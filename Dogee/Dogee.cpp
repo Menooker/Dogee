@@ -7,93 +7,266 @@
 #include <stdio.h>
 #include <iostream>
 
+#include "DogeeMacro.h"
 #include <stdint.h>
+#include <assert.h>
+#include "Dogee.h"
 namespace Dogee
 {
 	//test code
-	
-	uint64_t data[4096*32];
+
+	uint64_t data[4096 * 32];
 
 	template <class Dest, class Source>
 	inline Dest bit_cast(const Source& source) {
-		static_assert(sizeof(Dest) <= sizeof(Source),"Error: sizeof(Dest) > sizeof(Source)");
+		static_assert(sizeof(Dest) <= sizeof(Source), "Error: sizeof(Dest) > sizeof(Source)");
 		Dest dest;
 		memcpy(&dest, &source, sizeof(dest));
 		return dest;
 	}
 
-	typedef uint32_t ShortKey;
+
+
+	typedef uint32_t ObjectKey;
+	typedef uint32_t FieldKey;
 	typedef uint64_t LongKey;
 	class DObject
 	{
+	protected:
+		static const int _LAST_ = 0;
 	private:
-		LongKey last_field_id;	
+		ObjectKey object_id;
 	public:
 		//test code
-		LongKey RegisterField()
+		ObjectKey GetObjectId()
 		{
-			last_field_id+=8;
-			return last_field_id;
+			return object_id;
 		}
-		DObject(ShortKey obj_id)
-		{
-			//last_field_id = ((LongKey)obj_id)<<32;
-			last_field_id = (LongKey)(data + obj_id * 10);
-		}
-	};
-	DObject* lastobject;
 
-	template<typename T,int FieldId> class Value
+		DObject(ObjectKey obj_id)
+		{
+			object_id = obj_id;
+			//last_field_id = ((LongKey)obj_id)<<32;
+			//last_field_id = (LongKey)(data + obj_id * 10);
+		}
+
+		/*		DObject(DObject& x)
+				{
+				object_id=x.object_id;
+				}*/
+
+	};
+	thread_local DObject* lastobject = nullptr;
+
+
+	template<class T> class Reference;
+	template<typename T> class Array;
+
+	template <typename T>
+	class DSMInterface
 	{
-	private:
-		LongKey addr;
 	public:
+		static T get_value(ObjectKey obj_id, FieldKey field_id)
+		{
+			T ret = *(T*)(data + obj_id * 10 + field_id);
+			return ret;
+		}
+
+
+		static void set_value(ObjectKey obj_id, FieldKey field_id, T val)
+		{
+			*(T*)(data + obj_id * 10 + field_id) = val;
+		}
+
+	};
+
+	template <typename T>
+	class DSMInterface < Reference<T> >
+	{
+	public:
+		static Reference<T> get_value(ObjectKey obj_id, FieldKey field_id)
+		{
+			ObjectKey key = *(ObjectKey*)(data + obj_id * 10 + field_id);
+			Reference<T> ret(key);
+			return ret;
+		}
+
+		static void set_value(ObjectKey obj_id, FieldKey field_id, Reference<T> val)
+		{
+			*(ObjectKey*)(data + obj_id * 10 + field_id) = val->GetObjectId();
+		}
+
+	};
+
+	template <typename T>
+	class DSMInterface < Array<T> >
+	{
+	public:
+		static Array<T> get_value(ObjectKey obj_id, FieldKey field_id)
+		{
+			ObjectKey key = *(ObjectKey*)(data + obj_id * 10 + field_id);
+			Array<T> ret(key);
+			return ret;
+		}
+
+		static void set_value(ObjectKey obj_id, FieldKey field_id, Array<T> val)
+		{
+			*(ObjectKey*)(data + obj_id * 10 + field_id) = val.GetObjectId();
+		}
+
+	};
+
+
+	template<typename T> class ArrayElement
+	{
+		ObjectKey ok;
+		FieldKey fk;
+	public:
+
+		//copy 
+		ArrayElement<T>& operator=(ArrayElement<T>& x)
+		{
+			set(x.get());
+			return *this;
+		}
 
 		T get()
 		{
-			return *(T*)addr;
+			return DSMInterface<T>::get_value(ok, fk);
 		}
 
-		void set(T val)
+		void set(T& x)
 		{
-			*(T*)addr = val;
+			DSMInterface<T>::set_value(ok, fk, x);
 		}
-
 		//read
-		operator T() 
+		operator T()
 		{
 			return get();
 		}
 
-		//copy
-		Value<T>& operator=(Value<T>& x)
+		T operator->()
 		{
-			this->set(x.get());
-			return *this;
+			return get();
 		}
 
 		//write
-		Value<T>& operator=(T x)
+		T operator=(T x)
 		{
 			set(x);
+			return x;
+		}
+
+
+		ArrayElement(ObjectKey o_key, FieldKey f_key) : ok(o_key), fk(f_key)
+		{
+		}
+
+	};
+
+
+	template<typename T, FieldKey FieldId> class Value
+	{
+
+	private:
+		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
+		template<typename T2, FieldKey FieldId2>Value<T, FieldId>& operator=(Value<T2, FieldId2>& x);
+		Value<T, FieldId>& operator=(Value<T, FieldId>& x);
+	public:
+		int GetFieldId()
+		{
+			return FieldId;
+		}
+
+		//read
+		operator T() const
+		{
+			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			T ret = DSMInterface<T>::get_value(lastobject->GetObjectId(), FieldId);
+#ifdef DOGEE_DBG
+			lastobject = nullptr;
+#endif
+			return ret;
+		}
+
+		T operator->()
+		{
+			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			T ret = DSMInterface<T>::get_value(lastobject->GetObjectId(), FieldId);
+#ifdef DOGEE_DBG
+			lastobject = nullptr;
+#endif
+			return ret;
+		}
+
+/*		<T> operator[](int k)
+		{
+			return *(T*)nullptr;
+		}*/
+
+		//write
+		Value<T, FieldId>& operator=(T x)
+		{
+			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			DSMInterface<T>::set_value(lastobject->GetObjectId(), FieldId, x);
+#ifdef DOGEE_DBG
+			lastobject = nullptr;
+#endif
 			return *this;
 		}
 		//operator const   T() { return this->b_; }
 		//operator T&() { return this->b_; }
-/*		Value(T x)
-		{
-			this->operator=(x);
-		}*/
+		/*		Value(T x)
+				{
+				this->operator=(x);
+				}*/
 
-		Value(DObject* owner)
+		Value()
 		{
-			addr=owner->RegisterField();
 		}
 
 	};
-	typedef Value<int> DInt;
-	typedef Value<float> DFloat;
-	typedef Value<double> DDouble;
+
+/*	template<typename T, FieldKey FieldId> 
+	ArrayElement<T> Value<Array<T>, FieldId>::operator[](int k)
+	{
+			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			T ret = DSMInterface<T>::get_value(lastobject->GetObjectId(), FieldId);
+#ifdef DOGEE_DBG
+			lastobject = nullptr;
+#endif
+			return ret.ArrayAccess(k);
+	}*/
+
+
+
+	template<typename T> class Array
+	{
+	private:
+		ObjectKey object_id;
+	public:
+		//test code
+		ObjectKey GetObjectId()
+		{
+			return object_id;
+		}
+		Array(ObjectKey obj_id)
+		{
+			object_id = obj_id;
+		}
+
+		ArrayElement<T> ArrayAccess(int k)
+		{
+			FieldKey key = k;
+			return ArrayElement<T>(object_id, key);
+		}
+
+		ArrayElement<T> operator[](int k)
+		{
+			return ArrayAccess(k);
+		}
+	};
+
 
 	template<class T> class Reference
 	{
@@ -102,35 +275,104 @@ namespace Dogee
 	public:
 		T* operator->()
 		{
-			lastobject = &obj;
+			lastobject = (DObject*)&obj;
 			return &obj;
 		}
 
-		Reference(T& k) :T(k){}
+		Reference(ObjectKey key) :obj(key){}
+
+		Reference(T& k) :obj(k){}
 	};
+
+	//test code
+	ObjectKey objid;
+	template<class T> class Alloc
+	{
+	private:
+		//test code
+
+		static ObjectKey AllocObjectId()
+		{
+			return objid++;
+		}
+	public:
+		static Array<T>  newarray()
+		{
+			return Array<T>(AllocObjectId());
+		}
+
+		static Reference<T>  tnew()
+		{
+			T ret(AllocObjectId());
+			return Reference<T>(ret);
+		}
+
+		template<typename P1>
+		static Reference<T>  tnew(P1 p1)
+		{
+			T ret(AllocObjectId(), p1);
+			return Reference<T>(ret);
+		}
+
+		template<typename P1, typename P2>
+		static Reference<T>  tnew(P1 p1, P2 p2)
+		{
+			T ret(AllocObjectId(), p1, p2);
+			return Reference<T>(ret);
+		}
+		/*
+		template<typename P1, typename P2, typename P3>
+		T*  tnew(P1 p1, P2 p2, P3 p3)
+		{
+		return new (alloc()) T(p1, p2, p3);
+		}
+
+		template<typename P1, typename P2, typename P3, typename P4>
+		T*  tnew(P1 p1, P2 p2, P3 p3, P4 p4)
+		{
+		return new (alloc()) T(p1, p2, p3, p4);
+		}
+
+		template<typename P1, typename P2, typename P3, typename P4, typename P5>
+		T*  tnew(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
+		{
+		return new (alloc()) T(p1, p2, p3, p4, p5);
+		}*/
+	};
+
+	template <class T> inline T* ReferenceObject(T* obj)
+	{
+		lastobject = (DObject*)obj;
+		return obj;
+	}
 }
 using namespace Dogee;
-class clsa : DObject
+
+class clsa : public DObject
 {
+	DefBegin(DObject);
 public:
-	DInt i;
-	DFloat j;
-	DDouble k;
-	clsa(ShortKey obj_id) : DObject(obj_id), i(this), j(this), k(this)
+	Def(int, i);
+	Def(Array<float>, arr);
+	Def(Reference<clsa>, next);
+	DefEnd();
+	clsa(ObjectKey obj_id) : DObject(obj_id)
 	{}
+	
+
 };
 
-template <int I=0>
-class AAA
+
+
+
+template<typename T> void aaa(T* dummy)
 {
-	int jjj;
-public:
-	void print()
-	{
-		std::cout << I << std::endl;
-	}
-};
-
+	std::cout << "Normal" << std::endl;
+}
+template<> void aaa(int * dummy)
+{
+	std::cout << "Int" << std::endl;
+}
 int main(int argc, char* argv[])
 {
 /*	Dogee::DInt i = 10;
@@ -145,8 +387,16 @@ int main(int argc, char* argv[])
 	obj.j = 2.3;
 	obj.k = 4.5;
 	std::cout << sizeof(clsa) << std::endl << sizeof(DObject) << std::endl << sizeof(Value<int>) << std::endl;*/
-	AAA<32> ooo;
-	std::cout << sizeof(ooo);
+	auto ptr = Dogee::Alloc<clsa>::tnew();
+	ptr->arr = Dogee::Alloc<float>::newarray();
+	Array<float> arr = ptr->arr;
+	arr[0] = arr[0] + 1;
+	//std::cout << ptr->i << std::endl << ptr->j << std::endl << ptr->k << std::endl;
+	//ptr->next = ptr;
+	//ptr->next->next->i = 1;
+	//Reference<clsa> ptr2=ptr->next;
+	std::cout << arr[0] << std::endl;
+
 	return 0;
 }
 

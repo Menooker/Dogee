@@ -30,6 +30,12 @@
     <ClInclude Include="Instruction.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DogeeMacro.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DogeeNew.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
