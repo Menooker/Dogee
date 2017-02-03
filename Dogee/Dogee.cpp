@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include "Dogee.h"
+
 namespace Dogee
 {
 	//test code
@@ -165,10 +166,12 @@ namespace Dogee
 	};
 
 
+	//template<typename T> T dummy(T);
+	//template<typename T> ArrayElement<T> dummy(Array<T>);
 	template<typename T, FieldKey FieldId> class Value
 	{
-
 	private:
+
 		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
 		template<typename T2, FieldKey FieldId2>Value<T, FieldId>& operator=(Value<T2, FieldId2>& x);
 		Value<T, FieldId>& operator=(Value<T, FieldId>& x);
@@ -178,8 +181,8 @@ namespace Dogee
 			return FieldId;
 		}
 
-		//read
-		operator T() const
+
+		T get()
 		{
 			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
 			T ret = DSMInterface<T>::get_value(lastobject->GetObjectId(), FieldId);
@@ -187,22 +190,18 @@ namespace Dogee
 			lastobject = nullptr;
 #endif
 			return ret;
+		}
+		//read
+		operator T()
+		{
+			return get();
 		}
 
 		T operator->()
 		{
-			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
-			T ret = DSMInterface<T>::get_value(lastobject->GetObjectId(), FieldId);
-#ifdef DOGEE_DBG
-			lastobject = nullptr;
-#endif
-			return ret;
+			return get();
 		}
 
-/*		<T> operator[](int k)
-		{
-			return *(T*)nullptr;
-		}*/
 
 		//write
 		Value<T, FieldId>& operator=(T x)
@@ -214,29 +213,61 @@ namespace Dogee
 #endif
 			return *this;
 		}
-		//operator const   T() { return this->b_; }
-		//operator T&() { return this->b_; }
-		/*		Value(T x)
-				{
-				this->operator=(x);
-				}*/
-
 		Value()
 		{
 		}
 
 	};
 
-/*	template<typename T, FieldKey FieldId> 
-	ArrayElement<T> Value<Array<T>, FieldId>::operator[](int k)
+	//a dirty bypass for Value<Array<T>, FieldId>, just to add "operator[]" 
+	template<typename T, FieldKey FieldId> class Value<Array<T>, FieldId>
 	{
+	private:
+
+		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
+		template<typename T2, FieldKey FieldId2>Value<Array<T>, FieldId>& operator=(Value<T2, FieldId2>& x);
+		Value<Array<T>, FieldId>& operator=(Value<Array<T>, FieldId>& x);
+	public:
+		int GetFieldId()
+		{
+			return FieldId;
+		}
+
+
+		Array<T> get()
+		{
 			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
-			T ret = DSMInterface<T>::get_value(lastobject->GetObjectId(), FieldId);
+			Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
 #ifdef DOGEE_DBG
 			lastobject = nullptr;
 #endif
+			return ret;
+		}
+		//read
+		operator Array<T>()
+		{
+			return get();
+		}
+		ArrayElement<T> operator[](int k)
+		{
+			Array<T> ret = get();
 			return ret.ArrayAccess(k);
-	}*/
+		}
+		//write
+		Value<Array<T>, FieldId>& operator=(Array<T> x)
+		{
+			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			DSMInterface<Array<T>>::set_value(lastobject->GetObjectId(), FieldId, x);
+#ifdef DOGEE_DBG
+			lastobject = nullptr;
+#endif
+			return *this;
+		}
+		Value()
+		{
+		}
+
+	};
 
 
 
@@ -354,7 +385,7 @@ class clsa : public DObject
 public:
 	Def(int, i);
 	Def(Array<float>, arr);
-	Def(Reference<clsa>, next);
+	Def(Array<Reference<clsa>>, next);
 	DefEnd();
 	clsa(ObjectKey obj_id) : DObject(obj_id)
 	{}
@@ -389,14 +420,16 @@ int main(int argc, char* argv[])
 	std::cout << sizeof(clsa) << std::endl << sizeof(DObject) << std::endl << sizeof(Value<int>) << std::endl;*/
 	auto ptr = Dogee::Alloc<clsa>::tnew();
 	ptr->arr = Dogee::Alloc<float>::newarray();
-	Array<float> arr = ptr->arr;
-	arr[0] = arr[0] + 1;
+	ptr->next = Dogee::Alloc<Reference<clsa>>::newarray();
+	ptr->next[0] = ptr;
+	ptr->next[0]->i = 123;
+	ptr->arr[0] = 133;
+	ptr->arr[0]=ptr->arr[0] + 1;
+	std::cout << ptr->arr[0] << std::endl << ptr->i;
 	//std::cout << ptr->i << std::endl << ptr->j << std::endl << ptr->k << std::endl;
 	//ptr->next = ptr;
 	//ptr->next->next->i = 1;
 	//Reference<clsa> ptr2=ptr->next;
-	std::cout << arr[0] << std::endl;
-
 	return 0;
 }
 
