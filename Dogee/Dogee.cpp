@@ -10,6 +10,8 @@
 #include "DogeeMacro.h"
 #include <stdint.h>
 #include <assert.h>
+#include <hash_map>
+#include <functional>
 #include "Dogee.h"
 
 namespace Dogee
@@ -26,7 +28,7 @@ namespace Dogee
 		return dest;
 	}
 
-
+	template <class T> struct AutoRegisterObject;
 
 	typedef uint32_t ObjectKey;
 	typedef uint32_t FieldKey;
@@ -35,6 +37,7 @@ namespace Dogee
 	{
 	protected:
 		static const int _LAST_ = 0;
+		static const int CLASS_ID = 0;
 	private:
 		ObjectKey object_id;
 	public:
@@ -43,7 +46,10 @@ namespace Dogee
 		{
 			return object_id;
 		}
-
+		void SetObjectId(ObjectKey ok)
+		{
+			object_id = ok;
+		}
 		DObject(ObjectKey obj_id)
 		{
 			object_id = obj_id;
@@ -58,9 +64,11 @@ namespace Dogee
 
 	};
 	thread_local DObject* lastobject = nullptr;
+	std::hash_map<unsigned, std::function<DObject*(ObjectKey)>> VirtualReferenceCreators;
 
+	template<class T> T currentClassDummy();
 
-	template<class T> class Reference;
+	template<class T, bool isVirtual = false> class Reference;
 	template<typename T> class Array;
 
 	template <typename T>
@@ -69,32 +77,33 @@ namespace Dogee
 	public:
 		static T get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			T ret = *(T*)(data + obj_id * 10 + field_id);
+			T ret = *(T*)(data + obj_id * 100 + field_id);
 			return ret;
 		}
 
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, T val)
 		{
-			*(T*)(data + obj_id * 10 + field_id) = val;
+			*(T*)(data + obj_id * 100 + field_id) = val;
 		}
 
 	};
 
-	template <typename T>
-	class DSMInterface < Reference<T> >
+
+	template <typename T,bool isVirtual>
+	class DSMInterface < Reference<T, isVirtual> >
 	{
 	public:
-		static Reference<T> get_value(ObjectKey obj_id, FieldKey field_id)
+		static Reference<T, isVirtual> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = *(ObjectKey*)(data + obj_id * 10 + field_id);
-			Reference<T> ret(key);
+			ObjectKey key = *(ObjectKey*)(data + obj_id * 100 + field_id);
+			Reference<T, isVirtual> ret(key);
 			return ret;
 		}
 
-		static void set_value(ObjectKey obj_id, FieldKey field_id, Reference<T> val)
+		static void set_value(ObjectKey obj_id, FieldKey field_id, Reference<T, isVirtual> val)
 		{
-			*(ObjectKey*)(data + obj_id * 10 + field_id) = val->GetObjectId();
+			*(ObjectKey*)(data + obj_id * 100 + field_id) = val.GetObjectId();
 		}
 
 	};
@@ -105,19 +114,25 @@ namespace Dogee
 	public:
 		static Array<T> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = *(ObjectKey*)(data + obj_id * 10 + field_id);
+			ObjectKey key = *(ObjectKey*)(data + obj_id * 100 + field_id);
 			Array<T> ret(key);
 			return ret;
 		}
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, Array<T> val)
 		{
-			*(ObjectKey*)(data + obj_id * 10 + field_id) = val.GetObjectId();
+			*(ObjectKey*)(data + obj_id * 100 + field_id) = val.GetObjectId();
 		}
 
 	};
-
-
+	int GetClassId(ObjectKey obj_id)
+	{
+		return data [ obj_id * 100 + 97];
+	}
+	void SetClassId(ObjectKey obj_id,int cls_id)
+	{
+		data[obj_id * 100 + 97] = cls_id;
+	}
 	template<typename T> class ArrayElement
 	{
 		ObjectKey ok;
@@ -299,7 +314,8 @@ namespace Dogee
 	};
 
 
-	template<class T> class Reference
+
+	template<class T> class Reference<T,false>
 	{
 	private:
 		T obj;
@@ -309,12 +325,100 @@ namespace Dogee
 			lastobject = (DObject*)&obj;
 			return &obj;
 		}
+		ObjectKey GetObjectId()
+		{
+			return obj.GetObjectId();
+		}
 
-		Reference(ObjectKey key) :obj(key){}
+		template <class T2>
+		Reference<T, false>& operator=(Reference<T2, false> x)
+		{
+			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+			obj.SetObjectId(x->GetObjectId());
+			return *this;
+		}
 
-		Reference(T& k) :obj(k){}
+		template <class T2>
+		Reference<T, false>& operator=(Reference<T2, true> x)
+		{
+			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+			obj.SetObjectId(x->GetObjectId());
+			return *this;
+		}
+
+		template <class T2,bool isVirtual>
+		Reference(Reference<T2, isVirtual> x) :obj(x.GetObjectId())
+		{
+			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+		}
+
+		Reference(ObjectKey key) :obj(key)
+		{
+			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
+		}
+		
 	};
 
+	template<class T> class Reference < T, true >
+	{
+	private:
+		T* pobj;
+		ObjectKey okey;
+		void RefObj(ObjectKey okey)
+		{
+			if (okey == 0)
+			{
+				pobj = nullptr;
+				return;
+			}
+			std::function<DObject*(ObjectKey)> func = VirtualReferenceCreators[GetClassId(okey)];
+			pobj = (T*)(func(okey)); //dynamic_cast<T*> (func(okey));
+			assert(pobj);
+		}
+	public:
+		T* operator->()
+		{
+			if (!pobj) //possible memory leak in multithreaded environment
+				RefObj(okey);
+			lastobject = (DObject*)pobj;
+			return pobj;
+		}
+
+		ObjectKey GetObjectId()
+		{
+			return okey;
+		}
+
+		//copy or upcast
+		template <class T2,bool isVirtual>
+		Reference<T, true>& operator=(Reference<T2, isVirtual> x)
+		{
+			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+			okey=x.GetObjectId();
+			return *this;
+		}
+
+		template <class T2,bool isVirtual>
+		Reference(Reference<T2, isVirtual> x) 
+		{
+			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+			pobj = nullptr;
+			okey = x.GetObjectId();
+		}
+
+
+		Reference(ObjectKey key)
+		{
+			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
+			pobj = nullptr;
+			okey=key;
+		}
+
+		~Reference()
+		{
+			delete pobj;
+		}
+	};
 	//test code
 	ObjectKey objid;
 	template<class T> class Alloc
@@ -334,22 +438,28 @@ namespace Dogee
 
 		static Reference<T>  tnew()
 		{
-			T ret(AllocObjectId());
-			return Reference<T>(ret);
+			ObjectKey ok = AllocObjectId();
+			SetClassId(ok, T::CLASS_ID);
+			T ret(ok);
+			return Reference<T>(ok);
 		}
 
 		template<typename P1>
 		static Reference<T>  tnew(P1 p1)
 		{
-			T ret(AllocObjectId(), p1);
-			return Reference<T>(ret);
+			ObjectKey ok = AllocObjectId();
+			SetClassId(ok, T::CLASS_ID);
+			T ret(ok,p1);
+			return Reference<T>(ok);
 		}
 
 		template<typename P1, typename P2>
 		static Reference<T>  tnew(P1 p1, P2 p2)
 		{
-			T ret(AllocObjectId(), p1, p2);
-			return Reference<T>(ret);
+			ObjectKey ok = AllocObjectId();
+			SetClassId(ok, T::CLASS_ID);
+			T ret(ok, p1,p2);
+			return Reference<T>(ok);
 		}
 		/*
 		template<typename P1, typename P2, typename P3>
@@ -376,9 +486,48 @@ namespace Dogee
 		lastobject = (DObject*)obj;
 		return obj;
 	}
+
+	template <class T> struct AutoRegisterObject
+	{
+		static DObject* createInstance(ObjectKey key)
+		{
+			return dynamic_cast<DObject*> (new T(key));
+		}
+	public:
+		AutoRegisterObject()
+		{
+			static_assert(!std::is_abstract<T>::value, "No need to register abstract class.");
+			static_assert(std::is_base_of<DObject, T>::value,"T should be subclass of DObject.");
+			VirtualReferenceCreators[T::CLASS_ID] = createInstance;
+		}
+	};
+
 }
 using namespace Dogee;
 
+
+class clsb : public DObject
+{
+	DefBegin(DObject);
+public:
+	DefEnd();
+	virtual void aaaa() = 0;
+	clsb(ObjectKey obj_id) : DObject(obj_id)
+	{}
+};
+
+class clsc : public clsb
+{
+	DefBegin(clsb);
+public:
+	DefEnd();
+	virtual void aaaa()
+	{
+		std::cout << "Class C" << std::endl;
+	}
+	clsc(ObjectKey obj_id) : clsb(obj_id)
+	{}
+};
 class clsa : public DObject
 {
 	DefBegin(DObject);
@@ -386,21 +535,24 @@ public:
 	Def(int, i);
 	Def(Array<float>, arr);
 	Def(Array<Reference<clsa>>, next);
+	DefRef (clsb, true, prv);
 	DefEnd();
 	clsa(ObjectKey obj_id) : DObject(obj_id)
-	{}
+	{
+	}
 	
 
 };
 
 
-
+RegVirt(clsa);
+RegVirt(clsc);
 
 template<typename T> void aaa(T* dummy)
 {
 	std::cout << "Normal" << std::endl;
 }
-template<> void aaa(int * dummy)
+template<> void aaa(clsa * dummy)
 {
 	std::cout << "Int" << std::endl;
 }
@@ -421,11 +573,21 @@ int main(int argc, char* argv[])
 	auto ptr = Dogee::Alloc<clsa>::tnew();
 	ptr->arr = Dogee::Alloc<float>::newarray();
 	ptr->next = Dogee::Alloc<Reference<clsa>>::newarray();
+
+	//AutoRegisterObject<clsa> aaaaaa;
+
 	ptr->next[0] = ptr;
 	ptr->next[0]->i = 123;
 	ptr->arr[0] = 133;
 	ptr->arr[0]=ptr->arr[0] + 1;
-	std::cout << ptr->arr[0] << std::endl << ptr->i;
+	aaa((clsb*)0);
+	//Reference<clsa,true> ppp(12);
+	Reference<clsc, true> p2 = Dogee::Alloc<clsc>::tnew();
+	ptr->prv=p2;
+	Reference<clsb, true> p3=p2;
+	p3->aaaa();
+	//ppp->i = 0;
+	//std::cout <<  << sizeof(clsb);
 	//std::cout << ptr->i << std::endl << ptr->j << std::endl << ptr->k << std::endl;
 	//ptr->next = ptr;
 	//ptr->next->next->i = 1;
