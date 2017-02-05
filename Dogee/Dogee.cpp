@@ -10,7 +10,7 @@
 #include "DogeeBase.h"
 
 #include "DogeeMacro.h"
-
+#include <memory>
 using namespace Dogee;
 
 
@@ -57,13 +57,19 @@ class clsa : public DObject
 public:
 	Def(int, i);
 	Def(Array<float>, arr);
-	Def(Array<Reference<clsa>>, next);
+	Def(Array<Ref<clsa>>, next);
 	DefRef (clsb, true, prv);
 	DefEnd();
 	clsa(ObjectKey obj_id) : DObject(obj_id)
 	{
 	}
+	clsa(ObjectKey obj_id,int a) : DObject(obj_id)
+	{
 
+		self->arr = Dogee::NewArray<float>();
+		self->next = Dogee::NewArray<Ref<clsa>>();
+		self->arr[2] = a;
+	}
 };
 
 
@@ -83,26 +89,22 @@ RegVirt(clsd);
 int main(int argc, char* argv[])
 {
 	
-	auto ptr = Dogee::Alloc<clsa>::tnew();
-	ptr->arr = Dogee::Alloc<float>::newarray();
-	ptr->next = Dogee::Alloc<Reference<clsa>>::newarray();
-
+	auto ptr = Dogee::NewObj<clsa>(12);
 	//AutoRegisterObject<clsa> aaaaaa;
-
 	ptr->next[0] = ptr;
 	ptr->next[0]->i = 123;
 	ptr->arr[0] = 133;
 	ptr->arr[0]=ptr->arr[0] + 1;
 	aaa((clsb*)0);
-	//Reference<clsa,true> ppp(12);
-	Reference<clsc, true> p2 = Dogee::Alloc<clsc>::tnew();
+	//Ref<clsa,true> ppp(12);
+	Ref<clsc, true> p2 = Dogee::NewObj<clsc>();
 	ptr->prv=p2;
 	ptr->prv->aaaa();
-	Reference<clsd, true> p3 = Dogee::Alloc<clsd>::tnew();
+	Ref<clsd, true> p3 = Dogee::NewObj<clsd>();
 	ptr->prv = p3;
 	ptr->prv->aaaa();
-	Array<int> ppp = Dogee::force_cast<decltype(ptr), Array<int>>(ptr);
-	std::cout << clsa::CLASS_ID;
+	Array<int> ppp = Dogee::force_cast<Array<int>>(ptr);
+	std::cout << ptr->arr[2];
 
 	return 0;
 }

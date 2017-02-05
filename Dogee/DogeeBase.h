@@ -72,7 +72,7 @@ namespace Dogee
 
 	template<class T> T currentClassDummy();
 
-	template<class T, bool isVirtual = false> class Reference;
+	template<class T, bool isVirtual = false> class Ref;
 	template<typename T> class Array;
 
 	template <typename T>
@@ -95,17 +95,17 @@ namespace Dogee
 
 
 	template <typename T, bool isVirtual>
-	class DSMInterface < Reference<T, isVirtual> >
+	class DSMInterface < Ref<T, isVirtual> >
 	{
 	public:
-		static Reference<T, isVirtual> get_value(ObjectKey obj_id, FieldKey field_id)
+		static Ref<T, isVirtual> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
 			ObjectKey key = *(ObjectKey*)(data + obj_id * 100 + field_id);
-			Reference<T, isVirtual> ret(key);
+			Ref<T, isVirtual> ret(key);
 			return ret;
 		}
 
-		static void set_value(ObjectKey obj_id, FieldKey field_id, Reference<T, isVirtual> val)
+		static void set_value(ObjectKey obj_id, FieldKey field_id, Ref<T, isVirtual> val)
 		{
 			*(ObjectKey*)(data + obj_id * 100 + field_id) = val.GetObjectId();
 		}
@@ -203,7 +203,7 @@ namespace Dogee
 
 		T get()
 		{
-			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
 			T ret = DSMInterface<T>::get_value(lastobject->GetObjectId(), FieldId);
 #ifdef DOGEE_DBG
 			lastobject = nullptr;
@@ -225,7 +225,7 @@ namespace Dogee
 		//write
 		Value<T, FieldId>& operator=(T x)
 		{
-			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
 			DSMInterface<T>::set_value(lastobject->GetObjectId(), FieldId, x);
 #ifdef DOGEE_DBG
 			lastobject = nullptr;
@@ -255,7 +255,7 @@ namespace Dogee
 
 		Array<T> get()
 		{
-			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
 			Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
 #ifdef DOGEE_DBG
 			lastobject = nullptr;
@@ -275,7 +275,7 @@ namespace Dogee
 		//write
 		Value<Array<T>, FieldId>& operator=(Array<T> x)
 		{
-			assert(lastobject != nullptr);// "You should use a Reference<T> to access the member"
+			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
 			DSMInterface<Array<T>>::set_value(lastobject->GetObjectId(), FieldId, x);
 #ifdef DOGEE_DBG
 			lastobject = nullptr;
@@ -319,7 +319,7 @@ namespace Dogee
 
 
 
-	template<class T> class Reference<T, false>
+	template<class T> class Ref<T, false>
 	{
 		static_assert(!std::is_abstract<T>::value, "T should be non-abstract when using non-virtual Reference.");
 	private:
@@ -336,7 +336,7 @@ namespace Dogee
 		}
 
 		template <class T2>
-		Reference<T, false>& operator=(Reference<T2, false> x)
+		Ref<T, false>& operator=(Ref<T2, false> x)
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			obj.SetObjectId(x->GetObjectId());
@@ -344,7 +344,7 @@ namespace Dogee
 		}
 
 		template <class T2>
-		Reference<T, false>& operator=(Reference<T2, true> x)
+		Ref<T, false>& operator=(Ref<T2, true> x)
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			obj.SetObjectId(x->GetObjectId());
@@ -352,19 +352,19 @@ namespace Dogee
 		}
 
 		template <class T2, bool isVirtual>
-		Reference(Reference<T2, isVirtual> x) :obj(x.GetObjectId())
+		Ref(Ref<T2, isVirtual> x) :obj(x.GetObjectId())
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 		}
 
-		Reference(ObjectKey key) :obj(key)
+		Ref(ObjectKey key) :obj(key)
 		{
 			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
 		}
 
 	};
 
-	template<class T> class Reference < T, true >
+	template<class T> class Ref < T, true >
 	{
 	private:
 		T* pobj;
@@ -396,7 +396,7 @@ namespace Dogee
 
 		//copy or upcast
 		template <class T2, bool isVirtual>
-		Reference<T, true>& operator=(Reference<T2, isVirtual> x)
+		Ref<T, true>& operator=(Ref<T2, isVirtual> x)
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			okey = x.GetObjectId();
@@ -404,7 +404,7 @@ namespace Dogee
 		}
 
 		template <class T2, bool isVirtual>
-		Reference(Reference<T2, isVirtual> x)
+		Ref(Ref<T2, isVirtual> x)
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			pobj = nullptr;
@@ -412,59 +412,74 @@ namespace Dogee
 		}
 
 
-		Reference(ObjectKey key)
+		Ref(ObjectKey key)
 		{
 			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
 			pobj = nullptr;
 			okey = key;
 		}
 
-		~Reference()
+		~Ref()
 		{
 			delete pobj;
 		}
 	};
 	//test code
 	extern ObjectKey objid;
+
+	inline ObjectKey AllocObjectId()
+	{
+		return objid++;
+	}
+	template<typename T>
+	inline  Array<T>  NewArray()
+	{
+		return Array<T>(AllocObjectId());
+	}
+
+
+	template<class T,
+	class... _Types> inline
+		Ref<T> NewObj(_Types&&... _Args)
+	{	// copy from std::shared_ptr
+
+		ObjectKey ok = AllocObjectId();
+		SetClassId(ok, T::CLASS_ID);
+		T ret(ok, std::forward<_Types>(_Args)...);
+		return Ref<T>(ok);
+	}
+
 	template<class T> class Alloc
 	{
 	private:
 		//test code
 
-		static ObjectKey AllocObjectId()
-		{
-			return objid++;
-		}
-	public:
-		static Array<T>  newarray()
-		{
-			return Array<T>(AllocObjectId());
-		}
 
-		static Reference<T>  tnew()
+
+		static Ref<T>  tnew()
 		{
 			ObjectKey ok = AllocObjectId();
 			SetClassId(ok, T::CLASS_ID);
 			T ret(ok);
-			return Reference<T>(ok);
+			return Ref<T>(ok);
 		}
 
 		template<typename P1>
-		static Reference<T>  tnew(P1 p1)
+		static Ref<T>  tnew(P1 p1)
 		{
 			ObjectKey ok = AllocObjectId();
 			SetClassId(ok, T::CLASS_ID);
 			T ret(ok, p1);
-			return Reference<T>(ok);
+			return Ref<T>(ok);
 		}
 
 		template<typename P1, typename P2>
-		static Reference<T>  tnew(P1 p1, P2 p2)
+		static Ref<T>  tnew(P1 p1, P2 p2)
 		{
 			ObjectKey ok = AllocObjectId();
 			SetClassId(ok, T::CLASS_ID);
 			T ret(ok, p1, p2);
-			return Reference<T>(ok);
+			return Ref<T>(ok);
 		}
 		/*
 		template<typename P1, typename P2, typename P3>
@@ -484,7 +499,12 @@ namespace Dogee
 		{
 		return new (alloc()) T(p1, p2, p3, p4, p5);
 		}*/
+
+
+
 	};
+
+
 
 	template <class T> inline T* ReferenceObject(T* obj)
 	{
@@ -507,7 +527,7 @@ namespace Dogee
 		}
 	};
 
-	template<class TSrc, class TDest>
+	template<class TDest, class TSrc>
 	inline TDest force_cast(TSrc src)
 	{
 		return TDest(src.GetObjectId());
