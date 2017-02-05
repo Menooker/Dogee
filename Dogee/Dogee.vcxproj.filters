@@ -33,7 +33,7 @@
     <ClInclude Include="DogeeMacro.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeNew.h">
+    <ClInclude Include="DogeeBase.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -42,6 +42,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="Dogee.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DogeeShared.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

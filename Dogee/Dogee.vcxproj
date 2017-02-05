@@ -80,14 +80,15 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dogee.h" />
+    <ClInclude Include="DogeeBase.h" />
     <ClInclude Include="DogeeMacro.h" />
-    <ClInclude Include="DogeeNew.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Dogee.cpp" />
+    <ClCompile Include="DogeeShared.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
