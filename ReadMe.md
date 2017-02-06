@@ -13,7 +13,7 @@ Include header file "DogeeBase.h" and "DogeeMacro.h" to use the features.
 
 To define a class to be stored in DSM, the class or its base class should extend the Dogee base class "Dogee::DObject". A "referenece" in Dogee is the counterpart of pointers in C++, while pointers point to objects in local memory, and refereneces point to objects in shared memory.
 
-To declare member variables in the class, you should first "call" the macro "DefBegin(BASE_CLASS_NAME);". Then define the members by macro "Def(TYPE,VARIABLE_NAME)". Define referenece by "DefRef(Type,isVirtual,Name)", or by "Def(Dogee::Ref<TYPE>,VARIABLE_NAME)". Use "self" instead of "this" in the class's member functions. "Call" macro "DefEnd();" after defining the last member variable of a class. An example of defining a Dogee class.
+To declare member variables in the class, you should first "call" the macro "DefBegin(BASE_CLASS_NAME);". Then define the members by macro "Def(TYPE,VARIABLE_NAME)". Define referenece by "DefRef(Type,isVirtual,Name)", or by "Def(Dogee::Ref\<TYPE>,VARIABLE_NAME)". Use "self" instead of "this" in the class's member functions. "Call" macro "DefEnd();" after defining the last member variable of a class. An example of defining a Dogee class.
 
 ```C++
 class clsa : public DObject
@@ -44,13 +44,13 @@ IMPORTANT NOTES:
  * The first parameter of the consturtors should always be "ObjectKey obj_id", and the base class constructor BASE_CLASS(obj_id) should always be called
  * The constructor CLASS_NAME(ObjectKey obj_id) : BASE_CLASS_NAME(obj_id) should always be declared and have empty body.
 
-To create Dogee class instance, use Dogee::NewObj<CLASS_NAME>(PARAMETER_LIST), where PARAMETER_LIST is the list of parameters for the class constructor. However, the first paramter of the constructors is always "ObjectKey obj_id", which is provided by the Dogee system, and you should omit the first paramter of the constructors in PARAMETER_LIST. For example, to create a "clsa" object defined above.
+To create Dogee class instance, use Dogee::NewObj\<CLASS_NAME>(PARAMETER_LIST), where PARAMETER_LIST is the list of parameters for the class constructor. However, the first paramter of the constructors is always "ObjectKey obj_id", which is provided by the Dogee system, and you should omit the first paramter of the constructors in PARAMETER_LIST. For example, to create a "clsa" object defined above.
 ```C++
 Ref<clsa> ptr = NewObj<clsa>(32);
 ```
 The parameter "32" is passed to the variable "i" in the constructor "clsa(ObjectKey obj_id,int a)".
 
-We then have a reference to an object. A reference is declared by "Dogee:Ref<CLASS_NAME,isVirtual>". There are two types of references in Dogee. The first one is "non-virtual reference". Non-virtual reference inteprets the referenced objects as "CLASS_NAME" in the declaration, and use virtual function table of the class "CLASS_NAME". Non-virtual references may not accurately intepret the object, since the wrong virtual function can be called by using Non-virtual references. However, for a class without virtual functions,  Non-virtual references are always accurate. Declare a Non-virtual reference by Dogee:Ref<CLASS_NAME,false> or by ogee:Ref<CLASS_NAME> (References are non-virtual in default). Virtual references dynamically find the correct virtual function table for the refernced object, and virtual function calls are always accurately intepreted. Declare a Non-virtual reference by Dogee:Ref<CLASS_NAME,true>.
+We then have a reference to an object. A reference is declared by "Dogee:Ref\<CLASS_NAME,isVirtual>". There are two types of references in Dogee. The first one is "non-virtual reference". Non-virtual reference inteprets the referenced objects as "CLASS_NAME" in the declaration, and use virtual function table of the class "CLASS_NAME". Non-virtual references may not accurately intepret the object, since the wrong virtual function can be called by using Non-virtual references. However, for a class without virtual functions,  Non-virtual references are always accurate. Declare a Non-virtual reference by Dogee:Ref\<CLASS_NAME,false> or by ogee:Ref\<CLASS_NAME> (References are non-virtual in default). Virtual references dynamically find the correct virtual function table for the refernced object, and virtual function calls are always accurately intepreted. Declare a Non-virtual reference by Dogee:Ref\<CLASS_NAME,true>.
 
 References can be used in the same way of pointers.
 ```C++
