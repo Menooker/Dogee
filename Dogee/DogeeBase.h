@@ -139,8 +139,15 @@ namespace Dogee
 	}
 	template<typename T> class ArrayElement
 	{
+	private:
 		ObjectKey ok;
 		FieldKey fk;
+		template<typename Ty> static Ty getarray(Ty, int);
+		template<typename Ty>
+		ArrayElement<Ty> static getarray(Array<Ty> arr, int k)
+		{
+			return arr.ArrayAccess(k);
+		}
 	public:
 
 		//copy 
@@ -169,7 +176,10 @@ namespace Dogee
 		{
 			return get();
 		}
-
+		decltype(getarray(T(0), 0)) operator[](int k)
+		{
+			return getarray(get(), k);
+		}
 		//write
 		T operator=(T x)
 		{
@@ -185,12 +195,15 @@ namespace Dogee
 	};
 
 
-	//template<typename T> T dummy(T);
-	//template<typename T> ArrayElement<T> dummy(Array<T>);
 	template<typename T, FieldKey FieldId> class Value
 	{
 	private:
-
+		template<typename Ty> static Ty getarray(Ty, int);
+		template<typename Ty>
+		ArrayElement<Ty> static getarray(Array<Ty> arr, int k)
+		{
+			return arr.ArrayAccess(k);
+		}
 		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
 		template<typename T2, FieldKey FieldId2>Value<T, FieldId>& operator=(Value<T2, FieldId2>& x);
 		Value<T, FieldId>& operator=(Value<T, FieldId>& x);
@@ -222,6 +235,10 @@ namespace Dogee
 		}
 
 
+		decltype(getarray(T(0),0)) operator[](int k)
+		{
+			return getarray(get(),k);
+		}
 		//write
 		Value<T, FieldId>& operator=(T x)
 		{
@@ -239,7 +256,7 @@ namespace Dogee
 	};
 
 	//a dirty bypass for Value<Array<T>, FieldId>, just to add "operator[]" 
-	template<typename T, FieldKey FieldId> class Value<Array<T>, FieldId>
+/*	template<typename T, FieldKey FieldId> class Value<Array<T>, FieldId>
 	{
 	private:
 
@@ -287,7 +304,7 @@ namespace Dogee
 		}
 
 	};
-
+	*/
 
 
 	template<typename T> class Array
@@ -449,67 +466,16 @@ namespace Dogee
 		return Ref<T>(ok);
 	}
 
-	template<class T> class Alloc
-	{
-	private:
-		//test code
-
-
-
-		static Ref<T>  tnew()
-		{
-			ObjectKey ok = AllocObjectId();
-			SetClassId(ok, T::CLASS_ID);
-			T ret(ok);
-			return Ref<T>(ok);
-		}
-
-		template<typename P1>
-		static Ref<T>  tnew(P1 p1)
-		{
-			ObjectKey ok = AllocObjectId();
-			SetClassId(ok, T::CLASS_ID);
-			T ret(ok, p1);
-			return Ref<T>(ok);
-		}
-
-		template<typename P1, typename P2>
-		static Ref<T>  tnew(P1 p1, P2 p2)
-		{
-			ObjectKey ok = AllocObjectId();
-			SetClassId(ok, T::CLASS_ID);
-			T ret(ok, p1, p2);
-			return Ref<T>(ok);
-		}
-		/*
-		template<typename P1, typename P2, typename P3>
-		T*  tnew(P1 p1, P2 p2, P3 p3)
-		{
-		return new (alloc()) T(p1, p2, p3);
-		}
-
-		template<typename P1, typename P2, typename P3, typename P4>
-		T*  tnew(P1 p1, P2 p2, P3 p3, P4 p4)
-		{
-		return new (alloc()) T(p1, p2, p3, p4);
-		}
-
-		template<typename P1, typename P2, typename P3, typename P4, typename P5>
-		T*  tnew(P1 p1, P2 p2, P3 p3, P4 p4, P5 p5)
-		{
-		return new (alloc()) T(p1, p2, p3, p4, p5);
-		}*/
-
-
-
-	};
-
-
-
 	template <class T> inline T* ReferenceObject(T* obj)
 	{
 		lastobject = (DObject*)obj;
 		return obj;
+	}
+
+	inline FieldKey RegisterGlobalVariable()
+	{
+		static FieldKey fid = 0;
+		return fid++;
 	}
 
 	template <class T> struct AutoRegisterObject

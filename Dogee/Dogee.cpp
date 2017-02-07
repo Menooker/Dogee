@@ -58,6 +58,7 @@ public:
 	Def(int, i);
 	Def(Array<float>, arr);
 	Def(Array<Ref<clsa>>, next);
+	Def(Array<Array<int>>, mat);
 	DefRef (clsb, true, prv);
 	DefEnd();
 	clsa(ObjectKey obj_id) : DObject(obj_id)
@@ -68,6 +69,8 @@ public:
 
 		self->arr = Dogee::NewArray<float>();
 		self->next = Dogee::NewArray<Ref<clsa>>();
+		self->mat = Dogee::NewArray<Array<int>>();
+		self->mat[0] = Dogee::NewArray<int>();
 		self->arr[2] = a;
 	}
 };
@@ -86,6 +89,7 @@ template<> void aaa(clsa * dummy)
 
 RegVirt(clsc);
 RegVirt(clsd);
+DefGlobal(int, g_i);
 int main(int argc, char* argv[])
 {
 	
@@ -95,6 +99,7 @@ int main(int argc, char* argv[])
 	ptr->next[0]->i = 123;
 	ptr->arr[0] = 133;
 	ptr->arr[0]=ptr->arr[0] + 1;
+	ptr->mat[0][2] = 123;
 	aaa((clsb*)0);
 	//Ref<clsa,true> ppp(12);
 	Ref<clsc, true> p2 = Dogee::NewObj<clsc>();
@@ -103,8 +108,10 @@ int main(int argc, char* argv[])
 	Ref<clsd, true> p3 = Dogee::NewObj<clsd>();
 	ptr->prv = p3;
 	ptr->prv->aaaa();
+	g_i = 0;
+
 	Array<int> ppp = Dogee::force_cast<Array<int>>(ptr);
-	std::cout << ptr->arr[2];
+	std::cout << g_i;
 
 	return 0;
 }

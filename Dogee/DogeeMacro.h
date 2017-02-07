@@ -10,6 +10,8 @@
 #define DefEnd() static const int _LAST_ = __COUNTER__- _BASE_ - 1 + _PBASE_ ;static const int CLASS_ID = __COUNTER__;
 #define RegVirt(CurrentClass) static Dogee::AutoRegisterObject<CurrentClass> __REG_OBJECT__##CurrentClass##__;
 
+#define DefGlobal(Type,Name) Dogee::ArrayElement<Type> Name(0,Dogee::RegisterGlobalVariable());
+#define ExternGlobal(Type,Name) extern Dogee::ArrayElement<Type> Name;
 #endif
 
 
