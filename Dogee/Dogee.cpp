@@ -8,8 +8,8 @@
 #include <iostream>
 
 #include "DogeeBase.h"
-
 #include "DogeeMacro.h"
+#include "DogeeStorage.h"
 #include <memory>
 using namespace Dogee;
 
@@ -92,7 +92,10 @@ RegVirt(clsd);
 DefGlobal(int, g_i);
 int main(int argc, char* argv[])
 {
-	
+	std::vector<std::string> mem_hosts = { "127.0.0.1" };
+	std::vector<int> mem_ports = { 11211 };
+	DogeeEnv::SetIsMaster(true);
+	DogeeEnv::InitStorage(BackendType::SoBackendMemcached,CacheType::SoNoCache,mem_hosts,mem_ports);
 	auto ptr = Dogee::NewObj<clsa>(12);
 	//AutoRegisterObject<clsa> aaaaaa;
 	ptr->next[0] = ptr;
@@ -109,10 +112,10 @@ int main(int argc, char* argv[])
 	ptr->prv = p3;
 	ptr->prv->aaaa();
 	g_i = 0;
-
 	Array<int> ppp = Dogee::force_cast<Array<int>>(ptr);
-	std::cout << g_i;
-
+	std::cout << g_i << std::endl;
+	std::cout << ptr->mat[0][2] << std::endl;
+	std::cout << ptr->arr[0];
 	return 0;
 }
 

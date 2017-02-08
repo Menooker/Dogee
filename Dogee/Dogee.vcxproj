@@ -56,6 +56,7 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalDependencies>$(SolutionDir)\libmemcached.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -81,13 +82,17 @@
   <ItemGroup>
     <ClInclude Include="Dogee.h" />
     <ClInclude Include="DogeeBase.h" />
+    <ClInclude Include="DogeeEnv.h" />
     <ClInclude Include="DogeeMacro.h" />
+    <ClInclude Include="DogeeMemcachedStorage.h" />
+    <ClInclude Include="DogeeStorage.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Dogee.cpp" />
+    <ClCompile Include="DogeeMemcachedStorage.cpp" />
     <ClCompile Include="DogeeShared.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>

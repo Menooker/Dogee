@@ -36,6 +36,15 @@
     <ClInclude Include="DogeeBase.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DogeeStorage.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DogeeEnv.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DogeeMemcachedStorage.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -45,6 +54,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="DogeeShared.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DogeeMemcachedStorage.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

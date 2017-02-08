@@ -1,31 +1,35 @@
 #ifndef __DOGEE_BASE_H_ 
 #define __DOGEE_BASE_H_ 
 
-#include <stdint.h>
+
 #include <assert.h>
 #include <hash_map>
 #include <functional>
 #include "Dogee.h"
+#include "DogeeEnv.h"
 
 namespace Dogee
 {
 	//test code
 
-	extern uint64_t data[4096 * 32];
 
-	template <class Dest, class Source>
+	/*template <class Dest, class Source>
 	inline Dest bit_cast(const Source& source) {
 		static_assert(sizeof(Dest) <= sizeof(Source), "Error: sizeof(Dest) > sizeof(Source)");
 		Dest dest;
 		memcpy(&dest, &source, sizeof(dest));
 		return dest;
+	}*/
+
+	template <class Dest, class Source>
+	inline Dest bit_cast(const Source source) {
+		//static_assert(sizeof(Dest) <= sizeof(Source), "Error: sizeof(Dest) > sizeof(Source)");
+		//Dest dest;
+		//memcpy(&dest, &source, sizeof(dest));
+		return * reinterpret_cast<const Dest*>(&source);
 	}
 
 	template <class T> struct AutoRegisterObject;
-
-	typedef uint32_t ObjectKey;
-	typedef uint32_t FieldKey;
-	typedef uint64_t LongKey;
 	class DObject
 	{
 	protected:
@@ -50,7 +54,7 @@ namespace Dogee
 
 
 	};
-	extern thread_local DObject* lastobject;
+	extern THREAD_LOCAL DObject* lastobject;
 
 	typedef  std::function<DObject*(ObjectKey)> VirtualReferenceCreator;
 
@@ -81,14 +85,14 @@ namespace Dogee
 	public:
 		static T get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			T ret = *(T*)(data + obj_id * 100 + field_id);
-			return ret;
+			return bit_cast<T>(DogeeEnv::cache->get(obj_id, field_id));
 		}
 
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, T val)
 		{
-			*(T*)(data + obj_id * 100 + field_id) = val;
+			//fix-me : check the return value
+			DogeeEnv::cache->put(obj_id, field_id, bit_cast<uint64_t>(val));
 		}
 
 	};
@@ -100,14 +104,14 @@ namespace Dogee
 	public:
 		static Ref<T, isVirtual> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = *(ObjectKey*)(data + obj_id * 100 + field_id);
+			ObjectKey key = bit_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
 			Ref<T, isVirtual> ret(key);
 			return ret;
 		}
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, Ref<T, isVirtual> val)
 		{
-			*(ObjectKey*)(data + obj_id * 100 + field_id) = val.GetObjectId();
+			DogeeEnv::cache->put(obj_id, field_id, bit_cast<uint64_t>(val.GetObjectId()));
 		}
 
 	};
@@ -118,24 +122,26 @@ namespace Dogee
 	public:
 		static Array<T> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = *(ObjectKey*)(data + obj_id * 100 + field_id);
+			ObjectKey key = bit_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
 			Array<T> ret(key);
 			return ret;
 		}
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, Array<T> val)
 		{
-			*(ObjectKey*)(data + obj_id * 100 + field_id) = val.GetObjectId();
+			DogeeEnv::cache->put(obj_id, field_id, bit_cast<uint64_t>(val.GetObjectId()));
 		}
 
 	};
 	inline int GetClassId(ObjectKey obj_id)
 	{
-		return data[obj_id * 100 + 97];
+		//test code
+		return (int)DogeeEnv::cache->get(obj_id, 97);
 	}
 	inline void SetClassId(ObjectKey obj_id, int cls_id)
 	{
-		data[obj_id * 100 + 97] = cls_id;
+		//test code
+		DogeeEnv::cache->put(obj_id, 97, cls_id);
 	}
 	template<typename T> class ArrayElement
 	{
