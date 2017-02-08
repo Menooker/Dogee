@@ -26,7 +26,7 @@ namespace Dogee
 		char* mret;
 
 		size_t len;
-#ifdef BD_ON_X64
+#ifdef DOGEE_ON_X64
 		uint32_t flg;
 #else
 		size_t flg;

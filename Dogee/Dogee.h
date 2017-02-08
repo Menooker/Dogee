@@ -3,6 +3,19 @@
 
 #include <stdint.h>
 #define DOGEE_DBG
+
+#ifndef _MSC_VER
+#define SUPPORT_TLS
+#endif
+
+#ifdef __x86_64__
+#define DOGEE_ON_X64
+#endif
+
+#ifdef _WIN64
+#define DOGEE_ON_X64
+#endif
+
 #ifndef SUPPORT_TLS
 #define THREAD_LOCAL __declspec( thread )
 #else

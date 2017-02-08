@@ -7,7 +7,9 @@
 #include <string>
 #include <assert.h>
 //#include "DogeeEnv.h"
-
+#ifdef __GNUC__
+#define memcached_free2(a) free(a)
+#endif
 namespace Dogee
 {
 	extern THREAD_LOCAL memcached_st *memc;

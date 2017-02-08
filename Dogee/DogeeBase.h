@@ -3,7 +3,8 @@
 
 
 #include <assert.h>
-#include <hash_map>
+//#include "hash_compatible.h"
+#include <unordered_map>
 #include <functional>
 #include "Dogee.h"
 #include "DogeeEnv.h"
@@ -58,9 +59,9 @@ namespace Dogee
 
 	typedef  std::function<DObject*(ObjectKey)> VirtualReferenceCreator;
 
-	inline std::hash_map<unsigned, VirtualReferenceCreator>& GetClassMap()
+	inline std::unordered_map<unsigned, VirtualReferenceCreator>& GetClassMap()
 	{
-		static std::hash_map<unsigned, VirtualReferenceCreator> VirtualReferenceCreators;
+		static std::unordered_map<unsigned, VirtualReferenceCreator> VirtualReferenceCreators;
 		return VirtualReferenceCreators;
 	}
 
