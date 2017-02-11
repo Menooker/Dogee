@@ -1,6 +1,6 @@
 CXX ?= g++
 CPPFLAGS ?= -std=c++11
-LIBS ?= -lmemcached
+LIBS ?= -lmemcached -pthread
 Dogee: Dogee.o DogeeMemcachedStorage.o DogeeShared.o  DogeeRemote.o  DogeeThreading.o DogeeMemcachedStorage.o DogeeUtil.o
 	$(CXX) -o $@ $(CXXFLAGS) -Wl,--start-group $^ $(LIBS) -Wl,--end-group 
 	# Other rules could be implicitly deduced
