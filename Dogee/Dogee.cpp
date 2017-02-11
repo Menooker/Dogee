@@ -5,11 +5,14 @@
 #endif
 
 #include <stdio.h>
+#include <stdlib.h>
 #include <iostream>
 
 #include "DogeeBase.h"
 #include "DogeeMacro.h"
 #include "DogeeStorage.h"
+#include "DogeeRemote.h"
+#include "DogeeThreading.h"
 #include <memory>
 using namespace Dogee;
 
@@ -87,26 +90,55 @@ template<> void aaa(clsa * dummy)
 }
 
 
+DefGlobal(int, g_i);
+
 RegVirt(clsc);
 RegVirt(clsd);
-DefGlobal(int, g_i);
+
+
+void threadfun(uint32_t param)
+{
+	std::cout << "Create Thread" << g_i << std::endl<<param;
+}
+RegFunc(threadfun);
+
+
 int main(int argc, char* argv[])
 {
-	std::vector<std::string> mem_hosts = { "127.0.0.1" };
-	std::vector<int> mem_ports = { 11211 };
-	DogeeEnv::SetIsMaster(true);
-	DogeeEnv::InitStorage(BackendType::SoBackendMemcached,CacheType::SoNoCache,mem_hosts,mem_ports);
+	if (argc == 3 && std::string(argv[1])=="-s")
+	{
+		RcSlave(atoi(argv[2]));
+	}
+	else
+	{
+		std::vector<std::string> hosts = { "", "127.0.0.1" };
+		std::vector<int> ports = { 8090,18090 };
+		std::vector<std::string> mem_hosts = { "127.0.0.1" };
+		std::vector<int> mem_ports = { 11211 };
+		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
+		g_i = 123445;
+		Ref<DThread> thread = NewObj<DThread>(threadfun, 1, 3232);
+		int i;
+		std::cin >> i;
+		CloseCluster();
+	}
+
+	return 0;
+}
+
+void objecttest()
+{
 	auto ptr = Dogee::NewObj<clsa>(12);
 	//AutoRegisterObject<clsa> aaaaaa;
 	ptr->next[0] = ptr;
 	ptr->next[0]->i = 123;
 	ptr->arr[0] = 133;
-	ptr->arr[0]=ptr->arr[0] + 1;
+	ptr->arr[0] = ptr->arr[0] + 1;
 	ptr->mat[0][2] = 123;
 	aaa((clsb*)0);
 	//Ref<clsa,true> ppp(12);
 	Ref<clsc, true> p2 = Dogee::NewObj<clsc>();
-	ptr->prv=p2;
+	ptr->prv = p2;
 	ptr->prv->aaaa();
 	Ref<clsd, true> p3 = Dogee::NewObj<clsd>();
 	ptr->prv = p3;
@@ -116,6 +148,4 @@ int main(int argc, char* argv[])
 	std::cout << g_i << std::endl;
 	std::cout << ptr->mat[0][2] << std::endl;
 	std::cout << ptr->arr[0];
-	return 0;
 }
-

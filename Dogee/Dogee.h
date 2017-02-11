@@ -25,6 +25,8 @@ typedef uint32_t ObjectKey;
 typedef uint32_t FieldKey;
 typedef uint64_t LongKey;
 
+#define DOGEE_MAX_SHARED_KEY_TRIES  200
+
 #define MAKE64(a,b) (unsigned long long)( ((unsigned long long)a)<<32 | (unsigned long long)b)
 
 #define DOGEE_USE_MEMCACHED

@@ -21,8 +21,14 @@ namespace Dogee
 
 	public:
 		static memcached_st *main_memc;
+		static void InitInCurrentThread()
+		{
+			init_memcached_this_thread();
+		}
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v);
 		virtual uint64_t get(ObjectKey key, FieldKey fldid);
+		virtual SoStatus newobj(ObjectKey key, uint32_t flag);
+		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag);
 		~SoStorageMemcached();
 
 

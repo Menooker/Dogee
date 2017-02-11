@@ -29,7 +29,24 @@ namespace Dogee
 		static DSMCache* cache;
 		static int self_node_id;
 		static int num_nodes;
+		typedef void(*InitStorageCurrentThreadProc)();
+		static InitStorageCurrentThreadProc InitStorageCurrentThread;
 
+		class RemoteNodes
+		{
+		private:
+			std::vector<uint64_t> connections;
+		public:
+			void PushConnection(uint64_t s)
+			{
+				connections.push_back(s);
+			}
+			uint64_t GetConnection(int node_id)
+			{
+				return connections[node_id];
+			}
+		};
+		static RemoteNodes remote_nodes;
 		static bool isMaster()
 		{
 			return _isMaster;

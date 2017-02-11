@@ -8,6 +8,7 @@
 #include <functional>
 #include "Dogee.h"
 #include "DogeeEnv.h"
+#include "DogeeStorage.h"
 
 namespace Dogee
 {
@@ -134,16 +135,17 @@ namespace Dogee
 		}
 
 	};
-	inline int GetClassId(ObjectKey obj_id)
+	inline uint32_t GetClassId(ObjectKey obj_id)
 	{
-		//test code
-		return (int)DogeeEnv::cache->get(obj_id, 97);
+		uint32_t ret;
+		DogeeEnv::backend->getinfo(obj_id, ret);
+		return ret;
 	}
-	inline void SetClassId(ObjectKey obj_id, int cls_id)
+/*	inline void SetClassId(ObjectKey obj_id, int cls_id)
 	{
 		//test code
 		DogeeEnv::cache->put(obj_id, 97, cls_id);
-	}
+	}*/
 	template<typename T> class ArrayElement
 	{
 	private:
@@ -448,17 +450,31 @@ namespace Dogee
 			delete pobj;
 		}
 	};
-	//test code
-	extern ObjectKey objid;
 
-	inline ObjectKey AllocObjectId()
+
+	inline ObjectKey AllocObjectId(uint32_t cls_id)
 	{
-		return objid++;
+		ObjectKey key = 0;
+
+		for (int i = 0; i<DOGEE_MAX_SHARED_KEY_TRIES; i++)
+		{
+			while (key!=0)
+				key = rand();
+			if (DogeeEnv::backend->newobj(key, cls_id) == SoOK)
+			{
+				break;
+			}
+		}
+		if (key == 0)
+		{
+			//fix-me : raise some hard error here			
+		}
+		return key;
 	}
 	template<typename T>
 	inline  Array<T>  NewArray()
 	{
-		return Array<T>(AllocObjectId());
+		return Array<T>(AllocObjectId(1));
 	}
 
 
@@ -467,8 +483,8 @@ namespace Dogee
 		Ref<T> NewObj(_Types&&... _Args)
 	{	// copy from std::shared_ptr
 
-		ObjectKey ok = AllocObjectId();
-		SetClassId(ok, T::CLASS_ID);
+		ObjectKey ok = AllocObjectId(T::CLASS_ID);
+		//SetClassId(ok, T::CLASS_ID);
 		T ret(ok, std::forward<_Types>(_Args)...);
 		return Ref<T>(ok);
 	}

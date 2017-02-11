@@ -29,11 +29,13 @@ namespace Dogee
 			switch (type)
 			{
 			case SoBackendTest:
+				DogeeEnv::InitStorageCurrentThread = LocalStorage::InitInCurrentThread;
 				return new LocalStorage();
 				//case SoBackendChunkMemcached:
 				//	return new SoStorageChunkMemcached(arr_mem_hosts, arr_mem_ports);
 #ifdef DOGEE_USE_MEMCACHED
 			case SoBackendMemcached:
+				DogeeEnv::InitStorageCurrentThread = SoStorageMemcached::InitInCurrentThread;
 				return new SoStorageMemcached(arr_mem_hosts, arr_mem_ports);
 #endif
 			default:
@@ -57,5 +59,5 @@ namespace Dogee
 			return NULL;
 		}
 
-	}
+	};
 }

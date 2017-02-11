@@ -4,20 +4,32 @@
 #include "Dogee.h"
 #include <vector>
 #include <string>
+#include "DogeeEnv.h"
 
 namespace Dogee
 {
 	/*
-	Wait for connections from Slaves and initialize the cluster. Set isMaster=true. Wait until the
-	number of slaves equals to SlaveCount.
+	Connect to the Slaves and initialize the cluster. Set isMaster=true. 
+	hosts[0] is ignored, ports[0] is the master nodes's listening port
 	*/
-	void MasterConnect( std::vector<std::string>& Nodes, std::vector<int>& Ports);
+	int RcMaster(std::vector<std::string>& hosts, std::vector<int>& ports,
+		std::vector<std::string>& memhosts, std::vector<int>& memports,
+		BackendType backty, CacheType cachety);
 
 	/*
 	Called by slave nodes, will not return until the master close the cluster. Set isMaster=false.
 	*/
-	void SlaveMain(int SlavePort);
+	void RcSlave(int SlavePort);
 
+	/*
+	Can be called by the master node. Create a thread on "node_id", with function index "idx"
+	*/
+	int RcCreateThread(int node_id, uint32_t idx, uint32_t param, ObjectKey okey);
+
+	/*
+	Can be called by the master node. Close the whole cluster.
+	*/
+	void CloseCluster();
 }
 
 #endif

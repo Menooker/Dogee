@@ -87,6 +87,7 @@
     <ClInclude Include="DogeeMemcachedStorage.h" />
     <ClInclude Include="DogeeRemote.h" />
     <ClInclude Include="DogeeStorage.h" />
+    <ClInclude Include="DogeeThreading.h" />
     <ClInclude Include="DogeeUtil.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />
@@ -97,6 +98,7 @@
     <ClCompile Include="DogeeMemcachedStorage.cpp" />
     <ClCompile Include="DogeeRemote.cpp" />
     <ClCompile Include="DogeeShared.cpp" />
+    <ClCompile Include="DogeeThreading.cpp" />
     <ClCompile Include="DogeeUtil.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>

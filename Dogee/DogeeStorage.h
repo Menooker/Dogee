@@ -18,6 +18,10 @@ namespace Dogee
 	class SoStorage
 	{
 	public:
+		static void InitInCurrentThread()
+		{};
+		virtual SoStatus newobj(ObjectKey key, uint32_t flag) = 0;
+		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag) = 0;
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v) = 0;
 		virtual uint64_t get(ObjectKey key, FieldKey fldid) = 0;
 	};
@@ -27,6 +31,18 @@ namespace Dogee
 	{
 		uint64_t data[4096 * 32];
 	public:
+		SoStatus newobj(ObjectKey key, uint32_t flag)
+		{
+			data[key * 100 + 97] = flag;
+			return SoOK;
+		}
+
+		SoStatus getinfo(ObjectKey key, uint32_t& flag)
+		{
+			flag = (uint32_t)data[key * 100 + 97];
+			return SoOK;
+		}
+
 
 		SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v)
 		{

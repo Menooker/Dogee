@@ -2,7 +2,7 @@
 #include "DogeeEnv.h"
 #include <thread>
 #include <chrono>
-
+#include "DogeeStorage.h"
 
 #ifdef _WIN32
 #include <winsock.h>
@@ -34,8 +34,8 @@ typedef struct sockaddr* LPSOCKADDR;
 #define RcSocketLastError() errno
 #endif
 
-#define RC_MAGIC_MASTER 0x12345edf
-#define RC_MAGIC_SLAVE 0x33450f0e
+#define RC_MAGIC_MASTER 0x12335edf
+#define RC_MAGIC_SLAVE 0x33950f0e
 
 
 enum RcCommand
@@ -193,49 +193,6 @@ namespace Dogee
 			return (SOCKET)sclient;
 		}
 
-		SOCKET RcCreateListen(int port)
-		{
-			SOCKET slisten = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-			int reuse = 1;
-			if (setsockopt(slisten, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse)) < 0)
-				perror("setsockopt(SO_REUSEADDR) failed");
-
-#ifdef SO_REUSEPORT
-			reuse = 1;
-			if (setsockopt(slisten, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0)
-				perror("setsockopt(SO_REUSEPORT) failed");
-#endif
-			if (slisten == INVALID_SOCKET)
-			{
-				printf("socket error ! \n");
-				return 0;
-			}
-
-			//绑定IP和端口
-			sockaddr_in sin;
-			memset(&sin, 0, sizeof(sin));
-			sin.sin_family = AF_INET;
-			sin.sin_port = htons(port);
-#ifdef _WIN32
-			sin.sin_addr.S_un.S_addr = INADDR_ANY;
-#else
-			sin.sin_addr.s_addr = INADDR_ANY;
-#endif
-			if (bind(slisten, (LPSOCKADDR)&sin, sizeof(sin)) == SOCKET_ERROR)
-			{
-				printf("bind error !");
-				return 0;
-			}
-
-			//开始监听
-			if (listen(slisten, 5) == SOCKET_ERROR)
-			{
-				printf("listen error !");
-				return 0;
-			}
-			return (SOCKET)slisten;
-		}
-
 		SOCKET RcListen(int port)
 		{
 			SOCKET slisten = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
@@ -332,7 +289,7 @@ namespace Dogee
 
 			// discovery client information
 			struct sockaddr_in addr;
-#ifdef BD_ON_WINDOWS
+#ifdef _WIN32
 			int addrlen = sizeof(addr);
 #else
 			size_t addrlen = sizeof(addr);
@@ -364,6 +321,15 @@ namespace Dogee
 			RcSend(ret, &cmd, sizeof(cmd));
 			return ret;
 		}
+		int RcSendCmd(SOCKET s, RcCommandPack* cmd)
+		{
+			int ret = RcSend(s, cmd, sizeof(RcCommandPack));
+			if (ret == SOCKET_ERROR)
+			{
+				return RcSocketLastError();
+			}
+			return 0;
+		}
 
 	}
 
@@ -371,6 +337,7 @@ namespace Dogee
 
 	using namespace Socket;
 
+	extern void ThThreadEntry(int index, uint32_t param,ObjectKey okey );
 
 	void RcSlaveMainLoop(char* path, SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& mem_hosts, std::vector<int>& mem_ports, int node_id,
@@ -393,7 +360,7 @@ namespace Dogee
 				goto CLOSE;
 				break;
 			case RcCmdCreateThread:
-
+				std::thread(ThThreadEntry, cmd.param, cmd.param2, cmd.param3);
 				break;
 			case RcCmdWakeSync:
 				//RcDoWakeThread(cmd.param34);
@@ -422,7 +389,6 @@ namespace Dogee
 		int err = 0, err2 = 0;
 		if (cnt == sizeof(mi) && mi.magic == RC_MAGIC_MASTER)
 		{
-			char path[255];
 			char mainmod[255];
 
 			DogeeEnv::self_node_id = mi.node_id;
@@ -448,7 +414,7 @@ namespace Dogee
 			ports.push_back(mi.localport);
 			//printf("Master = %s:%d\n",master.c_str(),mi.localport);
 
-			for (int i = 1; i<mi.num_nodes; i++)
+			for (unsigned i = 1; i<mi.num_nodes; i++)
 			{
 				uint32_t len, port;
 				err = 5;
@@ -477,7 +443,7 @@ namespace Dogee
 			//printf("Memory server list :\n");
 			std::vector<std::string> memhosts;
 			std::vector<int> memports;
-			for (int i = 0; i<mi.num_mem_server; i++)
+			for (unsigned i = 0; i<mi.num_mem_server; i++)
 			{
 				uint32_t len, port;
 				err = 5;
@@ -587,9 +553,46 @@ namespace Dogee
 			sendl = memports[i];
 			RcSend(s, &sendl, sizeof(sendl));
 		}
-
-
-
 		return 0;
 	}
+
+	int RcMaster(std::vector<std::string>& hosts, std::vector<int>& ports,
+		std::vector<std::string>& memhosts, std::vector<int>& memports,
+		BackendType backty, CacheType cachety)
+	{
+		//push master node as node_id=0
+		DogeeEnv::remote_nodes.PushConnection(0);
+		for (unsigned i = 1; i < hosts.size(); i++)
+		{
+			SOCKET s = (SOCKET)RcConnect((char*)hosts[i].c_str(), ports[i]);
+			if (s == 0 || RcMasterHello((SOCKET)s, hosts, ports, memhosts, memports, i,backty,cachety))
+				return 1;
+			DogeeEnv::remote_nodes.PushConnection((uint64_t)s);
+		}
+		DogeeEnv::SetIsMaster(true);
+		DogeeEnv::num_nodes = hosts.size();
+		DogeeEnv::InitStorage(backty, cachety, memhosts, memports);
+		return 0;
+
+	}
+
+	void CloseCluster()
+	{
+		RcCommandPack cmd;
+		cmd.cmd = RcCmdClose;
+		for (int i = 1; i < DogeeEnv::num_nodes; i++)
+		{
+			RcSendCmd((SOCKET)DogeeEnv::remote_nodes.GetConnection(i), &cmd);
+		}
+		DogeeEnv::CloseStorage();
+	}
+
+	int RcCreateThread(int node_id,uint32_t idx,uint32_t param,ObjectKey okey)
+	{
+		RcCommandPack cmd = { RcCmdCreateThread, idx, param };
+		cmd.param3 = okey;
+		int sret = RcSendCmd((SOCKET)DogeeEnv::remote_nodes.GetConnection(node_id), &cmd);
+		return sret;
+	}
+
 }
