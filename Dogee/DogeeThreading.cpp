@@ -18,7 +18,7 @@ namespace Dogee
 
 	void ThRegisterThreadFunction(thread_proc func,int id)
 	{
-		GetIDProcMap()[id] = func;
+		GetIDProcMap().push_back(func);
 		GetProcIDMap()[func] = id;
 	}
 

@@ -3,6 +3,7 @@
 #include <thread>
 #include <chrono>
 #include "DogeeStorage.h"
+#include <string.h>
 
 #ifdef _WIN32
 #include <winsock.h>
@@ -70,7 +71,7 @@ struct MasterInfo
 	uint32_t num_mem_server;
 	uint32_t num_nodes;
 	uint32_t node_id;
-	uint32_t localport;
+	int32_t localport;
 	Dogee::BackendType backty;
 	Dogee::CacheType cachety;
 };
@@ -127,7 +128,7 @@ namespace Dogee
 			if (setsockopt(slisten, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse)) < 0)
 				perror("setsockopt(SO_REUSEADDR) failed");
 
-#ifdef SO_REUSEPORT
+#if defined(SO_REUSEPORT) & defined(DOGEE_REUSE_PORT)
 			reuse = 1;
 			if (setsockopt(slisten, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0)
 				perror("setsockopt(SO_REUSEPORT) failed");
@@ -173,7 +174,7 @@ namespace Dogee
 			SOCKET sclient = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 			if (sclient == INVALID_SOCKET)
 			{
-				return NULL;
+				return (SOCKET)NULL;
 			}
 
 			sockaddr_in serAddr;
@@ -188,7 +189,7 @@ namespace Dogee
 			if (connect(sclient, (sockaddr *)&serAddr, sizeof(serAddr)) == SOCKET_ERROR)
 			{
 				closesocket(sclient);
-				return NULL;
+				return (SOCKET)NULL;
 			}
 			return (SOCKET)sclient;
 		}
@@ -200,7 +201,7 @@ namespace Dogee
 			if (setsockopt(slisten, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuse, sizeof(reuse)) < 0)
 				perror("setsockopt(SO_REUSEADDR) failed");
 
-#ifdef SO_REUSEPORT
+#if defined(SO_REUSEPORT) & defined(DOGEE_REUSE_PORT)
 			reuse = 1;
 			if (setsockopt(slisten, SOL_SOCKET, SO_REUSEPORT, (const char*)&reuse, sizeof(reuse)) < 0)
 				perror("setsockopt(SO_REUSEPORT) failed");
@@ -292,7 +293,7 @@ namespace Dogee
 #ifdef _WIN32
 			int addrlen = sizeof(addr);
 #else
-			size_t addrlen = sizeof(addr);
+			socklen_t addrlen = sizeof(addr);
 #endif
 			if (getpeername((SOCKET)fd, (struct sockaddr*)&addr, &addrlen) == -1){
 				fprintf(stderr, "discovery client information failed, fd=%d, errno=%d(%#x).\n", fd, errno, errno);
@@ -360,7 +361,7 @@ namespace Dogee
 				goto CLOSE;
 				break;
 			case RcCmdCreateThread:
-				std::thread(ThThreadEntry, cmd.param, cmd.param2, cmd.param3);
+				std::thread(ThThreadEntry, cmd.param, cmd.param2, cmd.param3).detach();
 				break;
 			case RcCmdWakeSync:
 				//RcDoWakeThread(cmd.param34);
@@ -506,13 +507,13 @@ namespace Dogee
 
 
 	int RcMasterHello(SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
-		std::vector<std::string>& memhosts, std::vector<int>& memports, int node_id,
+		std::vector<std::string>& memhosts, std::vector<int>& memports, uint32_t node_id,
 		BackendType backty, CacheType cachety)
 	{
 		SlaveInfo si;
-		int mem_cnt;
+		unsigned mem_cnt;
 		mem_cnt = memhosts.size();
-		int host_cnt = hosts.size();
+		unsigned host_cnt = hosts.size();
 		if (RcRecv(s, &si, sizeof(si)) != sizeof(si))
 		{
 			return 1;
@@ -524,7 +525,7 @@ namespace Dogee
 		MasterInfo mi = { RC_MAGIC_MASTER, mem_cnt, host_cnt, node_id, ports[0] ,backty,  cachety };
 		RcSend(s, &mi, sizeof(mi));
 
-		for (int i = 1; i<host_cnt; i++)
+		for (unsigned i = 1; i<host_cnt; i++)
 		{
 
 			uint32_t sendl = hosts[i].size() + 1;
@@ -539,7 +540,7 @@ namespace Dogee
 			RcSend(s, &sendl, sizeof(sendl));
 		}
 
-		for (int i = 0; i<mem_cnt; i++)
+		for (unsigned i = 0; i<mem_cnt; i++)
 		{
 
 			uint32_t sendl = memhosts[i].size() + 1;
@@ -589,7 +590,9 @@ namespace Dogee
 
 	int RcCreateThread(int node_id,uint32_t idx,uint32_t param,ObjectKey okey)
 	{
-		RcCommandPack cmd = { RcCmdCreateThread, idx, param };
+		int _idx = idx;
+		int _param = param;
+		RcCommandPack cmd = { RcCmdCreateThread, _idx, _param };
 		cmd.param3 = okey;
 		int sret = RcSendCmd((SOCKET)DogeeEnv::remote_nodes.GetConnection(node_id), &cmd);
 		return sret;

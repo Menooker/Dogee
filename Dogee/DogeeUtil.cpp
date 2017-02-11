@@ -11,7 +11,8 @@ namespace Dogee
 		SoStorageFactory factory(backty, cachety);
 		backend = factory.make(arr_hosts, arr_ports);
 		cache = factory.makecache(backend, arr_hosts, arr_ports);
-		srand((int)time(NULL) ^ (int)std::this_thread::get_id().hash());
+		std::hash<std::thread::id> h;
+		srand((int)time(NULL) ^ (int)h(std::this_thread::get_id()));
 	}
 	void DogeeEnv::CloseStorage()
 	{
