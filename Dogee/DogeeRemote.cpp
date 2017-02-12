@@ -4,6 +4,11 @@
 #include <chrono>
 #include "DogeeStorage.h"
 #include <string.h>
+#include <mutex>
+#include <condition_variable>
+#include <vector>
+#include <queue>
+#include <unordered_map>
 
 #ifdef _WIN32
 #include <winsock.h>
@@ -119,6 +124,203 @@ struct RcDataPack
 
 namespace Dogee
 {
+
+	class RemoteNodes
+	{
+	private:
+		std::vector<SOCKET> connections;
+	public:
+		void PushConnection(SOCKET s)
+		{
+			connections.push_back(s);
+		}
+		SOCKET GetConnection(int node_id)
+		{
+			return connections[node_id];
+		}
+	};
+	static SOCKET master_socket;
+	static RemoteNodes remote_nodes;
+
+
+	void RcSetRemoteEvent(int local_thread_id);
+	/*
+	Wake up a remote thread from sync. Called on master
+	*/
+	void RcWakeRemoteThread(int dest, int thread_id);
+
+	//variables and types only avaiable on master node
+	namespace MasterZone
+	{
+
+		struct SyncThreadNode
+		{
+			int machine;
+			int thread_id;
+		};
+		struct SyncNode
+		{
+			enum
+			{
+				Barrier,
+				Semaphore,
+			}Kind;
+			int val;
+			int data;
+			union
+			{
+				std::vector<SyncThreadNode>* waitlist;
+				std::queue<SyncThreadNode>* waitqueue;
+			};
+		};
+
+		class SyncManager
+		{
+		private:
+			std::unordered_map<ObjectKey, SyncNode*> sync_data;
+			std::mutex mutex;
+		public:
+			~SyncManager()
+			{
+				auto itr = sync_data.begin();
+				for (; itr != sync_data.end(); itr++)
+				{
+					if (itr->second->Kind = SyncNode::Barrier)
+					{
+						delete itr->second->waitlist;
+					}
+					else if (itr->second->Kind = SyncNode::Semaphore)
+					{
+						delete itr->second->waitqueue;
+					}
+				}
+			}
+			/*
+			Process the barrier message, may call the nodes to
+			continue, called on master
+			param: src - the source of the message (index of
+			"slavenodes", 0 represents the master)
+			b_id - barrier id
+			*/
+			void BarrierMsg(int src, ObjectKey b_id, int thread_id)
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				auto itr = sync_data.find(b_id);
+				SyncNode* node;
+				if (itr == sync_data.end())
+				{
+					node = new SyncNode;
+					node->data = 0;
+					node->Kind = SyncNode::Barrier;
+					node->data = (int)DogeeEnv::cache->get(b_id, 0);
+					node->val = 0;
+					node->waitlist = new std::vector<SyncThreadNode>;
+					sync_data[b_id] = node;
+				}
+				else
+				{
+					node = itr->second;
+				}
+				node->val++;
+				if (node->val >= node->data)
+				{
+					node->val = 0;
+					RcWakeRemoteThread(src, thread_id);
+					for (unsigned i = 0; i<node->waitlist->size(); i++)
+					{
+						SyncThreadNode& th = (*node->waitlist)[i];
+						RcWakeRemoteThread(th.machine, th.thread_id);
+					}
+					node->waitlist->clear();
+				}
+				else
+				{
+					SyncThreadNode th = { src, thread_id };
+					node->waitlist->push_back(th);
+				}
+			}
+
+			/*
+			Process the semaphore message, may call the nodes to
+			continue, called on master
+			param: src - the source of the message (index of
+			"slavenodes", represents the master)
+			b_id - semaphore id
+			*/
+			void SemaphoreMsg(int src, ObjectKey b_id, int thread_id)
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				auto itr = sync_data.find(b_id);
+				SyncNode* node;
+				if (itr == sync_data.end())
+				{
+					node = new SyncNode;
+					node->data = 0;
+					node->Kind = SyncNode::Semaphore;
+					uint64_t val = DogeeEnv::cache->get(b_id, 0);
+					node->data = *(int*)val;
+					node->val = node->data;
+					node->waitqueue = new std::queue<SyncThreadNode>;
+					sync_data[b_id] = node;
+				}
+				else
+				{
+					node = itr->second;
+				}
+				node->val--;
+				if (node->val >= 0)
+				{
+					RcWakeRemoteThread(src, thread_id);
+				}
+				else
+				{
+					SyncThreadNode th = { src, thread_id };
+					node->waitqueue->push(th);
+				}
+			}
+
+			/*
+			Process the semaphore release message, may call the nodes to
+			continue, called on master
+			param: src - the source of the message (index of
+			"slavenodes", 0 represents the master)
+			b_id - semaphore id
+			*/
+			void SemaphoreLeaveMsg(int src, ObjectKey b_id, int thread_id)
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				auto itr = sync_data.find(b_id);
+				SyncNode* node;
+				if (itr == sync_data.end())
+				{
+					node = new SyncNode;
+					node->data = 0;
+					node->Kind = SyncNode::Semaphore;
+					uint64_t val = DogeeEnv::cache->get(b_id, 0);
+					node->data = *(int*)val;
+					node->val = node->data;
+					node->waitqueue = new std::queue<SyncThreadNode>;
+					sync_data[b_id] = node;
+				}
+				else
+				{
+					node = itr->second;
+				}
+				node->val++;
+				if (node->val <= 0)
+				{
+					SyncThreadNode& th = node->waitqueue->front();
+					RcWakeRemoteThread(th.machine, th.thread_id);
+					node->waitqueue->pop();
+				}
+			}
+
+		};
+		SyncManager* syncmanager;
+		std::thread masterlisten;
+	}
+
+
 	namespace Socket
 	{
 		SOCKET RcCreateListen(int port)
@@ -334,16 +536,69 @@ namespace Dogee
 
 	}
 
+	class Event
+	{
+		std::mutex mtx; 
+		std::condition_variable cv; 
+		bool ready = false;
+	public:
+		Event(bool state) {
+			ready = state;
+		}
 
+		void SetEvent() {
+			std::unique_lock <std::mutex> lck(mtx);
+			ready=true;
+			cv.notify_all();
+		}
 
+		void ResetEvent() {
+			std::unique_lock <std::mutex> lck(mtx);
+			ready=false;
+		}
+
+		void WaitForEvent() {
+			std::unique_lock <std::mutex> lck(mtx);
+			while (!ready)
+				cv.wait(lck);
+		}
+
+		bool WaitForEvent(int timeout) {
+			if (timeout<0)
+			{
+				WaitForEvent();
+				return true;
+			}
+			std::unique_lock <std::mutex> lck(mtx);
+			while (!ready)
+			{
+				if (cv.wait_for(lck,std::chrono::milliseconds(timeout))==std::cv_status::timeout)
+					return false;
+			}
+			return true;
+		}
+	};
+
+	std::vector< Event*> ThreadEventMap;
+
+	extern THREAD_LOCAL int thread_id;
+	void RcWaitForRemoteEvent()
+	{
+		ThreadEventMap[thread_id]->WaitForEvent();
+	}
+	void RcSetRemoteEvent(int local_thread_id)
+	{
+		ThreadEventMap[local_thread_id]->SetEvent();
+	}
 	using namespace Socket;
 
-	extern void ThThreadEntry(int index, uint32_t param,ObjectKey okey );
+	extern void ThThreadEntry(int thread_id,int index, uint32_t param,ObjectKey okey );
 
 	void RcSlaveMainLoop(char* path, SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& mem_hosts, std::vector<int>& mem_ports, int node_id,
 		BackendType backty, CacheType cachety)
 	{
+		int local_thread_id = 0;
 		DogeeEnv::InitStorage(backty, cachety, mem_hosts, mem_ports);
 		for (;;)
 		{
@@ -361,10 +616,12 @@ namespace Dogee
 				goto CLOSE;
 				break;
 			case RcCmdCreateThread:
-				std::thread(ThThreadEntry, cmd.param, cmd.param2, cmd.param3).detach();
+				ThreadEventMap.push_back(new Event(false));
+				std::thread(ThThreadEntry, local_thread_id, cmd.param, cmd.param2, cmd.param3).detach();
+				local_thread_id++;
 				break;
 			case RcCmdWakeSync:
-				//RcDoWakeThread(cmd.param34);
+				RcSetRemoteEvent(cmd.param);
 				break;
 			default:
 				printf("Unknown command %d\n", cmd.cmd);
@@ -487,6 +744,7 @@ namespace Dogee
 				}
 			}
 			masterdatanode = direct_sockets[mi.node_id - 1];*/
+			master_socket = s;
 			DogeeEnv::SetIsMaster(false);
 			RcSlaveMainLoop(mainmod, s, hosts, ports, memhosts, memports, mi.node_id,mi.backty,mi.cachety);
 		}
@@ -557,22 +815,26 @@ namespace Dogee
 		return 0;
 	}
 
+	static void RcMasterListen();
 	int RcMaster(std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& memhosts, std::vector<int>& memports,
 		BackendType backty, CacheType cachety)
 	{
 		//push master node as node_id=0
-		DogeeEnv::remote_nodes.PushConnection(0);
+		remote_nodes.PushConnection(0);
 		for (unsigned i = 1; i < hosts.size(); i++)
 		{
 			SOCKET s = (SOCKET)RcConnect((char*)hosts[i].c_str(), ports[i]);
 			if (s == 0 || RcMasterHello((SOCKET)s, hosts, ports, memhosts, memports, i,backty,cachety))
 				return 1;
-			DogeeEnv::remote_nodes.PushConnection((uint64_t)s);
+			remote_nodes.PushConnection(s);
 		}
 		DogeeEnv::SetIsMaster(true);
 		DogeeEnv::num_nodes = hosts.size();
 		DogeeEnv::InitStorage(backty, cachety, memhosts, memports);
+		MasterZone::masterlisten = std::thread(RcMasterListen);
+		MasterZone::masterlisten.detach();
+		MasterZone::syncmanager = new MasterZone::SyncManager;
 		return 0;
 
 	}
@@ -583,8 +845,9 @@ namespace Dogee
 		cmd.cmd = RcCmdClose;
 		for (int i = 1; i < DogeeEnv::num_nodes; i++)
 		{
-			RcSendCmd((SOCKET)DogeeEnv::remote_nodes.GetConnection(i), &cmd);
+			RcSendCmd(remote_nodes.GetConnection(i), &cmd);
 		}
+		delete MasterZone::syncmanager;
 		DogeeEnv::CloseStorage();
 	}
 
@@ -594,8 +857,145 @@ namespace Dogee
 		int _param = param;
 		RcCommandPack cmd = { RcCmdCreateThread, _idx, _param };
 		cmd.param3 = okey;
-		int sret = RcSendCmd((SOCKET)DogeeEnv::remote_nodes.GetConnection(node_id), &cmd);
+		int sret = RcSendCmd(remote_nodes.GetConnection(node_id), &cmd);
 		return sret;
+	}
+
+	void RcWakeRemoteThread(int dest, int thread_id)
+	{
+		//printf("Wake %d.%d\n",dest,thread_id);
+		if (dest == 0)
+		{
+			RcSetRemoteEvent(thread_id);
+			return;
+		}
+		RcCommandPack cmd;
+		cmd.cmd = RcCmdWakeSync;
+		cmd.param = thread_id;
+		RcSend(remote_nodes.GetConnection(dest), &cmd, sizeof(cmd));
+	}
+
+	static void RcMasterListen()
+	{
+		int n = DogeeEnv::num_nodes-1;
+		int maxfd;
+		fd_set readfds;
+		RcCommandPack cmd;
+		if (n > 1)
+			maxfd = remote_nodes.GetConnection(1);
+		else
+			maxfd = 0;
+#ifdef BD_ON_LINUX
+		for (int i = 2; i<n; i++)
+		{
+			auto tmp=DogeeEnv::remote_nodes.GetConnection(i);
+			if (tmp>maxfd)
+				maxfd = tmp;
+		}
+		maxfd++;
+#endif
+		void* memc = NULL;
+		for (;;)
+		{
+			FD_ZERO(&readfds);
+			for (int i = 1; i<n; i++)
+			{
+				FD_SET(remote_nodes.GetConnection(i), &readfds);
+			}
+			if (SOCKET_ERROR == select(maxfd, &readfds, NULL, NULL, NULL))
+			{
+				printf("Select Error!%d\n", RcSocketLastError());
+				break;
+			}
+			DogeeEnv::InitStorageCurrentThread();
+			for (int i = 1; i<n; i++)
+			{
+				auto sock = remote_nodes.GetConnection(i);
+				if (FD_ISSET(sock, &readfds))
+				{
+					if (RcRecv(sock, &cmd, sizeof(cmd)) != sizeof(cmd))
+					{
+						printf("Socket recv Error! %d\n", RcSocketLastError());
+						return ;
+					}
+					switch (cmd.cmd)
+					{
+					case RcCmdEnterBarrier:
+						MasterZone::syncmanager->BarrierMsg(i, cmd.param, cmd.param2);
+						break;
+					case RcCmdEnterSemaphore:
+						MasterZone::syncmanager->SemaphoreMsg(i, cmd.param, cmd.param2);
+						break;
+					case RcCmdLeaveSemaphore:
+						MasterZone::syncmanager->SemaphoreLeaveMsg(i, cmd.param, cmd.param2);
+						break;
+					default:
+						printf("Bad command %u!\n", cmd.cmd);
+					}
+				}
+			NEXT:
+				int dummy;
+			}
+
+		}
+	}
+
+	bool RcEnterBarrier(ObjectKey okey, int timeout)
+	{
+		ThreadEventMap[thread_id]->ResetEvent();
+		if (DogeeEnv::isMaster())
+		{
+			MasterZone::syncmanager->SemaphoreMsg(0, okey, thread_id);
+		}
+		else
+		{
+			RcCommandPack cmd;
+			cmd.cmd = RcCmdEnterBarrier;
+			cmd.param = okey;
+			cmd.param2 = thread_id;
+			RcSend(master_socket, &cmd, sizeof(cmd));
+		}
+		return ThreadEventMap[thread_id]->WaitForEvent(timeout);
+	}
+
+	bool RcEnterSemaphore(ObjectKey okey, int timeout)
+	{
+		ThreadEventMap[thread_id]->ResetEvent();
+		if (DogeeEnv::isMaster())
+		{
+			MasterZone::syncmanager->SemaphoreMsg(0, okey, thread_id);
+		}
+		else
+		{
+			RcCommandPack cmd;
+			cmd.cmd = RcCmdEnterSemaphore;
+			cmd.param = okey;
+			cmd.param2 = thread_id;
+			RcSend(master_socket, &cmd, sizeof(cmd));
+		}
+		return ThreadEventMap[thread_id]->WaitForEvent(timeout);
+	}
+
+	void RcLeaveSemaphore(ObjectKey okey)
+	{
+		if (DogeeEnv::isMaster())
+		{
+			MasterZone::syncmanager->SemaphoreLeaveMsg(0, okey, thread_id);
+		}
+		else
+		{
+			RcCommandPack cmd;
+			cmd.cmd = RcCmdLeaveSemaphore;
+			cmd.param = okey;
+			cmd.param2 = thread_id;
+			RcSend(master_socket, &cmd, sizeof(cmd));
+		}
+	}
+
+	void RcDeleteThreadEvent(int id)
+	{
+		delete ThreadEventMap[id];
+		ThreadEventMap[id] = nullptr;
 	}
 
 }

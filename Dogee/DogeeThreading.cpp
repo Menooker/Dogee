@@ -4,6 +4,7 @@
 namespace Dogee
 {
 	int AutoRegisterThreadProcClass::id = 0;
+	THREAD_LOCAL int thread_id;
 
 	std::vector<thread_proc>& GetIDProcMap()
 	{
@@ -22,13 +23,15 @@ namespace Dogee
 		GetProcIDMap()[func] = id;
 	}
 
-	void ThThreadEntry(int index, uint32_t param, ObjectKey okey)
+	extern void RcDeleteThreadEvent(int id);
+	void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey)
 	{
 		DogeeEnv::InitStorageCurrentThread();
 		Ref<DThread> ref(okey);
 		ref->state = DThread::ThreadRunning;
 		GetIDProcMap()[index](param);
 		ref->state = DThread::ThreadStoped;
+		RcDeleteThreadEvent(thread_id);
 	}
 
 }

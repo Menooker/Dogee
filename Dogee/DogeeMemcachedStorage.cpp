@@ -84,6 +84,8 @@ namespace Dogee
 	}
 	void* init_memcached_this_thread()
 	{
+		if (memc)
+			return memc;
 		//_memc=(memcached_st*)memcached_create(NULL);
 		if (SoStorageMemcached::main_memc)
 			memc = memcached_clone(memc, SoStorageMemcached::main_memc);

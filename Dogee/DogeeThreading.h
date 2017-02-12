@@ -10,7 +10,7 @@
 
 namespace Dogee
 {
-
+	extern THREAD_LOCAL int thread_id;
 	typedef void(*thread_proc)(uint32_t);
 	void ThRegisterThreadFunction(thread_proc func,int id);
 	std::vector<thread_proc>& GetIDProcMap();
@@ -52,6 +52,54 @@ namespace Dogee
 		}
 
 	};
+
+	extern bool RcEnterBarrier(ObjectKey okey,int timeout=-1);
+	class DBarrier : public DObject
+	{
+		DefBegin(DObject);
+	public:
+		Def(int, count);
+		DefEnd();
+		DBarrier(ObjectKey obj_id) : DObject(obj_id)
+		{
+		}
+		DBarrier(ObjectKey obj_id, int count) : DObject(obj_id)
+		{
+			self->count = count;
+		}
+		
+		bool Enter(int timeout=-1)
+		{
+			return RcEnterBarrier(self->GetObjectId(), timeout);
+		}
+	};
+
+	extern bool RcEnterSemaphore(ObjectKey okey, int timeout=-1);
+	extern bool RcLeaveSemaphore(ObjectKey okey);
+	class DSemaphore : public DObject
+	{
+		DefBegin(DObject);
+	public:
+		Def(int, count);
+		DefEnd();
+		DSemaphore(ObjectKey obj_id) : DObject(obj_id)
+		{
+		}
+		DSemaphore(ObjectKey obj_id, int count) : DObject(obj_id)
+		{
+			self->count = count;
+		}
+
+		bool Require(int timeout=-1)
+		{
+			return RcEnterBarrier(self->GetObjectId(), timeout);
+		}
+		bool Release(int timeout = -1)
+		{
+			return RcLeaveSemaphore(self->GetObjectId());
+		}
+	};
+
 }
 
 #endif

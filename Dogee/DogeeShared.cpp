@@ -9,7 +9,6 @@ namespace Dogee
 	bool DogeeEnv::_isMaster = false;
 	int DogeeEnv::self_node_id=-1;
 	int DogeeEnv::num_nodes=0;
-	DogeeEnv::RemoteNodes DogeeEnv::remote_nodes;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::InitStorageCurrentThread = nullptr;
 	bool isMaster()
 	{
