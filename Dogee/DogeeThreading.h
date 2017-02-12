@@ -75,7 +75,7 @@ namespace Dogee
 	};
 
 	extern bool RcEnterSemaphore(ObjectKey okey, int timeout=-1);
-	extern bool RcLeaveSemaphore(ObjectKey okey);
+	extern void RcLeaveSemaphore(ObjectKey okey);
 	class DSemaphore : public DObject
 	{
 		DefBegin(DObject);
@@ -90,13 +90,13 @@ namespace Dogee
 			self->count = count;
 		}
 
-		bool Require(int timeout=-1)
+		bool Acquire(int timeout=-1)
 		{
-			return RcEnterBarrier(self->GetObjectId(), timeout);
+			return RcEnterSemaphore(self->GetObjectId(), timeout);
 		}
-		bool Release(int timeout = -1)
+		void Release()
 		{
-			return RcLeaveSemaphore(self->GetObjectId());
+			RcLeaveSemaphore(self->GetObjectId());
 		}
 	};
 

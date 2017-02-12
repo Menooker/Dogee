@@ -455,18 +455,20 @@ namespace Dogee
 	inline ObjectKey AllocObjectId(uint32_t cls_id)
 	{
 		ObjectKey key = 0;
-
+		bool found = false;
 		for (int i = 0; i<DOGEE_MAX_SHARED_KEY_TRIES; i++)
 		{
-			while (key!=0)
+			while (key==0)
 				key = rand();
 			if (DogeeEnv::backend->newobj(key, cls_id) == SoOK)
 			{
+				found = true;
 				break;
 			}
 		}
-		if (key == 0)
+		if (!found)
 		{
+			abort();
 			//fix-me : raise some hard error here			
 		}
 		return key;

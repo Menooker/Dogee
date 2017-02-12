@@ -96,8 +96,12 @@ RegVirt(clsc);
 RegVirt(clsd);
 
 
+DefGlobal(Ref<DSemaphore>, sem);
+
 void threadfun(uint32_t param)
 {
+	std::cout << "Start" << g_i << std::endl ;
+	sem->Acquire(-1);
 	std::cout << "Create Thread" << g_i << std::endl<<param;
 }
 RegFunc(threadfun);
@@ -112,13 +116,17 @@ int main(int argc, char* argv[])
 	else
 	{
 		std::vector<std::string> hosts = { "", "127.0.0.1" };
-		std::vector<int> ports = { 8090,18090 };
+		std::vector<int> ports = { 8080,18080 };
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
 		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
 		g_i = 123445;
+		sem = NewObj<DSemaphore>(0);
+		std::cout << sem->GetObjectId();
 		Ref<DThread> thread = NewObj<DThread>(threadfun, 1, 3232);
 		int i;
+		std::cin >> i;
+		sem->Release();
 		std::cin >> i;
 		CloseCluster();
 	}

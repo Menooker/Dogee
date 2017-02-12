@@ -258,7 +258,7 @@ namespace Dogee
 					node->data = 0;
 					node->Kind = SyncNode::Semaphore;
 					uint64_t val = DogeeEnv::cache->get(b_id, 0);
-					node->data = *(int*)val;
+					node->data = *(int*)&val;
 					node->val = node->data;
 					node->waitqueue = new std::queue<SyncThreadNode>;
 					sync_data[b_id] = node;
@@ -832,7 +832,7 @@ namespace Dogee
 		DogeeEnv::SetIsMaster(true);
 		DogeeEnv::num_nodes = hosts.size();
 		DogeeEnv::InitStorage(backty, cachety, memhosts, memports);
-		MasterZone::masterlisten = std::thread(RcMasterListen);
+		MasterZone::masterlisten =std::move( std::thread(RcMasterListen));
 		MasterZone::masterlisten.detach();
 		MasterZone::syncmanager = new MasterZone::SyncManager;
 		return 0;
@@ -877,7 +877,7 @@ namespace Dogee
 
 	static void RcMasterListen()
 	{
-		int n = DogeeEnv::num_nodes-1;
+		int n = DogeeEnv::num_nodes;
 		int maxfd;
 		fd_set readfds;
 		RcCommandPack cmd;
