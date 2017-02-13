@@ -88,6 +88,7 @@
     <ClInclude Include="DogeeRemote.h" />
     <ClInclude Include="DogeeStorage.h" />
     <ClInclude Include="DogeeThreading.h" />
+    <ClInclude Include="DogeeHelper.h" />
     <ClInclude Include="DogeeUtil.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />
@@ -99,7 +100,7 @@
     <ClCompile Include="DogeeRemote.cpp" />
     <ClCompile Include="DogeeShared.cpp" />
     <ClCompile Include="DogeeThreading.cpp" />
-    <ClCompile Include="DogeeUtil.cpp" />
+    <ClCompile Include="DogeeHelper.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <ItemGroup>

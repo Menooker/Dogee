@@ -48,10 +48,13 @@
     <ClInclude Include="DogeeRemote.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeUtil.h">
+    <ClInclude Include="DogeeThreading.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeThreading.h">
+    <ClInclude Include="DogeeHelper.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="DogeeUtil.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
@@ -71,10 +74,10 @@
     <ClCompile Include="DogeeRemote.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="DogeeUtil.cpp">
+    <ClCompile Include="DogeeThreading.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="DogeeThreading.cpp">
+    <ClCompile Include="DogeeHelper.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

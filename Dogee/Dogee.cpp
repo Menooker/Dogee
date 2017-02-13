@@ -54,6 +54,22 @@ public:
 	{}
 };
 
+class clss : public DObject
+{
+	DefBegin(DObject);
+public:
+	//Def(int, i);
+	//Def(Array<float>, arr);
+	//Def(Array<Ref<clss>>, next);
+	//Def(Array<Array<int>>, mat);
+	//DefRef(clsb, true, prv);
+	DefEnd();
+	clss(ObjectKey obj_id) : DObject(obj_id)
+	{
+	}
+};
+
+
 class clsa : public DObject
 {
 	DefBegin(DObject);
@@ -107,6 +123,28 @@ void threadfun(uint32_t param)
 RegFunc(threadfun);
 
 
+template <typename T>
+void readtest()
+{
+	auto ptr2 = Dogee::NewArray<T>();
+	for (int i = 0; i < 100; i++)
+	{
+		ptr2[i] = i;
+	}
+	T buf[100];
+	ptr2->CopyTo(buf, 0, 100);
+	for (int i = 0; i < 100; i++)
+	{
+		if (buf[i] != i)
+		{
+			std::cout << "ERR" << i << std::endl;
+			break;
+		}
+	}
+	std::cout << "OK" << std::endl;
+}
+
+void objecttest();
 int main(int argc, char* argv[])
 {
 	if (argc == 3 && std::string(argv[1])=="-s")
@@ -119,7 +157,13 @@ int main(int argc, char* argv[])
 		std::vector<int> ports = { 8080,18080 };
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
-		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
+		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache,mem_hosts, mem_ports);
+
+		readtest<int>();
+		readtest<float>();
+		readtest<double>();
+		readtest<long long>();
+		/*RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
 		g_i = 123445;
 		sem = NewObj<DSemaphore>(0);
 		std::cout << sem->GetObjectId();
@@ -128,7 +172,7 @@ int main(int argc, char* argv[])
 		std::cin >> i;
 		sem->Release();
 		std::cin >> i;
-		CloseCluster();
+		CloseCluster();*/
 	}
 
 	return 0;
@@ -136,13 +180,22 @@ int main(int argc, char* argv[])
 
 void objecttest()
 {
+	Ref<clss> dd[1] = { 0 };
+	auto ptr2 = Dogee::NewArray<Ref<clss>>();
+	
+	ptr2->CopyTo(dd, 0, 1);
 	auto ptr = Dogee::NewObj<clsa>(12);
 	//AutoRegisterObject<clsa> aaaaaa;
 	ptr->next[0] = ptr;
 	ptr->next[0]->i = 123;
 	ptr->arr[0] = 133;
 	ptr->arr[0] = ptr->arr[0] + 1;
+	float buf[10];
+	ptr->arr->CopyTo(buf, 0, 10);
+
+	Array<int> arr_int[1] = { 0 };
 	ptr->mat[0][2] = 123;
+	ptr->mat->CopyTo(arr_int, 0, 1);
 	aaa((clsb*)0);
 	//Ref<clsa,true> ppp(12);
 	Ref<clsc, true> p2 = Dogee::NewObj<clsc>();

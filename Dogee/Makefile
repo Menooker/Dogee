@@ -13,5 +13,5 @@ clean:
 	rm -f DogeeRemote.o
 	rm -f DogeeThreading.o
 	rm -f DogeeMemcachedStorage.o
-	rm -f DogeeUtil.o
+	rm -f DogeeHelper.o
 	rm -f Dogee

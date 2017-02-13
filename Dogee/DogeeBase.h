@@ -9,27 +9,10 @@
 #include "Dogee.h"
 #include "DogeeEnv.h"
 #include "DogeeStorage.h"
+#include "DogeeUtil.h"
 
 namespace Dogee
 {
-	//test code
-
-
-	/*template <class Dest, class Source>
-	inline Dest bit_cast(const Source& source) {
-		static_assert(sizeof(Dest) <= sizeof(Source), "Error: sizeof(Dest) > sizeof(Source)");
-		Dest dest;
-		memcpy(&dest, &source, sizeof(dest));
-		return dest;
-	}*/
-
-	template <class Dest, class Source>
-	inline Dest bit_cast(const Source source) {
-		//static_assert(sizeof(Dest) <= sizeof(Source), "Error: sizeof(Dest) > sizeof(Source)");
-		//Dest dest;
-		//memcpy(&dest, &source, sizeof(dest));
-		return * reinterpret_cast<const Dest*>(&source);
-	}
 
 	template <class T> struct AutoRegisterObject;
 	class DObject
@@ -87,7 +70,7 @@ namespace Dogee
 	public:
 		static T get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			return bit_cast<T>(DogeeEnv::cache->get(obj_id, field_id));
+			return trunc_cast<T>(DogeeEnv::cache->get(obj_id, field_id));
 		}
 
 
@@ -106,7 +89,7 @@ namespace Dogee
 	public:
 		static Ref<T, isVirtual> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = bit_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
+			ObjectKey key = trunc_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
 			Ref<T, isVirtual> ret(key);
 			return ret;
 		}
@@ -124,7 +107,7 @@ namespace Dogee
 	public:
 		static Array<T> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = bit_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
+			ObjectKey key = trunc_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
 			Array<T> ret(key);
 			return ret;
 		}
@@ -264,61 +247,43 @@ namespace Dogee
 
 	};
 
-	//a dirty bypass for Value<Array<T>, FieldId>, just to add "operator[]" 
-/*	template<typename T, FieldKey FieldId> class Value<Array<T>, FieldId>
-	{
-	private:
-
-		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
-		template<typename T2, FieldKey FieldId2>Value<Array<T>, FieldId>& operator=(Value<T2, FieldId2>& x);
-		Value<Array<T>, FieldId>& operator=(Value<Array<T>, FieldId>& x);
-	public:
-		int GetFieldId()
-		{
-			return FieldId;
-		}
-
-
-		Array<T> get()
-		{
-			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
-			Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
-#ifdef DOGEE_DBG
-			lastobject = nullptr;
-#endif
-			return ret;
-		}
-		//read
-		operator Array<T>()
-		{
-			return get();
-		}
-		ArrayElement<T> operator[](int k)
-		{
-			Array<T> ret = get();
-			return ret.ArrayAccess(k);
-		}
-		//write
-		Value<Array<T>, FieldId>& operator=(Array<T> x)
-		{
-			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
-			DSMInterface<Array<T>>::set_value(lastobject->GetObjectId(), FieldId, x);
-#ifdef DOGEE_DBG
-			lastobject = nullptr;
-#endif
-			return *this;
-		}
-		Value()
-		{
-		}
-
-	};
-	*/
-
 
 	template<typename T> class Array
 	{
 	private:
+		// this is a template to check the type of the array - whether it
+		// supports array copy operation
+		template<typename T2, int n> struct Copyer
+		{
+			static uint32_t* CopyType(T2* ptr){ abort(); return nullptr; }//unsupported type of array is found
+		};
+
+		template<typename T2> struct Copyer<T2, 4>
+		{
+			static uint32_t* CopyType(T2* ptr){ return (uint32_t*)ptr; }
+		};
+		template<typename T2> struct Copyer<T2, 8>
+		{
+			static uint64_t* CopyType(T2* ptr){ return (uint64_t*)ptr; }
+		};
+
+		// We should be careful here. If Dogee::Ref<T,false> happens to have only one
+		// member, which is of size 4 bytes, then sizeof(Dogee::Ref<T,false>) happens to be 4.
+		// So we can use a uint32_t array to represent a Dogee::Ref<T,false> array.
+		// However, when using Array<Dogee::Ref<T,true>>, we have to mannually construct
+		// each reference for the virtual table. We don't support Ref<T,true> here.
+		template<typename T2> struct Copyer<Ref<T2, false>, 4>
+		{
+			static uint32_t* CopyType(Ref<T2, false>* ptr){ return (uint32_t*)ptr; }
+		};
+
+		// We should be careful here. Dogee::Array happens to have only one
+		// member, which is of size 4 bytes. sizeof(Dogee::Array) happens to be 4.
+		// So we can use a uint32_t array to represent a Dogee::Array array.
+		template<typename T2> struct Copyer<Array<T2>, 4>
+		{
+			static uint32_t* CopyType(Array<T2>* ptr){ return (uint32_t*)ptr; } 
+		};
 		ObjectKey object_id;
 	public:
 		//test code
@@ -330,6 +295,10 @@ namespace Dogee
 		{
 			object_id = obj_id;
 		}
+		Array<T>* operator->()
+		{
+			return this;
+		}
 
 		ArrayElement<T> ArrayAccess(int k)
 		{
@@ -340,6 +309,12 @@ namespace Dogee
 		ArrayElement<T> operator[](int k)
 		{
 			return ArrayAccess(k);
+		}
+
+
+		void CopyTo(T* localarr, uint32_t start_index,uint32_t copy_len)
+		{
+			DogeeEnv::cache->getchunk(object_id, start_index, copy_len, Copyer<T, sizeof(T)>::CopyType(localarr));
 		}
 	};
 

@@ -24,6 +24,10 @@ namespace Dogee
 		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag) = 0;
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v) = 0;
 		virtual uint64_t get(ObjectKey key, FieldKey fldid) = 0;
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
 	};
 
 
@@ -31,6 +35,23 @@ namespace Dogee
 	{
 		uint64_t data[4096 * 32];
 	public:
+
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
+		{
+			return SoOK;
+		}
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
+		{
+			return SoOK;
+		}
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
+		{
+			return SoOK;
+		}
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
+		{
+			return SoOK;
+		}
 		SoStatus newobj(ObjectKey key, uint32_t flag)
 		{
 			data[key * 100 + 97] = flag;
@@ -69,6 +90,10 @@ namespace Dogee
 		DSMCache(){}
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v) = 0;
 		virtual uint64_t get(ObjectKey key, FieldKey fldid) = 0;
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
 #ifdef BD_DSM_STAT
 		virtual void get_stat(long& mwrites, long& mwhit, long& mreads, long& mrhit)
 		{
@@ -99,6 +124,24 @@ namespace Dogee
 		uint64_t get(ObjectKey key, FieldKey fldid)
 		{
 			return backend->get(key, fldid);
+		}
+
+
+		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
+		{
+			return backend->getchunk(key, fldid, len, buf);
+		}
+		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
+		{
+			return backend->getchunk(key, fldid, len, buf);
+		}
+		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
+		{
+			return backend->putchunk(key, fldid, len, buf);
+		}
+		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
+		{
+			return backend->putchunk(key, fldid, len, buf);
 		}
 
 	};
