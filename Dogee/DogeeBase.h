@@ -316,6 +316,11 @@ namespace Dogee
 		{
 			DogeeEnv::cache->getchunk(object_id, start_index, copy_len, Copyer<T, sizeof(T)>::CopyType(localarr));
 		}
+
+		void CopyFrom(T* localarr, uint32_t start_index, uint32_t copy_len)
+		{
+			DogeeEnv::cache->putchunk(object_id, start_index, copy_len, Copyer<T, sizeof(T)>::CopyType(localarr));
+		}
 	};
 
 

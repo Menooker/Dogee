@@ -3,6 +3,12 @@
 #include <thread>
 #include <time.h>
 
+#ifdef _MSC_VER
+#ifdef _WIN64
+ptDbgBreakPoint _DbgBreakPoint = (ptDbgBreakPoint)GetProcAddress(GetModuleHandleW(L"NTDLL.DLL"), "DbgBreakPoint");;
+#endif
+#endif
+
 namespace Dogee
 {
 

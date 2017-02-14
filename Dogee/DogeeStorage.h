@@ -3,7 +3,6 @@
 
 
 #include "Dogee.h"
-
 namespace Dogee
 {
 
@@ -127,19 +126,19 @@ namespace Dogee
 		}
 
 
-		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
 		{
 			return backend->getchunk(key, fldid, len, buf);
 		}
-		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
+		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
 		{
 			return backend->getchunk(key, fldid, len, buf);
 		}
-		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
 		{
 			return backend->putchunk(key, fldid, len, buf);
 		}
-		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
+		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
 		{
 			return backend->putchunk(key, fldid, len, buf);
 		}

@@ -141,8 +141,31 @@ void readtest()
 			break;
 		}
 	}
-	std::cout << "OK" << std::endl;
+	std::cout << "OK" << typeid(T).name() << std::endl;
 }
+
+template <typename T>
+void writetest()
+{
+	auto ptr2 = Dogee::NewArray<T>();
+	ptr2[12] = 123;
+	T buf[100];
+	for (int i = 0; i < 3; i++)
+	{
+		buf[i] = i;
+	}
+	ptr2->CopyFrom(buf, 0, 3);
+	for (int i = 0; i < 3; i++)
+	{
+		if (ptr2[i] != i)
+		{
+			std::cout << "ERR" << i << std::endl;
+			break;
+		}
+	}
+	std::cout << "OK" << typeid(T).name() << std::endl;
+}
+
 
 void objecttest();
 int main(int argc, char* argv[])
@@ -158,6 +181,10 @@ int main(int argc, char* argv[])
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
 		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache,mem_hosts, mem_ports);
+		writetest<int>();
+		writetest<float>();
+		writetest<double>();
+		writetest<long long>();
 
 		readtest<int>();
 		readtest<float>();
