@@ -9,9 +9,9 @@
 #include <vector>
 #include <queue>
 #include <unordered_map>
+#include "DogeeSocket.h"
 
 #ifdef _WIN32
-#include <winsock.h>
 int RcWinsockStartup()
 {
 	WORD sockVersion = MAKEWORD(2, 2);
@@ -25,19 +25,6 @@ int RcWinsockStartup()
 //called when initialized
 int RcStartipRet = RcWinsockStartup();
 #pragma comment(lib, "WS2_32")
-#define RcSocketLastError() WSAGetLastError()
-#else
-#include <netinet/tcp.h>
-#include <arpa/inet.h>
-#include <sys/socket.h>
-#include <errno.h>
-#include <sys/unistd.h>
-#define SOCKET int
-#define INVALID_SOCKET (-1)
-#define SOCKET_ERROR (-1)
-#define closesocket close
-typedef struct sockaddr* LPSOCKADDR;
-#define RcSocketLastError() errno
 #endif
 
 #define RC_MAGIC_MASTER 0x12335edf
@@ -473,20 +460,6 @@ namespace Dogee
 			return (SOCKET)sClient;
 		}
 
-		inline int RcSend(SOCKET s, void* data, size_t len)
-		{
-			return send((SOCKET)s, (char*)data, len, 0);
-		}
-
-		inline int RcRecv(SOCKET s, void* data, size_t len)
-		{
-			return recv((SOCKET)s, (char*)data, len, 0);
-		}
-
-		inline int RcCloseSocket(SOCKET s)
-		{
-			return closesocket((SOCKET)s);
-		}
 		void get_peer_ip_port(SOCKET fd, std::string& ip, int& port)
 		{
 

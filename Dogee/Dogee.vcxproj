@@ -81,11 +81,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Dogee.h" />
+    <ClInclude Include="DogeeAPIWrapping.h" />
     <ClInclude Include="DogeeBase.h" />
+    <ClInclude Include="DogeeDirectoryCache.h" />
     <ClInclude Include="DogeeEnv.h" />
     <ClInclude Include="DogeeMacro.h" />
     <ClInclude Include="DogeeMemcachedStorage.h" />
     <ClInclude Include="DogeeRemote.h" />
+    <ClInclude Include="DogeeSocket.h" />
     <ClInclude Include="DogeeStorage.h" />
     <ClInclude Include="DogeeThreading.h" />
     <ClInclude Include="DogeeHelper.h" />
@@ -96,6 +99,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Dogee.cpp" />
+    <ClCompile Include="DogeeDirectoryCache.cpp" />
     <ClCompile Include="DogeeMemcachedStorage.cpp" />
     <ClCompile Include="DogeeRemote.cpp" />
     <ClCompile Include="DogeeShared.cpp" />

@@ -3,6 +3,17 @@
 
 
 #include "Dogee.h"
+
+#define DSM_CACHE_BITS 5
+#define DSM_CACHE_BLOCK_SIZE (1<<DSM_CACHE_BITS)
+#define DSM_CACHE_HIGH_MASK (0xffffffff >> DSM_CACHE_BITS << DSM_CACHE_BITS)
+#define DSM_CACHE_LOW_MASK (~DSM_CACHE_HIGH_MASK)
+#define DSM_CACHE_HIGH_MASK_64 ((uint64_t)0xffffffffffffffff >> DSM_CACHE_BITS << DSM_CACHE_BITS)
+#define DSM_CACHE_LOW_MASK_64 (~DSM_CACHE_HIGH_MASK_64)
+#define DSM_CACHE_BAD_KEY  ((uint64_t) DSM_CACHE_LOW_MASK)
+#define DSM_CACHE_SIZE 1024
+
+
 namespace Dogee
 {
 
