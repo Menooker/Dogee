@@ -67,17 +67,60 @@ namespace Dogee
 	template <typename T>
 	class DSMInterface
 	{
+		template <typename T,int size>
+		struct Helper
+		{
+			static const int dsm_size_of = 1;
+			static T get(ObjectKey obj_id, FieldKey field_id)
+			{
+				static_assert(0); // if the size of the field/array element is not 4 or 8
+				return *(T*)nullptr;
+			}
+			static void set(ObjectKey obj_id, FieldKey field_id, T val)
+			{
+				static_assert(0); // if the size of the field/array element is not 4 or 8
+			}
+		};
+		template <typename T>
+		struct Helper<T,4>
+		{
+			static const int dsm_size_of = 1;
+			static T get(ObjectKey obj_id, FieldKey field_id)
+			{
+				return trunc_cast<T>(DogeeEnv::cache->get(obj_id, field_id));
+			}
+			static void set(ObjectKey obj_id, FieldKey field_id, T val)
+			{
+				DogeeEnv::cache->put(obj_id, field_id, trunc_cast<uint32_t>(val));
+			}
+		};
+		template <typename T>
+		struct Helper<T, 8>
+		{
+			static const int dsm_size_of = 2;
+			static T get(ObjectKey obj_id, FieldKey field_id)
+			{
+				T ret;
+				DogeeEnv::cache->getchunk(obj_id, field_id, 1, (uint64_t*)&ret);
+				return ret;
+			}
+			static void set(ObjectKey obj_id, FieldKey field_id, T val)
+			{
+				DogeeEnv::cache->put(obj_id, field_id, trunc_cast<uint64_t>(val));
+			}
+		};
 	public:
+		static const int dsm_size_of = Helper<T, sizeof(T)>::dsm_size_of;
 		static T get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			return trunc_cast<T>(DogeeEnv::cache->get(obj_id, field_id));
+			return Helper<T,sizeof(T)>::get(obj_id,field_id);
 		}
 
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, T val)
 		{
 			//fix-me : check the return value
-			DogeeEnv::cache->put(obj_id, field_id, bit_cast<uint64_t>(val));
+			Helper<T, sizeof(T)>::set(obj_id, field_id, val);
 		}
 
 	};
@@ -87,16 +130,17 @@ namespace Dogee
 	class DSMInterface < Ref<T, isVirtual> >
 	{
 	public:
+		static const int dsm_size_of = 1;
 		static Ref<T, isVirtual> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = trunc_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
+			ObjectKey key = DogeeEnv::cache->get(obj_id, field_id);
 			Ref<T, isVirtual> ret(key);
 			return ret;
 		}
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, Ref<T, isVirtual> val)
 		{
-			DogeeEnv::cache->put(obj_id, field_id, bit_cast<uint64_t>(val.GetObjectId()));
+			DogeeEnv::cache->put(obj_id, field_id, val.GetObjectId());
 		}
 
 	};
@@ -105,16 +149,17 @@ namespace Dogee
 	class DSMInterface < Array<T> >
 	{
 	public:
+		static const int dsm_size_of = 1;
 		static Array<T> get_value(ObjectKey obj_id, FieldKey field_id)
 		{
-			ObjectKey key = trunc_cast<ObjectKey>(DogeeEnv::cache->get(obj_id, field_id));
+			ObjectKey key = (ObjectKey)DogeeEnv::cache->get(obj_id, field_id);
 			Array<T> ret(key);
 			return ret;
 		}
 
 		static void set_value(ObjectKey obj_id, FieldKey field_id, Array<T> val)
 		{
-			DogeeEnv::cache->put(obj_id, field_id, bit_cast<uint64_t>(val.GetObjectId()));
+			DogeeEnv::cache->put(obj_id, field_id,val.GetObjectId());
 		}
 
 	};
@@ -147,6 +192,11 @@ namespace Dogee
 		{
 			set(x.get());
 			return *this;
+		}
+
+		LongKey get_address()
+		{
+			return (((LongKey)ok) << 32 | fk);
 		}
 
 		T get()
@@ -302,7 +352,7 @@ namespace Dogee
 
 		ArrayElement<T> ArrayAccess(int k)
 		{
-			FieldKey key = k;
+			FieldKey key = k * DSMInterface<T>::dsm_size_of;
 			return ArrayElement<T>(object_id, key);
 		}
 
@@ -477,10 +527,13 @@ namespace Dogee
 		return obj;
 	}
 
+
 	inline FieldKey RegisterGlobalVariable()
 	{
 		static FieldKey fid = 0;
-		return fid++;
+		FieldKey ret = fid;
+		fid+= 2;
+		return fid;
 	}
 
 	template <class T> struct AutoRegisterObject

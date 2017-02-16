@@ -75,7 +75,7 @@ class clsa : public DObject
 	DefBegin(DObject);
 public:
 	Def(int, i);
-	Def(Array<float>, arr);
+	Def(Array<double>, arr);
 	Def(Array<Ref<clsa>>, next);
 	Def(Array<Array<int>>, mat);
 	DefRef (clsb, true, prv);
@@ -86,12 +86,23 @@ public:
 	clsa(ObjectKey obj_id,int a) : DObject(obj_id)
 	{
 
-		self->arr = Dogee::NewArray<float>();
+		self->arr = Dogee::NewArray<double>();
 		self->next = Dogee::NewArray<Ref<clsa>>();
 		self->mat = Dogee::NewArray<Array<int>>();
 		self->mat[0] = Dogee::NewArray<int>();
 		self->arr[2] = a;
 	}
+};
+class clsaa : public clsa
+{
+	DefBegin(clsa);
+public:
+	Def(int,kk);
+	DefEnd();
+	clsaa(ObjectKey obj_id) : clsa(obj_id)
+	{
+	}
+
 };
 
 
@@ -127,21 +138,27 @@ template <typename T>
 void readtest()
 {
 	auto ptr2 = Dogee::NewArray<T>();
+	int last = 23, cur;
 	for (int i = 0; i < 100; i++)
 	{
-		ptr2[i] = i;
+		cur = last * 34 - i * 99 + 9;
+		ptr2[i] = cur;
+		last = cur;
 	}
 	T buf[100];
 	ptr2->CopyTo(buf, 0, 100);
+	last = 23;
 	for (int i = 0; i < 100; i++)
 	{
-		if (buf[i] != i)
+		cur = last * 34 - i * 99 + 9;
+		last = cur;
+		if (buf[i] != cur)
 		{
-			std::cout << "ERR" << i << std::endl;
+			std::cout << "R ERR" << i << std::endl;
 			break;
 		}
 	}
-	std::cout << "OK" << typeid(T).name() << std::endl;
+	std::cout << "R OK" << typeid(T).name() << std::endl;
 }
 
 template <typename T>
@@ -150,20 +167,26 @@ void writetest()
 	auto ptr2 = Dogee::NewArray<T>();
 	ptr2[12] = 123;
 	T buf[100];
-	for (int i = 0; i < 3; i++)
+	int last = 23, cur;
+	for (int i = 0; i < 100; i++)
 	{
-		buf[i] = i;
+		cur = last * 34 - i * 99 + 9;
+		buf[i] = cur;
+		last = cur;
 	}
-	ptr2->CopyFrom(buf, 0, 3);
-	for (int i = 0; i < 3; i++)
+	last = 23;
+	ptr2->CopyFrom(buf, 0, 100);
+	for (int i = 0; i < 100; i++)
 	{
-		if (ptr2[i] != i)
+		cur = last * 34 - i * 99 + 9;
+		last = cur;
+		if (ptr2[i] != cur)
 		{
-			std::cout << "ERR" << i << std::endl;
+			std::cout << "W ERR" << i << std::endl;
 			break;
 		}
 	}
-	std::cout << "OK" << typeid(T).name() << std::endl;
+	std::cout << "W OK" << typeid(T).name() << std::endl;
 }
 
 
@@ -190,6 +213,35 @@ int main(int argc, char* argv[])
 		readtest<float>();
 		readtest<double>();
 		readtest<long long>();
+
+		clsaa AAA(0);
+		std::cout << AAA.i.GetFieldId() << std::endl
+			<< AAA.arr.GetFieldId() << std::endl
+			<< AAA.next.GetFieldId() << std::endl
+			<< AAA.mat.GetFieldId() << std::endl
+			<< AAA.prv.GetFieldId() << std::endl
+			<< AAA.kk.GetFieldId() << std::endl
+			<< "OBJ FID END" << std::endl;
+
+		Array<int> arri(0);
+		std::cout << arri[1].get_address() << std::endl;
+		Array<long long> arrl(0);
+		std::cout << arrl[1].get_address() << std::endl;
+		Array<Ref<clsa>> arro(0);
+		std::cout << arro[1].get_address() << std::endl;
+		Array<Array<clsa>> arra(0);
+		std::cout << arra[1].get_address() << std::endl;
+
+		auto ptr = Dogee::NewObj<clsa>(12);
+		//AutoRegisterObject<clsa> aaaaaa;
+		ptr->next[23] = ptr;
+		ptr->next[23]->i = 123;
+		ptr->arr[0] = 133;
+		ptr->arr[0] = ptr->arr[0] + 1;
+		ptr->mat[0][45] = 123;
+		std::cout << ptr->i << std::endl
+			<< ptr->arr[0] << std::endl
+			<< ptr->mat[0][45] << std::endl;
 		/*RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
 		g_i = 123445;
 		sem = NewObj<DSemaphore>(0);
@@ -217,7 +269,7 @@ void objecttest()
 	ptr->next[0]->i = 123;
 	ptr->arr[0] = 133;
 	ptr->arr[0] = ptr->arr[0] + 1;
-	float buf[10];
+	double buf[10];
 	ptr->arr->CopyTo(buf, 0, 10);
 
 	Array<int> arr_int[1] = { 0 };

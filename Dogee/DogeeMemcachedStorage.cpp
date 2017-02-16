@@ -71,7 +71,7 @@ namespace Dogee
 	}
 	SoStatus SoStorageMemcached::getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
 	{
-		return MemcachedGetChunk(key, fldid, len, buf);
+		return getchunk(key, fldid, len * 2, (uint32_t*)buf);
 	}
 
 	template <typename T>
@@ -81,7 +81,7 @@ namespace Dogee
 		SoStatus ret = SoOK;
 		for (uint32_t i = 0; i<len; i++, k++)
 		{
-			uint64_t v = bit_cast<uint64_t>(buf[i]);
+			uint32_t v = bit_cast<uint32_t>(buf[i]);
 			if (memcached_put(memc, MAKE64(key, k), &v, sizeof(v)) != MEMCACHED_SUCCESS)
 				ret = SoFail;
 		}
@@ -94,19 +94,24 @@ namespace Dogee
 	}
 	SoStatus SoStorageMemcached::putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
 	{
-		return MemcachedPutChunk(key, fldid, len, buf);
+		return putchunk(key, fldid, len * 2, (uint32_t*)buf);
 	}
 
-	SoStatus SoStorageMemcached::put(ObjectKey key, FieldKey fldid, uint64_t v)
+	SoStatus SoStorageMemcached::put(ObjectKey key, FieldKey fldid, uint32_t v)
 	{
 		memcached_return rc = memcached_put(memc, MAKE64(key, fldid), &v, sizeof(v));
 		if (rc == MEMCACHED_SUCCESS)
 			return SoOK;
 		return SoFail;
 	}
-	uint64_t SoStorageMemcached::get(ObjectKey key, FieldKey fldid)
+
+	SoStatus SoStorageMemcached::put(ObjectKey key, FieldKey fldid, uint64_t v)
 	{
-		uint64_t ret;
+		return putchunk(key, fldid, 2,(uint32_t*)&v);
+	}
+	uint32_t SoStorageMemcached::get(ObjectKey key, FieldKey fldid)
+	{
+		uint32_t ret;
 		uint64_t k = MAKE64(key, fldid);
 		char* mret;
 
@@ -121,7 +126,7 @@ namespace Dogee
 		//	sprintf(ch,"%016llx",k);
 		mret = memcached_get(memc, (char*)&k, 8, &len, &flg, &rc);
 		if (rc == MEMCACHED_SUCCESS) {
-			ret = *(uint64_t*)mret;
+			ret = *(uint32_t*)mret;
 			memcached_free2(mret);
 			return ret;
 		}

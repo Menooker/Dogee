@@ -26,7 +26,8 @@ namespace Dogee
 			init_memcached_this_thread();
 		}
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v);
-		virtual uint64_t get(ObjectKey key, FieldKey fldid);
+		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v);
+		virtual uint32_t get(ObjectKey key, FieldKey fldid);
 		virtual SoStatus newobj(ObjectKey key, uint32_t flag);
 		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag);
 		

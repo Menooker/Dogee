@@ -31,9 +31,9 @@ namespace Dogee
 		{
 			switch (type)
 			{
-			case SoBackendTest:
+/*			case SoBackendTest:
 				DogeeEnv::InitStorageCurrentThread = LocalStorage::InitInCurrentThread;
-				return new LocalStorage();
+				return new LocalStorage();*/
 				//case SoBackendChunkMemcached:
 				//	return new SoStorageChunkMemcached(arr_mem_hosts, arr_mem_ports);
 #ifdef DOGEE_USE_MEMCACHED

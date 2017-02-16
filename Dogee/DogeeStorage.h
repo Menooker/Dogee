@@ -33,7 +33,8 @@ namespace Dogee
 		virtual SoStatus newobj(ObjectKey key, uint32_t flag) = 0;
 		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag) = 0;
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v) = 0;
-		virtual uint64_t get(ObjectKey key, FieldKey fldid) = 0;
+		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v) = 0;
+		virtual uint32_t get(ObjectKey key, FieldKey fldid) = 0;
 		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
 		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
 		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
@@ -41,7 +42,7 @@ namespace Dogee
 	};
 
 
-	class LocalStorage :public SoStorage
+/*	class LocalStorage :public SoStorage
 	{
 		uint64_t data[4096 * 32];
 	public:
@@ -85,7 +86,7 @@ namespace Dogee
 		{
 			return data[key * 100 + fldid];
 		}
-	};
+	};*/
 
 
 
@@ -99,7 +100,8 @@ namespace Dogee
 
 		DSMCache(){}
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v) = 0;
-		virtual uint64_t get(ObjectKey key, FieldKey fldid) = 0;
+		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v) = 0;
+		virtual uint32_t get(ObjectKey key, FieldKey fldid) = 0;
 		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
 		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
 		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
@@ -128,10 +130,12 @@ namespace Dogee
 		SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v)
 		{
 			return backend->put(key, fldid, v);
-
 		}
-
-		uint64_t get(ObjectKey key, FieldKey fldid)
+		SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v)
+		{
+			return backend->put(key, fldid, v);
+		}
+		uint32_t get(ObjectKey key, FieldKey fldid)
 		{
 			return backend->get(key, fldid);
 		}
