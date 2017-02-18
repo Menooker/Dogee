@@ -98,6 +98,8 @@ class clsaa : public clsa
 	DefBegin(clsa);
 public:
 	Def(int,kk);
+	Var(lll, int);
+	Var(ppp, Ref<clsa,true>);
 	DefEnd();
 	clsaa(ObjectKey obj_id) : clsa(obj_id)
 	{
@@ -130,6 +132,7 @@ void threadfun(uint32_t param)
 	std::cout << "Start" << g_i << std::endl ;
 	sem->Acquire(-1);
 	std::cout << "Second" << g_i << std::endl;
+	sem->Acquire(-1);
 	std::cout << "Create Thread" << g_i << std::endl<<param;
 }
 RegFunc(threadfun);
@@ -210,6 +213,8 @@ void fieldtest()
 		<< AAA.mat.GetFieldId() << std::endl
 		<< AAA.prv.GetFieldId() << std::endl
 		<< AAA.kk.GetFieldId() << std::endl
+		<< AAA.lll.GetFieldId() << std::endl
+		<< AAA.ppp.GetFieldId() << std::endl
 		<< "OBJ FID END" << std::endl;
 
 	Array<int> arri(0);
@@ -242,6 +247,7 @@ int main(int argc, char* argv[])
 	}
 	else
 	{
+
 		std::vector<std::string> hosts = { "", "127.0.0.1" };
 		std::vector<int> ports = { 8080,18080 };
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };

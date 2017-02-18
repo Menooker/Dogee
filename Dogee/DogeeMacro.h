@@ -4,6 +4,7 @@
 #define self Dogee::ReferenceObject(this)
 #define DefBegin(Parent) static const int _BASE_ = __COUNTER__;static const int _PBASE_ = Parent::_LAST_;
 #define Def(Type,Name) Dogee::Value<Type,2*(__COUNTER__- _BASE_ - 1 + _PBASE_)> Name
+#define Var(Name,...) Dogee::Value<__VA_ARGS__,2*(__COUNTER__- _BASE_ - 1 + _PBASE_)> Name
 #define DefRef(Type,isVirtual,Name) Dogee::Value<Dogee::Ref<Type,isVirtual>,2*(__COUNTER__- _BASE_ - 1 + _PBASE_)> Name
 
 //DefEnd must be declared public

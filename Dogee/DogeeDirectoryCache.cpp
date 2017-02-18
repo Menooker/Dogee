@@ -95,7 +95,7 @@ namespace Dogee
 			sendpack.kind=MsgRenew;
 			sendpack.addr=addr;
 			sendpack.len = len;
-			memcpy(sendpack.buf, v, sizeof(sendpack.buf[0])*DSM_CACHE_BLOCK_SIZE);
+			memcpy(sendpack.buf, v, sizeof(sendpack.buf[0])*len);
 			for(int i=0;i<caches;i++)
 			{
 				if((old & 1) && src_id!=i)
@@ -175,7 +175,7 @@ namespace Dogee
 			sendpack.kind=MsgRenew;
 			sendpack.addr=addr;
 			sendpack.len = in_len;
-			memcpy(sendpack.buf, v, sizeof(sendpack.buf[0])*DSM_CACHE_BLOCK_SIZE);
+			memcpy(sendpack.buf, v, sizeof(sendpack.buf[0])*in_len);
 			for(int i=0;i<caches;i++)
 			{
 				if((old & 1) && src_id!=i)
