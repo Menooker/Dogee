@@ -129,6 +129,7 @@ void threadfun(uint32_t param)
 {
 	std::cout << "Start" << g_i << std::endl ;
 	sem->Acquire(-1);
+	std::cout << "Second" << g_i << std::endl;
 	std::cout << "Create Thread" << g_i << std::endl<<param;
 }
 RegFunc(threadfun);
@@ -189,6 +190,48 @@ void writetest()
 	std::cout << "W OK" << typeid(T).name() << std::endl;
 }
 
+void fieldtest()
+{
+	//DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, 0);
+	writetest<int>();
+	writetest<float>();
+	writetest<double>();
+	writetest<long long>();
+
+	readtest<int>();
+	readtest<float>();
+	readtest<double>();
+	readtest<long long>();
+
+	clsaa AAA(0);
+	std::cout << AAA.i.GetFieldId() << std::endl
+		<< AAA.arr.GetFieldId() << std::endl
+		<< AAA.next.GetFieldId() << std::endl
+		<< AAA.mat.GetFieldId() << std::endl
+		<< AAA.prv.GetFieldId() << std::endl
+		<< AAA.kk.GetFieldId() << std::endl
+		<< "OBJ FID END" << std::endl;
+
+	Array<int> arri(0);
+	std::cout << arri[1].get_address() << std::endl;
+	Array<long long> arrl(0);
+	std::cout << arrl[1].get_address() << std::endl;
+	Array<Ref<clsa>> arro(0);
+	std::cout << arro[1].get_address() << std::endl;
+	Array<Array<clsa>> arra(0);
+	std::cout << arra[1].get_address() << std::endl;
+
+	auto ptr = Dogee::NewObj<clsa>(12);
+	//AutoRegisterObject<clsa> aaaaaa;
+	ptr->next[23] = ptr;
+	ptr->next[23]->i = 123;
+	ptr->arr[0] = 133;
+	ptr->arr[0] = ptr->arr[0] + 1;
+	ptr->mat[0][45] = 123;
+	std::cout << ptr->i << std::endl
+		<< ptr->arr[0] << std::endl
+		<< ptr->mat[0][45] << std::endl;
+}
 
 void objecttest();
 int main(int argc, char* argv[])
@@ -203,46 +246,8 @@ int main(int argc, char* argv[])
 		std::vector<int> ports = { 8080,18080 };
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
-		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache,mem_hosts, mem_ports);
-		writetest<int>();
-		writetest<float>();
-		writetest<double>();
-		writetest<long long>();
 
-		readtest<int>();
-		readtest<float>();
-		readtest<double>();
-		readtest<long long>();
-
-		clsaa AAA(0);
-		std::cout << AAA.i.GetFieldId() << std::endl
-			<< AAA.arr.GetFieldId() << std::endl
-			<< AAA.next.GetFieldId() << std::endl
-			<< AAA.mat.GetFieldId() << std::endl
-			<< AAA.prv.GetFieldId() << std::endl
-			<< AAA.kk.GetFieldId() << std::endl
-			<< "OBJ FID END" << std::endl;
-
-		Array<int> arri(0);
-		std::cout << arri[1].get_address() << std::endl;
-		Array<long long> arrl(0);
-		std::cout << arrl[1].get_address() << std::endl;
-		Array<Ref<clsa>> arro(0);
-		std::cout << arro[1].get_address() << std::endl;
-		Array<Array<clsa>> arra(0);
-		std::cout << arra[1].get_address() << std::endl;
-
-		auto ptr = Dogee::NewObj<clsa>(12);
-		//AutoRegisterObject<clsa> aaaaaa;
-		ptr->next[23] = ptr;
-		ptr->next[23]->i = 123;
-		ptr->arr[0] = 133;
-		ptr->arr[0] = ptr->arr[0] + 1;
-		ptr->mat[0][45] = 123;
-		std::cout << ptr->i << std::endl
-			<< ptr->arr[0] << std::endl
-			<< ptr->mat[0][45] << std::endl;
-		/*RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
+		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoWriteThroughCache);
 		g_i = 123445;
 		sem = NewObj<DSemaphore>(0);
 		std::cout << sem->GetObjectId();
@@ -250,8 +255,13 @@ int main(int argc, char* argv[])
 		int i;
 		std::cin >> i;
 		sem->Release();
+
 		std::cin >> i;
-		CloseCluster();*/
+		g_i = 31024;
+		sem->Release();
+
+		std::cin >> i;
+		CloseCluster();
 	}
 
 	return 0;

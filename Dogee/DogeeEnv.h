@@ -40,7 +40,7 @@ namespace Dogee
 		{
 			_isMaster=is_master;
 		}
-		static void InitStorage(BackendType backty, CacheType cachety, std::vector<std::string>& arr_hosts, std::vector<int>& arr_ports);
+		static void InitStorage(BackendType backty, CacheType cachety, std::vector<std::string>& arr_hosts, std::vector<int>& arr_ports,int node_id);
 		static void CloseStorage();
 	};
 }

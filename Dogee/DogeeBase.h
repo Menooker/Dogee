@@ -67,44 +67,44 @@ namespace Dogee
 	template <typename T>
 	class DSMInterface
 	{
-		template <typename T,int size>
+		template <typename T2,int size>
 		struct Helper
 		{
 			static const int dsm_size_of = 1;
-			static T get(ObjectKey obj_id, FieldKey field_id)
+			static T2 get(ObjectKey obj_id, FieldKey field_id)
 			{
-				static_assert(0); // if the size of the field/array element is not 4 or 8
+				static_assert(size==4 || size==8, "the size of the field/array element is not 4 or 8");
 				return *(T*)nullptr;
 			}
-			static void set(ObjectKey obj_id, FieldKey field_id, T val)
+			static void set(ObjectKey obj_id, FieldKey field_id, T2 val)
 			{
-				static_assert(0); // if the size of the field/array element is not 4 or 8
+				static_assert(size == 4 || size == 8, "the size of the field/array element is not 4 or 8");
 			}
 		};
-		template <typename T>
-		struct Helper<T,4>
+		template <typename T2>
+		struct Helper<T2,4>
 		{
 			static const int dsm_size_of = 1;
-			static T get(ObjectKey obj_id, FieldKey field_id)
+			static T2 get(ObjectKey obj_id, FieldKey field_id)
 			{
-				return trunc_cast<T>(DogeeEnv::cache->get(obj_id, field_id));
+				return trunc_cast<T2>(DogeeEnv::cache->get(obj_id, field_id));
 			}
-			static void set(ObjectKey obj_id, FieldKey field_id, T val)
+			static void set(ObjectKey obj_id, FieldKey field_id, T2 val)
 			{
 				DogeeEnv::cache->put(obj_id, field_id, trunc_cast<uint32_t>(val));
 			}
 		};
-		template <typename T>
-		struct Helper<T, 8>
+		template <typename T2>
+		struct Helper<T2, 8>
 		{
 			static const int dsm_size_of = 2;
-			static T get(ObjectKey obj_id, FieldKey field_id)
+			static T2 get(ObjectKey obj_id, FieldKey field_id)
 			{
-				T ret;
+				T2 ret;
 				DogeeEnv::cache->getchunk(obj_id, field_id, 1, (uint64_t*)&ret);
 				return ret;
 			}
-			static void set(ObjectKey obj_id, FieldKey field_id, T val)
+			static void set(ObjectKey obj_id, FieldKey field_id, T2 val)
 			{
 				DogeeEnv::cache->put(obj_id, field_id, trunc_cast<uint64_t>(val));
 			}

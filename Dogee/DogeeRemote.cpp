@@ -572,7 +572,7 @@ namespace Dogee
 		BackendType backty, CacheType cachety)
 	{
 		int local_thread_id = 0;
-		DogeeEnv::InitStorage(backty, cachety, mem_hosts, mem_ports);
+		DogeeEnv::InitStorage(backty, cachety, mem_hosts, mem_ports,node_id);
 		for (;;)
 		{
 			RcCommandPack cmd;
@@ -804,7 +804,7 @@ namespace Dogee
 		}
 		DogeeEnv::SetIsMaster(true);
 		DogeeEnv::num_nodes = hosts.size();
-		DogeeEnv::InitStorage(backty, cachety, memhosts, memports);
+		DogeeEnv::InitStorage(backty, cachety, memhosts, memports,0);
 		MasterZone::masterlisten =std::move( std::thread(RcMasterListen));
 		MasterZone::masterlisten.detach();
 		MasterZone::syncmanager = new MasterZone::SyncManager;

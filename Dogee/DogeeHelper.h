@@ -6,7 +6,8 @@
 #include "DogeeMemcachedStorage.h"
 #endif
 #include "DogeeEnv.h"
-
+#include "DogeeDirectoryCache.h"
+#include "DogeeSocket.h"
 namespace Dogee
 {
 
@@ -47,15 +48,22 @@ namespace Dogee
 			return NULL;
 		}
 
-		DSMCache* makecache(SoStorage* storage, std::vector<std::string>& arr_hosts, std::vector<int>& arr_ports)
+		DSMCache* makecache(SoStorage* storage, std::vector<std::string>& arr_hosts, std::vector<int>& arr_ports,int node_id)
 		{
 			switch (cachetype)
 			{
 			case SoNoCache:
 				return new DSMNoCache(storage);
 				break;
-				//case SoWriteThroughCache:
-				//return new DSMDirectoryCache(storage, arr_hosts, arr_ports, mcache_id, mcontrollisten, mdatalisten);
+			case SoWriteThroughCache:
+				SOCKET controllisten, datalisten;
+				controllisten = Socket::RcCreateListen(arr_ports[node_id] + 1);
+				if (!controllisten)
+					abort();
+				datalisten = Socket::RcCreateListen(arr_ports[node_id] + 2);
+				if (!datalisten)
+					abort();
+				return new DSMDirectoryCache(storage, arr_hosts, arr_ports, node_id, controllisten, datalisten);
 			default:
 				assert(0);
 			}

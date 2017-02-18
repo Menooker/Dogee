@@ -27,7 +27,7 @@
 #define BD_LOCK pthread_spinlock_t
 #define BD_RWLOCK pthread_rwlock_t
 
-#define UaInitLock(a) pthread_spin_init(a)
+#define UaInitLock(a) pthread_spin_init(a,PTHREAD_PROCESS_PRIVATE)
 #define UaKillLock(a) pthread_spin_destroy(a)
 #define UaEnterLock(a) pthread_spin_lock(a)
 #define UaLeaveLock(a) pthread_spin_unlock(a)

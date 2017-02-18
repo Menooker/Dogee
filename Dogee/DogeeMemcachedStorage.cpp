@@ -33,9 +33,8 @@ namespace Dogee
 		return (rc == MEMCACHED_SUCCESS) ? SoOK : SoFail;
 	}
 	template <typename T>
-	SoStatus MemcachedGetChunk(ObjectKey key, FieldKey fldid, uint32_t len, T* buf)
+	SoStatus MemcachedGetChunk(LongKey k, uint32_t len, T* buf)
 	{
-		uint64_t k = MAKE64(key, fldid);
 		uint32_t offset;
 		SoStatus ret;
 		for (offset = 0; offset<len; offset += 15040)
@@ -67,13 +66,16 @@ namespace Dogee
 
 	SoStatus SoStorageMemcached::getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
 	{
-		return MemcachedGetChunk(key, fldid, len, buf);
+		return MemcachedGetChunk(MAKE64(key, fldid), len, buf);
 	}
 	SoStatus SoStorageMemcached::getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)
 	{
 		return getchunk(key, fldid, len * 2, (uint32_t*)buf);
 	}
-
+	SoStatus SoStorageMemcached::getblock(LongKey id, uint32_t* buf)
+	{
+		return MemcachedGetChunk(id, DSM_CACHE_BLOCK_SIZE, buf);
+	}
 	template <typename T>
 	SoStatus MemcachedPutChunk(ObjectKey key, FieldKey fldid, uint32_t len, T* buf)
 	{

@@ -12,11 +12,11 @@ ptDbgBreakPoint _DbgBreakPoint = (ptDbgBreakPoint)GetProcAddress(GetModuleHandle
 namespace Dogee
 {
 
-	void DogeeEnv::InitStorage(BackendType backty, CacheType cachety, std::vector<std::string>& arr_hosts, std::vector<int>& arr_ports)
+	void DogeeEnv::InitStorage(BackendType backty, CacheType cachety, std::vector<std::string>& arr_hosts, std::vector<int>& arr_ports,int node_id)
 	{
 		SoStorageFactory factory(backty, cachety);
 		backend = factory.make(arr_hosts, arr_ports);
-		cache = factory.makecache(backend, arr_hosts, arr_ports);
+		cache = factory.makecache(backend, arr_hosts, arr_ports, node_id);
 		std::hash<std::thread::id> h;
 		srand((int)time(NULL) ^ (int)h(std::this_thread::get_id()));
 	}
