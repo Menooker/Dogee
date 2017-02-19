@@ -24,46 +24,46 @@
     <ClInclude Include="targetver.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="Dogee.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="Instruction.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeMacro.h">
+    <ClInclude Include="..\include\Dogee.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeBase.h">
+    <ClInclude Include="..\include\DogeeAPIWrapping.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeStorage.h">
+    <ClInclude Include="..\include\DogeeBase.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeEnv.h">
+    <ClInclude Include="..\include\DogeeDirectoryCache.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeMemcachedStorage.h">
+    <ClInclude Include="..\include\DogeeEnv.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeRemote.h">
+    <ClInclude Include="..\include\DogeeHelper.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeThreading.h">
+    <ClInclude Include="..\include\DogeeMacro.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeHelper.h">
+    <ClInclude Include="..\include\DogeeMemcachedStorage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeUtil.h">
+    <ClInclude Include="..\include\DogeeRemote.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeDirectoryCache.h">
+    <ClInclude Include="..\include\DogeeSocket.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeSocket.h">
+    <ClInclude Include="..\include\DogeeStorage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="DogeeAPIWrapping.h">
+    <ClInclude Include="..\include\DogeeThreading.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DogeeUtil.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

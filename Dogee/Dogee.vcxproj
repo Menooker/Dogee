@@ -17,7 +17,7 @@
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>v120</PlatformToolset>
     <CharacterSet>MultiByte</CharacterSet>
@@ -41,6 +41,7 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <LinkIncremental>true</LinkIncremental>
+    <TargetExt>.lib</TargetExt>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
@@ -52,6 +53,7 @@
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -80,19 +82,19 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Dogee.h" />
-    <ClInclude Include="DogeeAPIWrapping.h" />
-    <ClInclude Include="DogeeBase.h" />
-    <ClInclude Include="DogeeDirectoryCache.h" />
-    <ClInclude Include="DogeeEnv.h" />
-    <ClInclude Include="DogeeMacro.h" />
-    <ClInclude Include="DogeeMemcachedStorage.h" />
-    <ClInclude Include="DogeeRemote.h" />
-    <ClInclude Include="DogeeSocket.h" />
-    <ClInclude Include="DogeeStorage.h" />
-    <ClInclude Include="DogeeThreading.h" />
-    <ClInclude Include="DogeeHelper.h" />
-    <ClInclude Include="DogeeUtil.h" />
+    <ClInclude Include="..\include\Dogee.h" />
+    <ClInclude Include="..\include\DogeeAPIWrapping.h" />
+    <ClInclude Include="..\include\DogeeBase.h" />
+    <ClInclude Include="..\include\DogeeDirectoryCache.h" />
+    <ClInclude Include="..\include\DogeeEnv.h" />
+    <ClInclude Include="..\include\DogeeHelper.h" />
+    <ClInclude Include="..\include\DogeeMacro.h" />
+    <ClInclude Include="..\include\DogeeMemcachedStorage.h" />
+    <ClInclude Include="..\include\DogeeRemote.h" />
+    <ClInclude Include="..\include\DogeeSocket.h" />
+    <ClInclude Include="..\include\DogeeStorage.h" />
+    <ClInclude Include="..\include\DogeeThreading.h" />
+    <ClInclude Include="..\include\DogeeUtil.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
