@@ -1,3 +1,4 @@
+#include "DogeeUtil.h"
 #include "DogeeHelper.h"
 #include <stdlib.h>
 #include <thread>
@@ -5,7 +6,7 @@
 
 #ifdef _MSC_VER
 #ifdef _WIN64
-ptDbgBreakPoint _DbgBreakPoint = (ptDbgBreakPoint)GetProcAddress(GetModuleHandleW(L"NTDLL.DLL"), "DbgBreakPoint");;
+Dogee::ptDbgBreakPoint Dogee::_DbgBreakPoint = (Dogee::ptDbgBreakPoint)GetProcAddress(GetModuleHandleW(L"NTDLL.DLL"), "DbgBreakPoint");
 #endif
 #endif
 
