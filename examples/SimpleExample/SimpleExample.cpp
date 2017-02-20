@@ -24,8 +24,6 @@ public:
 	Def(m_vector, Array<double>);
 	Def(m_matrix, Array<Array<int>>);
 	Def(prv, Ref<clsa>);
-	//DefRef(clsa, false, prv);
-	//Def(next, Array<Ref<clsa>>);
 	DefEnd();
 	clsa(ObjectKey obj_id) : DObject(obj_id)
 	{

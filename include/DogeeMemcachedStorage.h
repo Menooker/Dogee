@@ -13,14 +13,14 @@
 namespace Dogee
 {
 	extern THREAD_LOCAL memcached_st *memc;
-
+	extern memcached_st *main_memc;
 	extern void* init_memcached_this_thread();
 	extern bool isMaster();
+	void InitMemcachedStorage(std::vector<std::string>& arr_mem_hosts, std::vector<int>& arr_mem_ports);
 	class SoStorageMemcached : public SoStorage
 	{
 
 	public:
-		static memcached_st *main_memc;
 		static void InitInCurrentThread()
 		{
 			init_memcached_this_thread();
@@ -48,31 +48,37 @@ namespace Dogee
 		{
 			mem_hosts = arr_mem_hosts;
 			mem_ports = arr_mem_ports;
-			memcached_return rc;
-			memcached_server_st *servers;
-			assert(!main_memc); //main_memc should be null, or memcached has been initialized
-			main_memc = (memcached_st*)memcached_create(NULL);
-			memc = main_memc;
-			memcached_behavior_set(main_memc, MEMCACHED_BEHAVIOR_BINARY_PROTOCOL, 1);
-
-#ifndef WIN32
-			memcached_behavior_set(main_memc, MEMCACHED_BEHAVIOR_NO_BLOCK, 1);
-			memcached_behavior_set(main_memc, MEMCACHED_BEHAVIOR_TCP_NODELAY, 1);
-			memcached_behavior_set(main_memc, MEMCACHED_BEHAVIOR_NOREPLY, 1);
-			//memcached_behavior_set((memcached_st*)_memc, MEMCACHED_BEHAVIOR_TCP_KEEPALIVE, 1);
-#endif
-			servers = NULL;
-			for (unsigned i = 0; i < mem_hosts.size(); i++)
-			{
-				servers = memcached_server_list_append(servers, mem_hosts[i].c_str(), mem_ports[i], &rc);
-			}
-
-			rc = memcached_server_push(main_memc, servers);
-			memcached_server_free(servers);
-			if (isMaster())
-				memcached_flush(main_memc, 0);
+			InitMemcachedStorage(arr_mem_hosts, arr_mem_ports);
 		}
 
 	};
+
+	class SoStorageChunkMemcached : public SoStorageMemcached
+	{
+
+	public:
+		static void InitInCurrentThread()
+		{
+			init_memcached_this_thread();
+		}
+		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v);
+		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v);
+		virtual uint32_t get(ObjectKey key, FieldKey fldid);
+
+
+		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf);
+		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);
+		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);
+		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf);
+		SoStatus getblock(LongKey id, uint32_t* buf);
+		~SoStorageChunkMemcached();
+
+
+		SoStorageChunkMemcached(std::vector<std::string>& arr_mem_hosts, std::vector<int>& arr_mem_ports) :SoStorageMemcached(arr_mem_hosts,arr_mem_ports)
+		{
+		}
+
+	};
+
 }
 #endif

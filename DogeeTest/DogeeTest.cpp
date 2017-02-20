@@ -195,9 +195,34 @@ void writetest()
 	std::cout << "W OK" << typeid(T).name() << std::endl;
 }
 
+template <typename T>
+void singlewritetest()
+{
+	auto ptr2 = Dogee::NewArray<T>();
+	int last = 23, cur;
+	for (int i = 0; i < 100; i++)
+	{
+		cur = last * 34 - i * 99 + 9;
+		ptr2[i] = cur;
+		last = cur;
+	}
+	last = 23;
+	
+	for (int i = 0; i < 100; i++)
+	{
+		cur = last * 34 - i * 99 + 9;
+		last = cur;
+		if (ptr2[i] != cur)
+		{
+			std::cout << "SW ERR" << i << std::endl;
+			break;
+		}
+	}
+	std::cout << "SW OK" << typeid(T).name() << std::endl;
+}
+
 void fieldtest()
 {
-	//DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, 0);
 	writetest<int>();
 	writetest<float>();
 	writetest<double>();
@@ -207,6 +232,11 @@ void fieldtest()
 	readtest<float>();
 	readtest<double>();
 	readtest<long long>();
+
+	singlewritetest<int>();
+	singlewritetest<float>();
+	singlewritetest<double>();
+	singlewritetest<long long>();
 
 	clsaa AAA(0);
 	std::cout << AAA.i.GetFieldId() << std::endl
@@ -220,13 +250,13 @@ void fieldtest()
 		<< "OBJ FID END" << std::endl;
 
 	Array<int> arri(0);
-	std::cout << arri[1].get_address() << std::endl;
+	std::cout << (arri[1].get_address()==1) << std::endl;
 	Array<long long> arrl(0);
-	std::cout << arrl[1].get_address() << std::endl;
+	std::cout << (arrl[1].get_address()==2) << std::endl;
 	Array<Ref<clsa>> arro(0);
-	std::cout << arro[1].get_address() << std::endl;
+	std::cout << (arro[1].get_address()==1) << std::endl;
 	Array<Array<clsa>> arra(0);
-	std::cout << arra[1].get_address() << std::endl;
+	std::cout << (arra[1].get_address()==1) << std::endl;
 
 	auto ptr = Dogee::NewObj<clsa>(12);
 	//AutoRegisterObject<clsa> aaaaaa;
@@ -235,9 +265,9 @@ void fieldtest()
 	ptr->arr[0] = 133;
 	ptr->arr[0] = ptr->arr[0] + 1;
 	ptr->mat[0][45] = 123;
-	std::cout << ptr->i << std::endl
-		<< ptr->arr[0] << std::endl
-		<< ptr->mat[0][45] << std::endl;
+	std::cout << (ptr->i == 123) << std::endl
+		<< (ptr->arr[0] == 134) << std::endl
+		<< (ptr->mat[0][45]==123) << std::endl;
 }
 
 void objecttest();
@@ -255,7 +285,7 @@ int main(int argc, char* argv[])
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
 
-		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoWriteThroughCache);
+		/*RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendChunkMemcached, CacheType::SoWriteThroughCache);
 		g_i = 123445;
 		sem = NewObj<DSemaphore>(0);
 		std::cout << sem->GetObjectId();
@@ -269,7 +299,9 @@ int main(int argc, char* argv[])
 		sem->Release();
 
 		std::cin >> i;
-		CloseCluster();
+		CloseCluster();*/
+		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
+		fieldtest();
 	}
 
 	return 0;
