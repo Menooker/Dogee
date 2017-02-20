@@ -38,8 +38,8 @@ namespace Dogee
 			ThreadStoped
 
 		};
-		Def(ThreadState, state);
-		Def(int, node_id);
+		Def(state, ThreadState);
+		Def(node_id, int);
 		DefEnd();
 		DThread(ObjectKey obj_id) : DObject(obj_id)
 		{
@@ -58,7 +58,7 @@ namespace Dogee
 	{
 		DefBegin(DObject);
 	public:
-		Def(int, count);
+		Def(count, int);
 		DefEnd();
 		DBarrier(ObjectKey obj_id) : DObject(obj_id)
 		{
@@ -80,7 +80,7 @@ namespace Dogee
 	{
 		DefBegin(DObject);
 	public:
-		Def(int, count);
+		Def(count, int);
 		DefEnd();
 		DSemaphore(ObjectKey obj_id) : DObject(obj_id)
 		{

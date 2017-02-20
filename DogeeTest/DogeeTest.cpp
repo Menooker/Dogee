@@ -74,11 +74,13 @@ class clsa : public DObject
 {
 	DefBegin(DObject);
 public:
-	Def(int, i);
-	Def(Array<double>, arr);
-	Def(Array<Ref<clsa>>, next);
-	Def(Array<Array<int>>, mat);
-	DefRef(clsb, true, prv);
+	Def(i, int);
+	Def(arr, Array<double>);
+	Def(next, Array<Ref<clsa>>);
+	Def(next2, Ref<clsa>);
+	Def(mat, Array<Array<int>>);
+	Def(prv, Ref<clsb, true>);
+	//DefRef (clsb, true, prv);
 	DefEnd();
 	clsa(ObjectKey obj_id) : DObject(obj_id)
 	{
@@ -97,9 +99,9 @@ class clsaa : public clsa
 {
 	DefBegin(clsa);
 public:
-	Def(int, kk);
-	Var(lll, int);
-	Var(ppp, Ref<clsa, true>);
+	Def(kk, int);
+	Def(lll, int);
+	Def(ppp, Ref<clsa, true>);
 	DefEnd();
 	clsaa(ObjectKey obj_id) : clsa(obj_id)
 	{
@@ -119,13 +121,13 @@ template<> void aaa(clsa * dummy)
 }
 
 
-DefGlobal(int, g_i);
+DefGlobal(g_i, int);
 
 RegVirt(clsc);
 RegVirt(clsd);
 
 
-DefGlobal(Ref<DSemaphore>, sem);
+DefGlobal(sem, Ref<DSemaphore>);
 
 void threadfun(uint32_t param)
 {

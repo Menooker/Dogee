@@ -240,12 +240,6 @@ namespace Dogee
 	template<typename T, FieldKey FieldId> class Value
 	{
 	private:
-		template<typename Ty> static Ty getarray(Ty, int);
-		template<typename Ty>
-		ArrayElement<Ty> static getarray(Array<Ty> arr, int k)
-		{
-			return arr.ArrayAccess(k);
-		}
 		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
 		template<typename T2, FieldKey FieldId2>Value<T, FieldId>& operator=(Value<T2, FieldId2>& x);
 		Value<T, FieldId>& operator=(Value<T, FieldId>& x);
@@ -276,11 +270,6 @@ namespace Dogee
 			return get();
 		}
 
-
-		decltype(getarray(T(0),0)) operator[](int k)
-		{
-			return getarray(get(),k);
-		}
 		//write
 		Value<T, FieldId>& operator=(T x)
 		{
@@ -297,6 +286,69 @@ namespace Dogee
 
 	};
 
+	/* A dirty implementation for operator [] of array.
+	 As you can see, most of the members of Value<Array<T>,FieldId> are
+	 the same as Value<Array<T>,FieldId> 's. We just add the method
+	 ArrayElement<T> operator[](int k).
+	 Why not use 
+	 decltype(getarray(T(0), 0)) operator[](int k)
+	 declared in ArrayElement?
+	 It is because when we define a class having a member referencing it self (like a node of
+	 linked list), the compiler won't pass, throwing "the class has as incomplete type". 
+	 (Note that "decltype(getarray(T(0), 0))" references the class T, which is incomplete 
+	 when we are still declaring the member variables of the class T.)
+	*/
+	template<typename T, FieldKey FieldId> class Value<Array<T>,FieldId>
+	{
+	private:
+		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
+		template<typename T2, FieldKey FieldId2>Value<Array<T>, FieldId>& operator=(Value<T2, FieldId2>& x);
+		Value<Array<T>, FieldId>& operator=(Value<Array<T>, FieldId>& x);
+	public:
+		int GetFieldId()
+		{
+			return FieldId;
+		}
+
+
+		Array<T> get()
+		{
+			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
+			Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
+#ifdef DOGEE_DBG
+			lastobject = nullptr;
+#endif
+			return ret;
+		}
+		//read
+		operator Array<T>()
+		{
+			return get();
+		}
+
+		//write
+		Value<Array<T>, FieldId>& operator=(Array<T> x)
+		{
+			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
+			DSMInterface<Array<T>>::set_value(lastobject->GetObjectId(), FieldId, x);
+#ifdef DOGEE_DBG
+			lastobject = nullptr;
+#endif
+			return *this;
+		}
+		Value()
+		{
+		}
+		ArrayElement<T> operator[](int k)
+		{
+			return get().ArrayAccess(k);
+		}
+		Array<T> operator->()
+		{
+			return get();
+		}
+
+	};
 
 	template<typename T> class Array
 	{
