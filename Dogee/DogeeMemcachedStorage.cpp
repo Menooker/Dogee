@@ -94,6 +94,66 @@ namespace Dogee
 		return ret;
 	}
 
+	uint64_t SoStorageMemcached::getcounter(ObjectKey key, FieldKey fldid)
+	{
+		//char ch[17];
+		//sprintf(ch,"%016llx",MAKE64(key,fldid));
+		uint64_t k = MAKE64(key, fldid);
+		size_t return_key_length = 8;
+		size_t return_value_length;
+		uint32_t flags;
+		memcached_return rc;
+		char* return_value = memcached_get(memc, (char*)&k, return_key_length, &return_value_length, &flags, &rc);
+		if (rc != MEMCACHED_SUCCESS)
+			throw 1;
+		uint64_t ret = atoll(return_value);
+		memcached_free2(return_value);
+		return ret;
+	}
+	SoStatus SoStorageMemcached::setcounter(ObjectKey key, FieldKey fldid, uint64_t n)
+	{
+		//char ch[17];
+		//sprintf(ch,"%016llx",MAKE64(key,fldid));
+		uint64_t k = MAKE64(key, fldid);
+		size_t return_key_length = 8;
+		memcached_return rc;
+
+		char ch2[65];
+		sprintf(ch2, "%lld", n);
+		rc = memcached_set(memc, (char*)&k, return_key_length, ch2, strlen(ch2), 0, 0);
+		if (rc != MEMCACHED_SUCCESS)
+			return SoFail;
+		return SoOK;
+	}
+
+	uint64_t SoStorageMemcached::inc(ObjectKey key, FieldKey fldid, uint64_t inc)
+	{
+		//char ch[17];
+		//sprintf(ch,"%016llx",MAKE64(key,fldid));
+		uint64_t k = MAKE64(key, fldid);
+		uint64_t ret;
+		memcached_return rc;
+		rc = memcached_increment(memc, (char*)&k, 8, inc, &ret);
+		if (rc != MEMCACHED_SUCCESS)
+			throw 1;
+		return ret;
+
+	}
+
+	uint64_t SoStorageMemcached::dec(ObjectKey key, FieldKey fldid, uint64_t dec)
+	{
+		//char ch[17];
+		//sprintf(ch,"%016llx",MAKE64(key,fldid));
+		uint64_t k = MAKE64(key, fldid);
+		uint64_t ret;
+		memcached_return rc;
+		rc = memcached_increment(memc, (char*)&k, 8, dec, &ret);
+		if (rc != MEMCACHED_SUCCESS)
+			throw 1;
+		return ret;
+
+	}
+
 	SoStatus SoStorageMemcached::getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
 	{
 		return MemcachedGetChunk(MAKE64(key, fldid), len, buf);

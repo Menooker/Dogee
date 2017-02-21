@@ -165,6 +165,7 @@
     <ClInclude Include="..\include\DogeeStorage.h" />
     <ClInclude Include="..\include\DogeeThreading.h" />
     <ClInclude Include="..\include\DogeeUtil.h" />
+    <ClInclude Include="DogeeAtomicCounter.h" />
     <ClInclude Include="DogeeMR.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />

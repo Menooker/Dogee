@@ -40,6 +40,11 @@ namespace Dogee
 		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
 		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
 		virtual SoStatus getblock(LongKey id, uint32_t* buf) = 0;
+
+		virtual uint64_t inc(ObjectKey key, FieldKey fldid, uint64_t inc)=0;
+		virtual uint64_t dec(ObjectKey key, FieldKey fldid, uint64_t dec)=0;
+		virtual uint64_t getcounter(ObjectKey key, FieldKey fldid)=0;
+		virtual SoStatus setcounter(ObjectKey key, FieldKey fldid, uint64_t n) = 0;
 	};
 
 

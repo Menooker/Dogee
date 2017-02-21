@@ -37,6 +37,12 @@ namespace Dogee
 		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);
 		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf);
 		SoStatus getblock(LongKey id, uint32_t* buf);
+
+		virtual uint64_t inc(ObjectKey key, FieldKey fldid, uint64_t inc);
+		virtual uint64_t dec(ObjectKey key, FieldKey fldid, uint64_t dec);
+		virtual uint64_t getcounter(ObjectKey key, FieldKey fldid);
+		virtual SoStatus setcounter(ObjectKey key, FieldKey fldid, uint64_t n);
+
 		~SoStorageMemcached();
 
 
