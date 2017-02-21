@@ -10,6 +10,7 @@ namespace Dogee
 	int DogeeEnv::self_node_id=-1;
 	int DogeeEnv::num_nodes=0;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::InitStorageCurrentThread = nullptr;
+
 	bool isMaster()
 	{
 		return DogeeEnv::isMaster();

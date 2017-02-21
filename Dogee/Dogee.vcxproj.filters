@@ -72,6 +72,9 @@
     <ClInclude Include="DogeeAtomicCounter.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\DogeeAccumulator.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">

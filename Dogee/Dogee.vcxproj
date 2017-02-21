@@ -153,6 +153,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\include\Dogee.h" />
+    <ClInclude Include="..\include\DogeeAccumulator.h" />
     <ClInclude Include="..\include\DogeeAPIWrapping.h" />
     <ClInclude Include="..\include\DogeeBase.h" />
     <ClInclude Include="..\include\DogeeDirectoryCache.h" />

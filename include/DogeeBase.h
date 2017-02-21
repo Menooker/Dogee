@@ -19,7 +19,6 @@ namespace Dogee
 	{
 	protected:
 		static const int _LAST_ = 0;
-		static const int CLASS_ID = 0;
 	private:
 		ObjectKey object_id;
 	public:
@@ -561,13 +560,13 @@ namespace Dogee
 		return Array<T>(AllocObjectId(1));
 	}
 
-
+	template <class T> struct AutoRegisterObject;
 	template<class T,
 	class... _Types> inline
 		Ref<T> NewObj(_Types&&... _Args)
 	{	// copy from std::shared_ptr
 
-		ObjectKey ok = AllocObjectId(T::CLASS_ID);
+		ObjectKey ok = AllocObjectId(AutoRegisterObject<T>::id);
 		//SetClassId(ok, T::CLASS_ID);
 		T ret(ok, std::forward<_Types>(_Args)...);
 		return Ref<T>(ok);
@@ -590,6 +589,7 @@ namespace Dogee
 
 	template <class T> struct AutoRegisterObject
 	{
+		static int id;
 		static DObject* createInstance(ObjectKey key)
 		{
 			return dynamic_cast<DObject*> (new T(key));
@@ -599,7 +599,7 @@ namespace Dogee
 		{
 			static_assert(!std::is_abstract<T>::value, "No need to register abstract class.");
 			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
-			RegisterClass(T::CLASS_ID, createInstance);
+			RegisterClass(id, createInstance);
 		}
 	};
 
@@ -608,5 +608,14 @@ namespace Dogee
 	{
 		return TDest(src.GetObjectId());
 	}
+
+	inline int ClassIdInc()
+	{
+		static int id = 100;
+		return id++;
+	}
+
+	template <class T> int AutoRegisterObject<T>::id = ClassIdInc();
+
 }
 #endif

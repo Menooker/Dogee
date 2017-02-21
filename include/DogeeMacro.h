@@ -8,8 +8,12 @@
 #define DefRef(Type,isVirtual,Name) Dogee::Value<Dogee::Ref<Type,isVirtual>,2*(__COUNTER__- _BASE_ - 1 + _PBASE_)> Name
 
 //DefEnd must be declared public
-#define DefEnd() static const int _LAST_ = __COUNTER__- _BASE_ - 1 + _PBASE_ ;static const int CLASS_ID = __COUNTER__+100;
-#define RegVirt(CurrentClass)  Dogee::AutoRegisterObject<CurrentClass> __REG_OBJECT__##CurrentClass##__;
+#define DefEnd() static const int _LAST_ = __COUNTER__- _BASE_ - 1 + _PBASE_ ;
+
+#define AutoRegisterObjectName(n) __REG_OBJECT__##n##__
+#define _AutoRegisterObjectName(n) AutoRegisterObjectName(n)
+#define RegVirt(...)  static Dogee::AutoRegisterObject<__VA_ARGS__> _AutoRegisterObjectName(__COUNTER__);
+
 
 //#define DefGlobal(Type,Name) Dogee::ArrayElement<Type> Name(0,Dogee::RegisterGlobalVariable());
 //#define ExternGlobal(Type,Name) extern Dogee::ArrayElement<Type> Name;
