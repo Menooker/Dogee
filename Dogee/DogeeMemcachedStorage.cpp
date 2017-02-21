@@ -164,8 +164,9 @@ namespace Dogee
 		}
 		else
 		{
-			//printf("Memc Error:%d",memc->cached_errno);
-			throw 1;
+			printf("Memc Error:%d",memc->cached_errno);
+			ret = 0;
+			//throw 1;
 		}
 
 

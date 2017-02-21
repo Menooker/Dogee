@@ -66,6 +66,9 @@
     <ClInclude Include="..\include\DogeeUtil.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="DogeeMR.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
