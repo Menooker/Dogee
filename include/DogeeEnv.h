@@ -20,6 +20,9 @@ namespace Dogee
 		SoNoCache,
 		SoWriteThroughCache,
 	};
+	extern THREAD_LOCAL int current_thread_id;
+	extern int AllocThreadId();
+	extern void RcPrepareNewThread();
 	class DogeeEnv
 	{
 	private:
@@ -31,6 +34,18 @@ namespace Dogee
 		static int num_nodes;
 		typedef void(*InitStorageCurrentThreadProc)();
 		static InitStorageCurrentThreadProc InitStorageCurrentThread;
+
+
+		static void InitCurrentThread()
+		{
+			if (current_thread_id == 0)
+			{
+				current_thread_id = AllocThreadId();
+				RcPrepareNewThread();
+				InitStorageCurrentThread();
+			}
+
+		}
 
 		static bool isMaster()
 		{

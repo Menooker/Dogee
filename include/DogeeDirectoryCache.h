@@ -181,7 +181,7 @@ namespace Dogee
 
 			static void CacheProtocalProc(DSMCacheProtocal* ths, int target_id)
 			{
-				DogeeEnv::InitStorageCurrentThread();
+				DogeeEnv::InitCurrentThread();
 				DataPack pack;
 				for (;;)
 				{

@@ -13,6 +13,7 @@
 #include "DogeeStorage.h"
 #include "DogeeRemote.h"
 #include "DogeeThreading.h"
+#include "DogeeAccumulator.h"
 #include <memory>
 using namespace Dogee;
 
@@ -221,6 +222,17 @@ void singlewritetest()
 	std::cout << "SW OK" << typeid(T).name() << std::endl;
 }
 
+
+template<typename T>
+void accutest()
+{
+	DAddAccumulator<T>::autoreg;
+	auto arr = NewArray<T>();
+	auto accu = NewObj<DAddAccumulator<T>>(arr, 1000, 3);
+	T buf[1000];
+	accu->AccumulateAndWait(buf, 1000);
+}
+
 void fieldtest()
 {
 	writetest<int>();
@@ -301,6 +313,10 @@ int main(int argc, char* argv[])
 		std::cin >> i;
 		CloseCluster();*/
 		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
+		DogeeEnv::InitCurrentThread();
+
+		accutest<int>();
+		accutest<double>();
 		fieldtest();
 	}
 

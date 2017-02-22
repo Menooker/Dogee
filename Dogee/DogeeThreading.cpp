@@ -1,10 +1,16 @@
 #include "DogeeThreading.h"
-
+#include <atomic>
 
 namespace Dogee
 {
 	int AutoRegisterThreadProcClass::id = 0;
-	THREAD_LOCAL int thread_id;
+	THREAD_LOCAL int current_thread_id=0;
+	std::atomic<int> tid_count = {1};
+
+	int AllocThreadId()
+	{
+		return tid_count++;
+	}
 
 	std::vector<thread_proc>& GetIDProcMap()
 	{
@@ -26,7 +32,7 @@ namespace Dogee
 	extern void RcDeleteThreadEvent(int id);
 	void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey)
 	{
-		DogeeEnv::InitStorageCurrentThread();
+		DogeeEnv::InitCurrentThread();
 		Ref<DThread> ref(okey);
 		ref->state = DThread::ThreadRunning;
 		GetIDProcMap()[index](param);

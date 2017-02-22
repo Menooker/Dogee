@@ -8,6 +8,35 @@
 
 namespace Dogee
 {
+
+	enum AcDataType
+	{
+		TypeDense = 1,
+		TypeSparse,
+	};
+
+
+	struct RcCommandPack
+	{
+		uint32_t cmd;
+		int32_t param;
+		int32_t param2;
+		union
+		{
+			struct
+			{
+				int32_t param3;
+				int32_t param4;
+			};
+			uint64_t param34;
+		};
+	};
+	struct SyncThreadNode
+	{
+		int machine;
+		int thread_id;
+	};
+
 	/*
 	Connect to the Slaves and initialize the cluster. Set isMaster=true. 
 	hosts[0] is ignored, ports[0] is the master nodes's listening port
