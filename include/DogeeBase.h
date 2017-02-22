@@ -592,9 +592,19 @@ namespace Dogee
 		static int id;
 		static DObject* createInstance(ObjectKey key)
 		{
+			static_assert(!std::is_abstract<T>::value, "No need to register abstract class.");
+			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
 			return dynamic_cast<DObject*> (new T(key));
 		}
 	public:
+
+		static int Init()
+		{
+			int mid=ClassIdInc();
+			RegisterClass(mid, createInstance);
+			return mid;
+		}
+
 		AutoRegisterObject()
 		{
 			static_assert(!std::is_abstract<T>::value, "No need to register abstract class.");
@@ -615,7 +625,7 @@ namespace Dogee
 		return id++;
 	}
 
-	template <class T> int AutoRegisterObject<T>::id = ClassIdInc();
+	template <class T> int AutoRegisterObject<T>::id = AutoRegisterObject<T>::Init();
 
 }
 #endif

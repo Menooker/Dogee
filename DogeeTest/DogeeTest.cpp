@@ -124,8 +124,8 @@ template<> void aaa(clsa * dummy)
 
 DefGlobal(g_i, int);
 
-RegVirt(clsc);
-RegVirt(clsd);
+//RegVirt(clsc);
+//RegVirt(clsd);
 
 
 DefGlobal(sem, Ref<DSemaphore>);
