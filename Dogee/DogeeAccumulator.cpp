@@ -433,7 +433,7 @@ namespace Dogee
 							printf("Error! Slave node received a control message!\n");
 						break;
 					default:
-						printf("Bad command %d!\n");
+						printf("Bad command %u!\n", cmd.cmd);
 					}
 				}
 				int dummy;

@@ -8,14 +8,6 @@
 
 namespace Dogee
 {
-
-	enum AcDataType
-	{
-		TypeDense = 1,
-		TypeSparse,
-	};
-
-
 	struct RcCommandPack
 	{
 		uint32_t cmd;

@@ -9,6 +9,22 @@
 namespace Dogee
 {
 
+#pragma pack(push)
+#pragma pack(4)
+	template<typename T>
+	struct SparseElement
+	{
+		uint32_t index;
+		T data;
+	};
+#pragma pack(pop)
+
+	enum AcDataType
+	{
+		TypeDense = 1,
+		TypeSparse,
+	};
+
 	enum AccumulatorMode
 	{
 		DenseMode,
@@ -135,15 +151,7 @@ namespace Dogee
 
 	};
 
-#pragma pack(push)
-#pragma pack(4)
-	template<typename T>
-	struct SparseElement
-	{
-		uint32_t index;
-		T data;
-	};
-#pragma pack(pop)
+
 
 	template<typename T>
 	class DAccumulator : public DBaseAccumulator

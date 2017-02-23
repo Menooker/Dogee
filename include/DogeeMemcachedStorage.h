@@ -16,7 +16,7 @@ namespace Dogee
 	extern memcached_st *main_memc;
 	extern void* init_memcached_this_thread();
 	extern bool isMaster();
-	void InitMemcachedStorage(std::vector<std::string>& arr_mem_hosts, std::vector<int>& arr_mem_ports);
+	extern void InitMemcachedStorage(std::vector<std::string>& arr_mem_hosts, std::vector<int>& arr_mem_ports);
 	class SoStorageMemcached : public SoStorage
 	{
 

@@ -119,7 +119,7 @@ namespace Dogee
 		memcached_return rc;
 
 		char ch2[65];
-		sprintf(ch2, "%lld", n);
+		sprintf(ch2, "%lu", n);
 		rc = memcached_set(memc, (char*)&k, return_key_length, ch2, strlen(ch2), 0, 0);
 		if (rc != MEMCACHED_SUCCESS)
 			return SoFail;
@@ -224,7 +224,7 @@ namespace Dogee
 		}
 		else
 		{
-			printf("Memc Error:%d",memc->cached_errno);
+			printf("Memc Error");
 			ret = 0;
 			//throw 1;
 		}

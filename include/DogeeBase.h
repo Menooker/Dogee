@@ -587,6 +587,12 @@ namespace Dogee
 		return fid;
 	}
 
+	inline int ClassIdInc()
+	{
+		static int id = 100;
+		return id++;
+	}
+
 	template <class T> struct AutoRegisterObject
 	{
 		static int id;
@@ -617,12 +623,6 @@ namespace Dogee
 	inline TDest force_cast(TSrc src)
 	{
 		return TDest(src.GetObjectId());
-	}
-
-	inline int ClassIdInc()
-	{
-		static int id = 100;
-		return id++;
 	}
 
 	template <class T> int AutoRegisterObject<T>::id = AutoRegisterObject<T>::Init();
