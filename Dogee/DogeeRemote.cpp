@@ -526,7 +526,8 @@ namespace Dogee
 		std::vector<std::string>& mem_hosts, std::vector<int>& mem_ports, int node_id,
 		BackendType backty, CacheType cachety)
 	{
-		DogeeEnv::InitStorage(backty, cachety,hosts,ports, mem_hosts, mem_ports,node_id);
+
+		DogeeEnv::InitCurrentThread();
 		for (;;)
 		{
 			RcCommandPack cmd;
@@ -553,10 +554,10 @@ namespace Dogee
 			}
 		}
 		CLOSE:
-		DogeeEnv::CloseStorage(); //*/
 		return;
 	}
 
+	extern bool AcWaitForReady();
 
 	void RcSlave(int port)
 	{
@@ -577,9 +578,8 @@ namespace Dogee
 			DogeeEnv::self_node_id = mi.node_id;
 			DogeeEnv::num_nodes = mi.num_nodes;
 
-			AcInit(slisten);
-
 			char buf[255];
+			
 
 			//printf("Host list :\n");
 			std::vector<std::string> hosts;
@@ -647,14 +647,22 @@ namespace Dogee
 				memports.push_back(port);
 				//printf("%s:%d\n",buf,port);
 			}
-
+			DogeeEnv::InitStorage(mi.backty, mi.cachety, hosts, ports, memhosts, memports, mi.node_id);
+			AcInit(slisten);
 			if (!AcSlaveInitDataConnections(hosts, ports, mi.node_id))
 				goto ERR;
+			
+			if (!AcWaitForReady())
+			{
+				printf("Wait for data socket timeout\n");
+				goto ERR;
+			}
 
 			master_socket = s;
 			DogeeEnv::SetIsMaster(false);
-			DogeeEnv::InitCurrentThread();
+			
 			RcSlaveMainLoop(mainmod, s, hosts, ports, memhosts, memports, mi.node_id,mi.backty,mi.cachety);
+			
 		}
 		else
 		{
@@ -662,6 +670,7 @@ namespace Dogee
 			printf("Hand shaking error! %d %d\n", err, err2);
 
 		}
+		DogeeEnv::CloseStorage(); //*/
 		RcCloseSocket(s);
 		AcClose();
 		//fix-me : kill control listen thread
@@ -743,6 +752,11 @@ namespace Dogee
 		MasterZone::masterlisten.detach();
 		MasterZone::syncmanager = new MasterZone::SyncManager;
 		AcInit(Socket::RcCreateListen(ports[0]));
+		if (!AcWaitForReady())
+		{
+			printf("Wait for data socket timeout\n");
+			return 1;
+		}
 		return 0;
 
 	}

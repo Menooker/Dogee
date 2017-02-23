@@ -146,16 +146,16 @@ void readtest()
 {
 	auto ptr2 = Dogee::NewArray<T>();
 	int last = 23, cur;
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 10000; i++)
 	{
 		cur = last * 34 - i * 99 + 9;
 		ptr2[i] = cur;
 		last = cur;
 	}
-	T buf[100];
-	ptr2->CopyTo(buf, 0, 100);
+	T buf[10000];
+	ptr2->CopyTo(buf, 0, 10000);
 	last = 23;
-	for (int i = 0; i < 100; i++)
+	for (int i = 0; i < 10000; i++)
 	{
 		cur = last * 34 - i * 99 + 9;
 		last = cur;
@@ -222,17 +222,6 @@ void singlewritetest()
 	std::cout << "SW OK" << typeid(T).name() << std::endl;
 }
 
-
-template<typename T>
-void accutest()
-{
-	DAddAccumulator<T>::autoreg;
-	auto arr = NewArray<T>();
-	auto accu = NewObj<DAddAccumulator<T>>(arr, 1000, 3);
-	T buf[1000];
-	accu->AccumulateAndWait(buf, 1000);
-}
-
 void fieldtest()
 {
 	writetest<int>();
@@ -282,7 +271,29 @@ void fieldtest()
 		<< (ptr->mat[0][45]==123) << std::endl;
 }
 
+
+void cache_test()
+{
+	
+	g_i = 123445;
+	sem = NewObj<DSemaphore>(0);
+	std::cout << sem->GetObjectId();
+	Ref<DThread> thread = NewObj<DThread>(threadfun, 1, 3232);
+	int i;
+	std::cin >> i;
+	sem->Release();
+
+	std::cin >> i;
+	g_i = 31024;
+	sem->Release();
+
+	std::cin >> i;
+}
+
+
+
 void objecttest();
+extern void accutest();
 int main(int argc, char* argv[])
 {
 	if (argc == 3 && std::string(argv[1]) == "-s")
@@ -292,32 +303,24 @@ int main(int argc, char* argv[])
 	else
 	{
 
-		std::vector<std::string> hosts = { "", "127.0.0.1" };
-		std::vector<int> ports = { 8080, 18080 };
+		std::vector<std::string> hosts = { "", "127.0.0.1", "127.0.0.1" };
+		std::vector<int> ports = { 8080, 18080 ,18090};
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
 
-		/*RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendChunkMemcached, CacheType::SoWriteThroughCache);
-		g_i = 123445;
-		sem = NewObj<DSemaphore>(0);
-		std::cout << sem->GetObjectId();
-		Ref<DThread> thread = NewObj<DThread>(threadfun, 1, 3232);
-		int i;
-		std::cin >> i;
-		sem->Release();
+		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
+		
+		std::cout << "Init OK" << std::endl;
+		accutest();
+		std::string str;
+		std::cin >> str;
+		CloseCluster();
+		//DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
+		//DogeeEnv::InitCurrentThread();
+		//readtest<int>();
+		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);
 
-		std::cin >> i;
-		g_i = 31024;
-		sem->Release();
-
-		std::cin >> i;
-		CloseCluster();*/
-		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
-		DogeeEnv::InitCurrentThread();
-
-		accutest<int>();
-		accutest<double>();
-		fieldtest();
+		//fieldtest();
 	}
 
 	return 0;

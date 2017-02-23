@@ -21,7 +21,9 @@
 #define ExternGlobal(Name,...) extern Dogee::ArrayElement<__VA_ARGS__> Name;
 
 
-#define RegFunc(Func)  Dogee::AutoRegisterThreadProcClass __REG_FUNC__##Func##__(Func);
+#define AutoRegisterFuncName(n) __REG_FUNC__##n##__
+#define _AutoRegisterFuncName(n) AutoRegisterFuncName(n)
+#define RegFunc(Func)  static Dogee::AutoRegisterThreadProcClass AutoRegisterFuncName(__COUNTER__)(Func);
 
 #endif
 

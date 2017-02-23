@@ -32,15 +32,11 @@ namespace Dogee
 		AutoMode,
 	};
 	extern AccumulatorMode accu_mode;
-	extern float accu_threshold;
 	inline void SetAccumulatorMode(AccumulatorMode mode)
 	{
 		accu_mode = mode;
 	}
-	inline void SetAccumulatorThreshold(float t)
-	{
-		accu_threshold = t;
-	}
+
 
 	typedef std::function<uint32_t(AccumulatorMode, void* src, char* dest,
 		int idx, int size, unsigned int& outsize, uint32_t & type)> _BufferPrepareProc;
@@ -56,7 +52,7 @@ namespace Dogee
 		for (i = 0; i < vsize && used < BD_DATA_PROCESS_SIZE; i++)
 		{
 			T val = vec[i];
-			if ((val >= 0 && val < threshold) || (val<0 && val> -threshold))
+			if ((val >= 0 && val <= threshold) || (val<0 && val>= -threshold))
 			{
 				zeros++;
 			}
@@ -255,7 +251,6 @@ namespace Dogee
 		DefBegin(DAccumulator<T>);
 	public:
 		DefEnd();
-		static Dogee::AutoRegisterObject<DAddAccumulator<T>> autoreg;
 		DAddAccumulator(ObjectKey k) :DAccumulator<T>(k)
 		{}
 
@@ -268,18 +263,6 @@ namespace Dogee
 		DAddAccumulator(ObjectKey k, Array<T> outarr, uint32_t outlen, uint32_t in_num_user) :DAccumulator<T>(k, outarr, outlen, in_num_user)
 		{}
 
-		/*
-		User defined function to do the acutal accumulation for dense vector. See the input of the Accumulator as a vector.
-		Each node is responsible for a part of the vector. This function will be called when a node has
-		received a part of its responsible vector from the peer nodes.
-		param:
-		- in_data : the input data buffer
-		- in_len : the input buffer length (count of elements)
-		- in_index : the offset of in_data within the output array "arr"
-		- out_data : the output data buffer, may have the accumulation results from previously received vectors
-		- out_index : the offset of out_data within the output array "arr"
-		- out_len : the length of output buffer
-		*/
 		virtual void DoAccumulateDense(T* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
 		{
 			const int offset = in_index - out_index;
@@ -290,18 +273,6 @@ namespace Dogee
 			}
 		}
 
-		/*
-		User defined function to do the acutal accumulation for sparse vector. See the input of the Accumulator as a vector.
-		Each node is responsible for a part of the vector. This function will be called when a node has
-		received a part of its responsible vector from the peer nodes.
-		param:
-		- in_data : the input data buffer
-		- in_len : the input buffer length (count of elements)
-		- in_index : the offset of in_data within the output array "arr"
-		- out_data : the output data buffer, may have the accumulation results from previously received vectors
-		- out_index : the offset of out_data within the output array "arr"
-		- out_len : the length of output buffer
-		*/
 		virtual void DoAccumulateSparse(SparseElement<T>* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
 		{
 			for (uint32_t i = 0; i < in_len; i++)
@@ -313,6 +284,47 @@ namespace Dogee
 		}
 	};
 
+	template<typename T>
+	struct AccumulatorFuntionHelper
+	{
+		typedef void (*tyfun)(T in,uint32_t index,T& out);
+		//typedef uint32_t(*tymapkeyfun)(T in, uint32_t index, T& out);
+	};
+
+	template<typename T, typename AccumulatorFuntionHelper<T>::tyfun Func>
+	class DFunctionalAccumulator : public DAccumulator<T>
+	{
+
+		DefBegin(DAccumulator<T>);
+	public:
+		DefEnd();
+
+		DFunctionalAccumulator(ObjectKey k) :DAccumulator<T>(k)
+		{}
+
+		DFunctionalAccumulator(ObjectKey k, Array<T> outarr, uint32_t outlen, uint32_t in_num_user) :DAccumulator<T>(k, outarr, outlen, in_num_user)
+		{}
+
+		virtual void DoAccumulateDense(T* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
+		{
+			const int offset = in_index - out_index;
+			assert(offset >= 0 && offset + in_len <= out_len);
+			for (uint32_t i = 0; i < in_len; i++)
+			{
+				Func(in_data[i], i + in_index, out_data[offset + i]);
+			}
+		}
+
+		virtual void DoAccumulateSparse(SparseElement<T>* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
+		{
+			for (uint32_t i = 0; i < in_len; i++)
+			{
+				uint32_t idx = in_data[i].index;
+				assert(idx >= out_index && idx < out_index + out_len);
+				Func(in_data[i].data, idx, out_data[idx - out_index]);
+			}
+		}
+	};
 }
 
 #endif

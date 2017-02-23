@@ -62,17 +62,19 @@ namespace Dogee
 		delete[]maddr;
 		return (rc == MEMCACHED_SUCCESS) ? SoOK : SoFail;
 	}
+
+#define MEMCACHED_FETCH_BATCH 490
 	template <typename T>
 	SoStatus MemcachedGetChunk(LongKey k, uint32_t len, T* buf)
 	{
 		uint32_t offset;
 		SoStatus ret;
-		for (offset = 0; offset<len; offset += 15040)
+		for (offset = 0; offset<len; offset += MEMCACHED_FETCH_BATCH)
 		{
 			memcached_result_st results_obj;
 			memcached_result_st* results;
 			results = memcached_result_create(memc, &results_obj);
-			uint32_t mylen = offset + 15040<len ? 15040 : len - offset;
+			uint32_t mylen = offset + MEMCACHED_FETCH_BATCH<len ? MEMCACHED_FETCH_BATCH : len - offset;
 			memset(buf + offset, 0, sizeof(T)*mylen);
 
 			memcached_return rc;
@@ -406,7 +408,7 @@ namespace Dogee
 				uint32_t idx = (*pkey) - k;
 				uint32_t i = (idx == 0) ? offset : 0;
 				uint32_t j = idx*DSM_CACHE_BLOCK_SIZE + i - offset;
-				for (; i<DSM_CACHE_BLOCK_SIZE, j<len; i++, j++)
+				for (; i<DSM_CACHE_BLOCK_SIZE && j<len; i++, j++)
 				{
 					buf[j] = pvalue[i];
 				}
@@ -416,16 +418,16 @@ namespace Dogee
 		return ret;
 	}
 	
-
+#define CHUNK_MEMCACHED_FETCH_BATCH 15000
 	SoStatus splited_getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
 	{
 		uint32_t l = fldid;
-		if (len >= 15040)
+		if (len >= CHUNK_MEMCACHED_FETCH_BATCH)
 		{
-			uint32_t limit = fldid + len - 15040;
-			for (; l<limit; l += 15040)
+			uint32_t limit = fldid + len - CHUNK_MEMCACHED_FETCH_BATCH;
+			for (; l<limit; l += CHUNK_MEMCACHED_FETCH_BATCH)
 			{
-				if (do_getchunk(key, l, 15040, buf + (l - fldid)) != SoOK)
+				if (do_getchunk(key, l, CHUNK_MEMCACHED_FETCH_BATCH, buf + (l - fldid)) != SoOK)
 					return SoFail;
 			}
 		}

@@ -7,17 +7,13 @@
 #include "DogeeAPIWrapping.h"
 #include <unordered_map>
 #include <assert.h>
-
+#include <iostream>
 
 
 namespace Dogee
 {
 
 	AccumulatorMode accu_mode = AutoMode;
-	float accu_threshold = 0;
-
-	template<typename T>
-	AutoRegisterObject<DAddAccumulator<T>> DAddAccumulator<T>::autoreg = AutoRegisterObject<DAddAccumulator<T>>();
 
 	extern bool RcWaitForRemoteEvent(int timeout);
 	extern void RcSetRemoteEvent(int local_thread_id);
@@ -159,7 +155,7 @@ namespace Dogee
 		BD_LOCK lock;
 		SOCKET* dataconnections;
 		std::unordered_map<ObjectKey, DataSyncNode*> map;
-
+		bool connection_ok;
 
 		DataSyncNode* FindOrCreateDataSyncNode(ObjectKey aid)
 		{
@@ -180,7 +176,9 @@ namespace Dogee
 		AcConnectionManager()
 		{
 			UaInitLock(&lock);
+			connection_ok = false;
 			dataconnections = new SOCKET[DogeeEnv::num_nodes - 1];
+			memset(dataconnections, 0, sizeof(SOCKET)*(DogeeEnv::num_nodes - 1));
 		}
 		~AcConnectionManager()
 		{
@@ -200,14 +198,14 @@ namespace Dogee
 		inline int nodeid2idx(int node_id)
 		{
 			int ret = (node_id == 0) ? DogeeEnv::self_node_id - 1 : node_id - 1;
-			assert(ret > 0 && ret < DogeeEnv::num_nodes - 1);
+			assert(ret >= 0 && ret < DogeeEnv::num_nodes - 1);
 			return ret;
 		}
 
 		inline int idx2nodeid(int idx)
 		{
 			int ret = ((idx == DogeeEnv::self_node_id - 1) ? 0 : idx + 1);
-			assert(ret > 0 && ret < DogeeEnv::num_nodes);
+			assert(ret >= 0 && ret < DogeeEnv::num_nodes);
 			return ret;
 		}
 
@@ -276,7 +274,7 @@ namespace Dogee
 		switch (type)
 		{
 		case TypeDense:
-			node->accu->BaseDoAccumulateDense(data, size_bytes, offset, node->buf, node->base,node->size);
+			node->accu->BaseDoAccumulateDense(data, size_bytes, offset, node->buf, node->base, node->size);
 			break;
 		case TypeSparse:
 			node->accu->BaseDoAccumulateSparse(data, size_bytes, offset, node->buf, node->base, node->size);
@@ -298,7 +296,7 @@ namespace Dogee
 				if (node->size)
 					DogeeEnv::cache->putchunk(node->outarray, node->base, node->size, node->buf);
 				node->val = 0;
-				memset(node->buf, 0, node->size * sizeof(double));
+				memset(node->buf, 0, node->size * sizeof(uint32_t));
 				if (DogeeEnv::self_node_id == 0)
 				{
 					AcAccumulatePartialDoneMsg(0, aid, true);
@@ -360,11 +358,12 @@ namespace Dogee
 				}
 			}
 		}
+		accu_manager->connection_ok = true;
 		printf("Data connection ok\n");
 		if (n > 0)
 			maxfd = accu_manager->dataconnections[0];
 #ifdef BD_ON_LINUX
-		for (int i = 1; i<n; i++)
+		for (int i = 1; i < n; i++)
 		{
 			if ( accu_manager->dataconnections[i]>maxfd)
 				maxfd =  accu_manager->dataconnections[i];
@@ -455,6 +454,15 @@ namespace Dogee
 		data_thread.detach();
 	}
 
+	bool AcWaitForReady()
+	{
+		for (int i = 0; i < 100 && (!accu_manager->connection_ok); i++)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(50));
+		}
+		return (accu_manager->connection_ok);
+	}
+
 	void AcClose()
 	{
 		delete accu_manager;
@@ -499,7 +507,7 @@ namespace Dogee
 		if (DogeeEnv::num_nodes > 0)
 			maxfd = accu_manager->dataconnections[0];
 #ifdef BD_ON_LINUX
-		for (int i = 1; i<DogeeEnv::num_nodes; i++)
+		for (int i = 1; i < DogeeEnv::num_nodes; i++)
 		{
 			if (i != DogeeEnv::self_node_id && accu_manager->GetConnection(i)>maxfd)
 				maxfd = accu_manager->GetConnection(i);
@@ -530,7 +538,7 @@ namespace Dogee
 
 					if (FD_ISSET(accu_manager->GetConnection(i), &writefds))
 					{
-						unsigned int send_idx_size = func(accu_mode,  in_buf,
+						unsigned int send_idx_size = func(accu_mode, in_buf,
 							(char*)cmd->buf, send_idx[i], send_size[i], cmd->size, cmd->datatype);
 						cmd->param0 = send_idx[i];
 						send_idx[i] += send_idx_size;
@@ -551,94 +559,4 @@ namespace Dogee
 		}
 		return RcWaitForRemoteEvent(timeout);
 	}
-	/*
-	template<typename T>
-	bool DAccumulator<T>::AccumulateAndWait(T* buf, uint32_t len, T threshold, int timeout)
-	{
-		RcResetRemoteEvent();
-		uint32_t sz = DSMInterface<T>::dsm_size_of * len;
-		uint32_t blocks = (sz % DSM_CACHE_BLOCK_SIZE == 0) ? sz / DSM_CACHE_BLOCK_SIZE : sz / DSM_CACHE_BLOCK_SIZE + 1;
-		blocks = (blocks % DogeeEnv::num_nodes == 0) ? blocks / DogeeEnv::num_nodes : blocks / DogeeEnv::num_nodes + 1;
-		std::vector<uint32_t> send_idx;
-		send_idx.resize(DogeeEnv::num_nodes);
-		std::vector<uint32_t> send_size;
-		send_size.resize(DogeeEnv::num_nodes);
-		RcDataPack* cmd;
-		char buf[sizeof(RcDataPack) + BD_DATA_PROCESS_SIZE];
-		cmd = (RcDataPack*)buf;
-		cmd->cmd = AcDataAccumulate;
-		cmd->id = this->GetObjectId();
-		for (int i = 0; i<DogeeEnv::num_nodes; i++)
-		{
-			send_idx[i] = i*blocks*DSM_CACHE_BLOCK_SIZE;
-			if (blocks*DSM_CACHE_BLOCK_SIZE + send_idx[i]>sz)
-				send_size[i] = sz;
-			else
-				send_size[i] = send_idx[i] + blocks*DSM_CACHE_BLOCK_SIZE;
-		}
-
-		AcAccumulateMsg(DogeeEnv::self_node_id, this->GetObjectId(), current_thread_id, send_idx[DogeeEnv::self_node_id],
-			(send_size[DogeeEnv::self_node_id] - send_idx[DogeeEnv::self_node_id])*sizeof(uint32_t),
-			(char*)((uint32_t*)buf + send_idx[DogeeEnv::self_node_id]), TypeDense);
-		send_idx[DogeeEnv::self_node_id] = send_size[DogeeEnv::self_node_id];
-
-		int done = 1;
-		int maxfd = 0;
-		fd_set writefds;
-		if (DogeeEnv::num_nodes > 0)
-			maxfd = accu_manager->dataconnections[0];
-#ifdef BD_ON_LINUX
-		for (int i = 1; i<DogeeEnv::num_nodes; i++)
-		{
-			if (i != DogeeEnv::self_node_id && accu_manager->GetConnection(i)>maxfd)
-				maxfd = accu_manager->GetConnection(i);
-		}
-		maxfd++;
-#endif
-		while (done < DogeeEnv::num_nodes)
-		{
-			FD_ZERO(&writefds);
-			for (int i = 0; i < DogeeEnv::num_nodes; i++)
-			{
-				if (i != DogeeEnv::self_node_id)
-					FD_SET(accu_manager->GetConnection(i), &writefds);
-			}
-			if (SOCKET_ERROR == select(maxfd, NULL, &writefds, NULL, NULL))
-			{
-				printf("Data Send Select Error!%d\n", RcSocketLastError());
-				break;
-			}
-			for (int i = 0; i < DogeeEnv::num_nodes; i++)
-			{
-				if (send_idx[i] < send_size[i])
-				{
-					if (i == DogeeEnv::self_node_id)
-					{
-						continue;
-					}
-
-					if (FD_ISSET(accu_manager->GetConnection(i), &writefds))
-					{
-						unsigned int send_idx_size = AcAccumulatePrepareBuffer(accu_mode, threshold, buf,
-							(char*)cmd->buf, send_idx[i], send_size[i], cmd->size, cmd->datatype);
-						cmd->param0 = send_idx[i];
-						send_idx[i] += send_idx_size;
-						if (send_idx[i] == send_size[i])
-						{
-							cmd->param12 = current_thread_id;
-							done++;
-						}
-						else
-						{
-							cmd->param12 = 0;
-						}
-						//printf("Send partition to %d, offset=%d len=%d\n",nodeid2idx(i),cmd->param0,send_idx_size);
-						Socket::RcSend(accu_manager->GetConnection(i), cmd, sizeof(RcDataPack) + cmd->size);
-					}
-				}
-			}
-		}
-		return RcWaitForRemoteEvent(timeout);
-
-	}*/
 }

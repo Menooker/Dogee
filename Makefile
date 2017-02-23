@@ -18,7 +18,7 @@ LIBS ?= -lmemcached -pthread
 export PWD_DIR CXX CPPFLAGS LIBS LIB_DIR TEST_DIR INC_DIR BIN_DIR
 
 ##
-all: directories lib test 
+all: directories lib test simple_example
 
 directories: ${BIN_DIR}
 

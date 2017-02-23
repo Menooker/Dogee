@@ -43,7 +43,7 @@ namespace Dogee
 		virtual uint64_t getcounter(ObjectKey key, FieldKey fldid);
 		virtual SoStatus setcounter(ObjectKey key, FieldKey fldid, uint64_t n);
 
-		~SoStorageMemcached();
+		~SoStorageMemcached(){}
 
 
 
