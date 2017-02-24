@@ -808,7 +808,7 @@ namespace Dogee
 			maxfd = remote_nodes.GetConnection(1);
 		else
 			maxfd = 0;
-#ifdef BD_ON_LINUX
+#ifndef _WIN32
 		for (int i = 2; i<n; i++)
 		{
 			auto tmp=DogeeEnv::remote_nodes.GetConnection(i);

@@ -5,6 +5,7 @@
 #include "DogeeMacro.h"
 #include "DogeeAPIWrapping.h"
 #include <assert.h>
+#include <unordered_map>
 #define BD_DATA_PROCESS_SIZE (16*1024)
 namespace Dogee
 {
@@ -141,7 +142,8 @@ namespace Dogee
 		DefEnd();
 		DBaseAccumulator(ObjectKey key) :DObject(key)
 		{}
-
+		virtual uint32_t* AllocLocalBuffer(uint32_t len)=0;
+		virtual void FreeLocalBuffer(uint32_t* ptr) = 0;
 		virtual void BaseDoAccumulateDense(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len) = 0;
 		virtual void BaseDoAccumulateSparse(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len) = 0;
 
@@ -158,6 +160,16 @@ namespace Dogee
 
 		DAccumulator(ObjectKey k) :DBaseAccumulator(k)
 		{}
+
+		virtual uint32_t* AllocLocalBuffer(uint32_t len)
+		{
+			return new uint32_t[len];
+		}
+
+		virtual void FreeLocalBuffer(uint32_t* ptr)
+		{
+			delete[]ptr;
+		}
 
 		/*
 		param :

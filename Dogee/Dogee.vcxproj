@@ -161,13 +161,14 @@
     <ClInclude Include="..\include\DogeeHelper.h" />
     <ClInclude Include="..\include\DogeeMacro.h" />
     <ClInclude Include="..\include\DogeeMemcachedStorage.h" />
+    <ClInclude Include="..\include\DogeeMR.h" />
     <ClInclude Include="..\include\DogeeRemote.h" />
+    <ClInclude Include="..\include\DogeeSerializerImpl.h" />
     <ClInclude Include="..\include\DogeeSocket.h" />
     <ClInclude Include="..\include\DogeeStorage.h" />
     <ClInclude Include="..\include\DogeeThreading.h" />
     <ClInclude Include="..\include\DogeeUtil.h" />
     <ClInclude Include="DogeeAtomicCounter.h" />
-    <ClInclude Include="DogeeMR.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />

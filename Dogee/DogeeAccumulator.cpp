@@ -5,9 +5,8 @@
 #include <thread>
 #include "DogeeRemote.h"
 #include "DogeeAPIWrapping.h"
-#include <unordered_map>
 #include <assert.h>
-#include <iostream>
+//#include <iostream>
 
 
 namespace Dogee
@@ -112,7 +111,7 @@ namespace Dogee
 		{
 			if (waitlist)
 				delete waitlist;
-			delete[]buf;
+			accu->FreeLocalBuffer(buf);
 		}
 	};
 
@@ -138,7 +137,7 @@ namespace Dogee
 				if (node->size < 0)
 					node->size = 0;
 			}
-			node->buf = new uint32_t[node->size];
+			node->buf = node->accu->AllocLocalBuffer(node->size);//new uint32_t[node->size];
 			node->base = blocks * DogeeEnv::self_node_id * DSM_CACHE_BLOCK_SIZE;
 			//printf("===========\nnode->size =%d\nnode->base=%d\n==============\n",size,base);
 			memset(node->buf, 0, node->size * sizeof(uint32_t));
@@ -271,16 +270,19 @@ namespace Dogee
 		UaEnterLock(&accu_manager->lock);
 		DataSyncNode* node = accu_manager->FindOrCreateDataSyncNode(aid);
 
-		switch (type)
+		if (size_bytes)
 		{
-		case TypeDense:
-			node->accu->BaseDoAccumulateDense(data, size_bytes, offset, node->buf, node->base, node->size);
-			break;
-		case TypeSparse:
-			node->accu->BaseDoAccumulateSparse(data, size_bytes, offset, node->buf, node->base, node->size);
-			break;
-		default:
-			assert(0);
+			switch (type)
+			{
+			case TypeDense:
+				node->accu->BaseDoAccumulateDense(data, size_bytes, offset, node->buf, node->base, node->size);
+				break;
+			case TypeSparse:
+				node->accu->BaseDoAccumulateSparse(data, size_bytes, offset, node->buf, node->base, node->size);
+				break;
+			default:
+				assert(0);
+			}
 		}
 
 		if (thread_id)
@@ -294,9 +296,12 @@ namespace Dogee
 			if (node->val >= node->count)
 			{
 				if (node->size)
+				{
 					DogeeEnv::cache->putchunk(node->outarray, node->base, node->size, node->buf);
+					memset(node->buf, 0, node->size * sizeof(uint32_t));
+				}
 				node->val = 0;
-				memset(node->buf, 0, node->size * sizeof(uint32_t));
+				
 				if (DogeeEnv::self_node_id == 0)
 				{
 					AcAccumulatePartialDoneMsg(0, aid, true);
@@ -362,7 +367,7 @@ namespace Dogee
 		printf("Data connection ok\n");
 		if (n > 0)
 			maxfd = accu_manager->dataconnections[0];
-#ifdef BD_ON_LINUX
+#ifndef _WIN32
 		for (int i = 1; i < n; i++)
 		{
 			if ( accu_manager->dataconnections[i]>maxfd)
@@ -506,7 +511,7 @@ namespace Dogee
 		fd_set writefds;
 		if (DogeeEnv::num_nodes > 0)
 			maxfd = accu_manager->dataconnections[0];
-#ifdef BD_ON_LINUX
+#ifndef _WIN32
 		for (int i = 1; i < DogeeEnv::num_nodes; i++)
 		{
 			if (i != DogeeEnv::self_node_id && accu_manager->GetConnection(i)>maxfd)
