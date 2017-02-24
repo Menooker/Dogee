@@ -43,6 +43,10 @@ namespace Dogee
 	public:
 		DefEnd();
 		typedef std::unordered_map < MAP_OUT_KEY_TYPE, std::vector<MAP_OUT_VALUE_TYPE> > MAP;
+		typedef void (*pDoMapFunc)(MAP_IN_KEY_TYPE& key, MAP_IN_VALUE_TYPE& value, MAP& localmap);
+		typedef void (*pDoReduceFunc)(const MAP_OUT_KEY_TYPE& key, const std::vector<MAP_OUT_VALUE_TYPE>& values);
+
+		
 		DMapReduce(ObjectKey key) :DBaseMapReduce(key)
 		{}
 
@@ -60,8 +64,7 @@ namespace Dogee
 		virtual void BaseDoReduce(uint32_t* buf)
 		{
 			MAP* outmap = (MAP*)buf;
-			auto& itr = outmap->begin();
-			for (; itr != outmap->end(); itr++)
+			for (auto itr = outmap->begin(); itr != outmap->end(); itr++)
 			{
 				DoReduce(itr->first, itr->second);
 			}
@@ -97,13 +100,13 @@ namespace Dogee
 
 		bool Reduce(int timeout = -1)
 		{
-			_Reduce(GetObjectKey(), -1);
+			return _Reduce(GetObjectId(), -1);
 		}
 
 		bool Map(std::unordered_map<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE> in_map, int timeout=-1)
 		{
 			uint32_t cnt = in_map.size();
-			auto& itr = in_map.begin();
+			auto itr = in_map.begin();
 			const uint32_t buflen = BD_DATA_PROCESS_SIZE / sizeof(uint32_t);
 			auto PrepareBuf = [&](uint32_t* mybuf){
 				uint32_t elements = 0;
@@ -118,9 +121,6 @@ namespace Dogee
 						idx += ret;
 						ret = value_serializer.Serialize(itr->second, mybuf + idx);
 						idx += ret;
-
-						MAP_IN_VALUE_TYPE test;
-						uint32_t rrr=value_serializer.Deserialize(mybuf + idx-ret,test);
 					}
 					else
 					{
@@ -139,7 +139,29 @@ namespace Dogee
 	};
 
 	
+	template<typename MAP_IN_KEY_TYPE, typename MAP_IN_VALUE_TYPE,
+		typename MAP_OUT_KEY_TYPE, typename MAP_OUT_VALUE_TYPE,
+		typename DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE, MAP_OUT_VALUE_TYPE>::pDoMapFunc MapFunc,
+		typename DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE, MAP_OUT_VALUE_TYPE>::pDoReduceFunc ReduceFunc>
+	class DFunctionMapReduce : public DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE,  MAP_OUT_VALUE_TYPE>
+	{
+		typedef DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE, MAP_OUT_VALUE_TYPE> Parent;
+	public:
+		DFunctionMapReduce(ObjectKey key) :Parent(key)
+		{}
 
+		DFunctionMapReduce(ObjectKey key, uint32_t num_users) :Parent(key, num_users)
+		{}
+
+		virtual void DoMap(MAP_IN_KEY_TYPE& key, MAP_IN_VALUE_TYPE& value, typename Parent::MAP & localmap)
+		{
+			MapFunc(key, value, localmap);
+		}
+		virtual void DoReduce(const MAP_OUT_KEY_TYPE& key, const std::vector<MAP_OUT_VALUE_TYPE>& values)
+		{
+			ReduceFunc(key, values);
+		}
+	};
 }
 
 #endif

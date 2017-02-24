@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
-VisualStudioVersion = 12.0.31101.0
+VisualStudioVersion = 12.0.40629.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dogee", "Dogee\Dogee.vcxproj", "{B25E729C-B0D7-4CC7-B6E4-246A0B038482}"
 EndProject
@@ -11,6 +11,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DogeeTest", "DogeeTest\Doge
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SimpleExample", "examples\SimpleExample\SimpleExample.vcxproj", "{7979C85C-A19F-40E9-94BE-9A7FCD31F1F0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B25E729C-B0D7-4CC7-B6E4-246A0B038482} = {B25E729C-B0D7-4CC7-B6E4-246A0B038482}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "LogisticRegression", "examples\LogisticRegression\LogisticRegression.vcxproj", "{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}"
 	ProjectSection(ProjectDependencies) = postProject
 		{B25E729C-B0D7-4CC7-B6E4-246A0B038482} = {B25E729C-B0D7-4CC7-B6E4-246A0B038482}
 	EndProjectSection
@@ -59,6 +64,16 @@ Global
 		{7979C85C-A19F-40E9-94BE-9A7FCD31F1F0}.Release|Win32.ActiveCfg = Release|Win32
 		{7979C85C-A19F-40E9-94BE-9A7FCD31F1F0}.Release|Win32.Build.0 = Release|Win32
 		{7979C85C-A19F-40E9-94BE-9A7FCD31F1F0}.Release|x64.ActiveCfg = Release|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Debug|Win32.ActiveCfg = Debug|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Debug|Win32.Build.0 = Debug|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Debug|x64.ActiveCfg = Debug|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Release|Win32.ActiveCfg = Release|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Release|Win32.Build.0 = Release|Win32
+		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -617,13 +617,16 @@ namespace Dogee
 		DataSyncNode* node = accu_manager->FindOrCreateDataSyncNode(key);
 		SyncThreadNode th = { 0, current_thread_id };
 		node->waitlist->push_back(th);
-		AcLocalReduceMsg(0, key, true);
-		UaLeaveLock(&accu_manager->lock);
-				
+
 		for (int i = 1; i < DogeeEnv::num_nodes; i++)
 		{
 			Socket::RcSend(accu_manager->GetConnection(i), cmd, sizeof(RcDataPack));
 		}
+
+		AcLocalReduceMsg(0, key, true);
+		UaLeaveLock(&accu_manager->lock);
+				
+
 		return RcWaitForRemoteEvent(timeout);
 	}
 

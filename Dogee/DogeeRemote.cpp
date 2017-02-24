@@ -811,7 +811,7 @@ namespace Dogee
 #ifndef _WIN32
 		for (int i = 2; i<n; i++)
 		{
-			auto tmp=DogeeEnv::remote_nodes.GetConnection(i);
+			auto tmp= remote_nodes.GetConnection(i);
 			if (tmp>maxfd)
 				maxfd = tmp;
 		}

@@ -1,6 +1,7 @@
 #include "DogeeMR.h"
 #include <string>
 #include <sstream>
+#include <iostream>
 
 using namespace Dogee;
 class MyMR : public DMapReduce<int, std::string, std::string, int>
@@ -25,18 +26,34 @@ public:
 		}
 	}
 
-	void DoReduce(const std::string& key, const std::vector<int>& value)
+	void DoReduce(const std::string& key, const std::vector<int>& values)
 	{
-
+		std::cout << key << " " << values.size() << std::endl;
 	}
 };
 
+void WordCountMap(int& key, std::string& value, std::unordered_map < std::string, std::vector<int> >& map)
+{
+	std::stringstream buf(value);
+	while (buf)
+	{
+		std::string str;
+		buf >> str;
+		map[str].push_back(1);
+	}
+}
 
-DefGlobal(mr, Ref<MyMR>);
+void WordCountReduce(const std::string& key, const std::vector<int>& values)
+{
+	std::cout << key << " " << values.size() << std::endl;
+}
+
+typedef  DFunctionMapReduce<int, std::string, std::string, int, WordCountMap, WordCountReduce> MyMapReduce;
+DefGlobal(mr, Ref<MyMapReduce>);
 
 void mrtest()
 {
-	mr = NewObj<MyMR>(1);
+	mr = NewObj<MyMapReduce>(1);
 	std::unordered_map<int, std::string> input = {
 		{ 1, "On a dark desert highway" },
 		{ 2, "cool wind in my hair" },
@@ -47,7 +64,7 @@ void mrtest()
 		{ 7, "My head grew heavy and my sight grew dim" },
 		{ 8, "I had to stop for the night" }
 	};
-	//auto& itr = input.begin();
-//	itr->first
+
 	mr->Map(input);
+	mr->Reduce();
 }

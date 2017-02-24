@@ -10,8 +10,6 @@
 #include "DogeeSocket.h"
 namespace Dogee
 {
-
-
 	class SoStorageFactory
 	{
 	private:
@@ -73,6 +71,9 @@ namespace Dogee
 		}
 
 	};
+
+	extern void HelperInitCluster(int argc, char* argv[]);
+
 }
 
 #endif
