@@ -6,6 +6,7 @@
 #include "DogeeRemote.h"
 #include "DogeeAPIWrapping.h"
 #include <assert.h>
+#include "DogeeMR.h"
 //#include <iostream>
 
 
@@ -24,6 +25,7 @@ namespace Dogee
 		AcDataHello = 1,
 		AcDataAccumulate,
 		AcDataAccumulatePartialDone,
+		AcDataLocalReduce,
 	};
 
 
@@ -244,6 +246,7 @@ namespace Dogee
 		return true;
 	}
 
+
 	void AcAccumulatePartialDoneMsg(int src, ObjectKey aid, bool locked)
 	{
 		if (!locked)
@@ -261,6 +264,31 @@ namespace Dogee
 			node->done_node_cnt = 0;
 			node->waitlist->clear();
 		}
+		if (!locked)
+			UaLeaveLock(&accu_manager->lock);
+	}
+
+	void AcLocalReduceMsg(int src, ObjectKey aid, bool locked)
+	{
+		if (!locked)
+			UaEnterLock(&accu_manager->lock);
+
+		DataSyncNode* node = accu_manager->FindOrCreateDataSyncNode(aid);
+		auto ptr = dynamic_cast<DBaseMapReduce*>(node->accu.get());
+		ptr->BaseDoReduce(node->buf);
+		if (DogeeEnv::self_node_id == 0)
+		{
+			AcAccumulatePartialDoneMsg(0, aid, true);
+		}
+		else
+		{
+			RcDataPack cmd;
+			cmd.cmd = AcDataAccumulatePartialDone;
+			cmd.id = aid;
+			cmd.size = 0;
+			Socket::RcSend(accu_manager->GetConnection(0), &cmd, sizeof(cmd));
+		}
+
 		if (!locked)
 			UaLeaveLock(&accu_manager->lock);
 	}
@@ -432,9 +460,12 @@ namespace Dogee
 						break;
 					case AcDataAccumulatePartialDone:
 						if (DogeeEnv::self_node_id == 0)
-							AcAccumulatePartialDoneMsg(i, cmd.id, false);
+							AcAccumulatePartialDoneMsg(accu_manager->idx2nodeid(i), cmd.id, false);
 						else
 							printf("Error! Slave node received a control message!\n");
+						break;
+					case AcDataLocalReduce:
+						AcLocalReduceMsg(accu_manager->idx2nodeid(i), cmd.id, false);
 						break;
 					default:
 						printf("Bad command %u!\n", cmd.cmd);
@@ -564,4 +595,123 @@ namespace Dogee
 		}
 		return RcWaitForRemoteEvent(timeout);
 	}
+
+
+	bool _Reduce(ObjectKey key,int timeout)
+	{
+		if (DogeeEnv::isMaster == false)
+		{
+			printf("Only master node can send \'Reduce\' command.\n");
+			return false;
+		}
+		RcResetRemoteEvent();
+		RcDataPack* cmd;
+		char buf2[sizeof(RcDataPack)];
+		cmd = (RcDataPack*)buf2;
+		cmd->cmd = AcDataLocalReduce;
+		cmd->id = key;
+		cmd->size = 0;
+		cmd->param12 = current_thread_id;//thread_id
+
+		UaEnterLock(&accu_manager->lock);
+		DataSyncNode* node = accu_manager->FindOrCreateDataSyncNode(key);
+		SyncThreadNode th = { 0, current_thread_id };
+		node->waitlist->push_back(th);
+		AcLocalReduceMsg(0, key, true);
+		UaLeaveLock(&accu_manager->lock);
+				
+		for (int i = 1; i < DogeeEnv::num_nodes; i++)
+		{
+			Socket::RcSend(accu_manager->GetConnection(i), cmd, sizeof(RcDataPack));
+		}
+		return RcWaitForRemoteEvent(timeout);
+	}
+
+
+	bool _Map(ObjectKey key, std::function<bool()> has_more, std::function<uint32_t(uint32_t*)> PrepareBuf, int timeout)
+	{
+		RcResetRemoteEvent();
+
+		RcDataPack* cmd;
+		char buf2[sizeof(RcDataPack) + BD_DATA_PROCESS_SIZE];
+		cmd = (RcDataPack*)buf2;
+		cmd->cmd = AcDataAccumulate;
+		cmd->id = key;
+
+		uint32_t* mybuf = (uint32_t*)cmd->buf;
+
+		int maxfd = 0;
+		fd_set writefds;
+		if (DogeeEnv::num_nodes > 0)
+			maxfd = accu_manager->dataconnections[0];
+#ifndef _WIN32
+		for (int i = 1; i < DogeeEnv::num_nodes; i++)
+		{
+			if (i != DogeeEnv::self_node_id && accu_manager->GetConnection(i)>maxfd)
+				maxfd = accu_manager->GetConnection(i);
+		}
+		maxfd++;
+#endif
+		
+		bool done = false;
+
+		int turns = 0;
+
+		while (has_more())
+		{
+			if (turns % DogeeEnv::num_nodes == DogeeEnv::self_node_id)
+			{
+				uint32_t sz = PrepareBuf(mybuf);
+				AcAccumulateMsg(DogeeEnv::self_node_id, key, 0, 0,
+					sz*sizeof(uint32_t), (char*)mybuf, TypeDense);
+				turns++;
+				continue;
+			}
+			FD_ZERO(&writefds);
+			for (int i = 0; i < DogeeEnv::num_nodes; i++)
+			{
+				if (i != DogeeEnv::self_node_id)
+					FD_SET(accu_manager->GetConnection(i), &writefds);
+			}
+			if (SOCKET_ERROR == select(maxfd, NULL, &writefds, NULL, NULL))
+			{
+				printf("Data Send Select Error!%d\n", RcSocketLastError());
+				break;
+			}
+			for (int i = 0; i < DogeeEnv::num_nodes; i++)
+			{
+				if (i == DogeeEnv::self_node_id)
+					continue;
+				if (FD_ISSET(accu_manager->GetConnection(i), &writefds))
+				{
+					turns++;
+					uint32_t sz = PrepareBuf(mybuf);
+					cmd->size = sz*sizeof(uint32_t);
+					cmd->datatype = TypeDense;
+					cmd->param0 = 0;//offset
+					cmd->param12 = 0;//thread_id
+					Socket::RcSend(accu_manager->GetConnection(i), cmd, sizeof(RcDataPack) + cmd->size);
+				}
+
+			}
+		}
+		for (int i = 0; i < DogeeEnv::num_nodes; i++)
+		{
+			if (i == DogeeEnv::self_node_id)
+				AcAccumulateMsg(DogeeEnv::self_node_id, key, current_thread_id, 0,
+				0, nullptr, TypeDense);
+			else
+			{
+				cmd->size = 0;
+				cmd->datatype = TypeDense;
+				cmd->param0 = 0;//offset
+				cmd->param12 = current_thread_id;//thread_id
+				Socket::RcSend(accu_manager->GetConnection(i), cmd, sizeof(RcDataPack) + cmd->size);
+			}
+
+		}
+
+		return RcWaitForRemoteEvent(timeout);
+	}
+
 }

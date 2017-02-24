@@ -156,6 +156,7 @@
   <ItemGroup>
     <ClCompile Include="AccumulatorTest.cpp" />
     <ClCompile Include="DogeeTest.cpp" />
+    <ClCompile Include="MRTest.cpp" />
     <ClCompile Include="stdafx.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

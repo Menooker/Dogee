@@ -35,5 +35,8 @@
     <ClCompile Include="AccumulatorTest.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="MRTest.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

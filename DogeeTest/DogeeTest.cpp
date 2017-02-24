@@ -294,6 +294,7 @@ void cache_test()
 
 void objecttest();
 extern void accutest();
+extern void mrtest();
 int main(int argc, char* argv[])
 {
 	if (argc == 3 && std::string(argv[1]) == "-s")
@@ -303,20 +304,23 @@ int main(int argc, char* argv[])
 	else
 	{
 
-		std::vector<std::string> hosts = { "", "127.0.0.1", "127.0.0.1" };
-		std::vector<int> ports = { 8080, 18080 ,18090};
+		std::vector<std::string> hosts = { "", "127.0.0.1"};
+		std::vector<int> ports = { 8080, 18080};
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
 
 		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
 		
 		std::cout << "Init OK" << std::endl;
-		accutest();
+		//accutest();
+		mrtest();
 		std::string str;
 		std::cin >> str;
-		CloseCluster();
+		CloseCluster(); 
+
 		//DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
 		//DogeeEnv::InitCurrentThread();
+		
 		//readtest<int>();
 		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);
 

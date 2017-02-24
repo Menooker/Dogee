@@ -4,25 +4,36 @@
 
 namespace Dogee
 {
+	namespace Serializer
+	{
+		inline uint32_t cell_divide(uint32_t a)
+		{
+			const uint32_t b = sizeof(uint32_t);
+			if (a % b == 0)
+				return a / b;
+			else
+				return a / b + 1;
+		}
+	}
 
 
 	template<typename T>
 	class InputSerializer
 	{
 	public:
-		uint32_t GetSize(T& pair)
+		uint32_t GetSize(const T& pair)
 		{
-			return cell_divide(sizeof(T));
+			return Serializer::cell_divide(sizeof(T));
 		}
-		uint32_t Serialize(T& in, uint32_t* buf)
+		uint32_t Serialize(const T& in, uint32_t* buf)
 		{
 			*(T*)buf = in;
-			return cell_divide(sizeof(T));
+			return Serializer::cell_divide(sizeof(T));
 		}
 		uint32_t Deserialize(uint32_t* buf, int& out)
 		{
 			out = *(T*)buf;
-			return cell_divide(sizeof(T));
+			return Serializer::cell_divide(sizeof(T));
 		}
 	};
 
@@ -30,11 +41,11 @@ namespace Dogee
 	class InputSerializer<std::string>
 	{
 	public:
-		uint32_t GetSize(std::string& pair)
+		uint32_t GetSize(const std::string& pair)
 		{
-			return cell_divide(pair.size()+1)+1;
+			return Serializer::cell_divide(pair.size() + 1) + 1;
 		}
-		uint32_t Serialize(std::string& in, uint32_t* buf)
+		uint32_t Serialize(const std::string& in, uint32_t* buf)
 		{
 			buf[0] = in.size();
 			memcpy(buf+1, in.c_str(), in.size());
@@ -47,7 +58,7 @@ namespace Dogee
 			str[sz]= 0;
 			out = std::string(str);
 			assert(sz == out.size());
-			return cell_divide(sz + 1) + 1;
+			return Serializer::cell_divide(sz + 1) + 1;
 		}
 	};
 }

@@ -432,10 +432,16 @@ namespace Dogee
 	private:
 		T obj;
 	public:
-		T* operator->()
+
+		T* get()
 		{
 			lastobject = (DObject*)&obj;
 			return &obj;
+		}
+		
+		T* operator->()
+		{
+			return get();
 		}
 		ObjectKey GetObjectId()
 		{
@@ -488,12 +494,17 @@ namespace Dogee
 			assert(pobj);
 		}
 	public:
-		T* operator->()
+		T* get()
 		{
 			if (!pobj) //possible memory leak in multithreaded environment
 				RefObj(okey);
 			lastobject = (DObject*)pobj;
 			return pobj;
+		}
+
+		T* operator->()
+		{
+			return get();
 		}
 
 		ObjectKey GetObjectId()
