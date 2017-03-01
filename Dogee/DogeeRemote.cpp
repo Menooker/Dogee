@@ -4,13 +4,13 @@
 #include <chrono>
 #include "DogeeStorage.h"
 #include <string.h>
-#include <mutex>
-#include <condition_variable>
+
 #include <vector>
 #include <queue>
 #include <unordered_map>
 #include "DogeeSocket.h"
 #include <atomic>
+#include "DogeeLocalSync.h"
 
 #ifdef _WIN32
 int RcWinsockStartup()
@@ -73,7 +73,7 @@ struct SlaveInfo
 
 namespace Dogee
 {
-
+	extern void (*slave_init_proc)(uint32_t);
 	extern void AcInit(SOCKET sock);
 	extern void AcClose();
 	extern bool AcSlaveInitDataConnections(std::vector<std::string>& hosts, std::vector<int>& ports, int node_id);
@@ -254,7 +254,7 @@ namespace Dogee
 					node = itr->second;
 				}
 				node->val++;
-				if (node->val <= 0)
+				if (node->val >= 0)
 				{
 					SyncThreadNode& th = node->waitqueue->front();
 					RcWakeRemoteThread(th.machine, th.thread_id);
@@ -452,49 +452,6 @@ namespace Dogee
 
 	}
 
-	class Event
-	{
-		std::mutex mtx; 
-		std::condition_variable cv; 
-		bool ready = false;
-	public:
-		Event(bool state) {
-			ready = state;
-		}
-
-		void SetEvent() {
-			std::unique_lock <std::mutex> lck(mtx);
-			ready=true;
-			cv.notify_all();
-		}
-
-		void ResetEvent() {
-			std::unique_lock <std::mutex> lck(mtx);
-			ready=false;
-		}
-
-		void WaitForEvent() {
-			std::unique_lock <std::mutex> lck(mtx);
-			while (!ready)
-				cv.wait(lck);
-		}
-
-		bool WaitForEvent(int timeout) {
-			if (timeout<0)
-			{
-				WaitForEvent();
-				return true;
-			}
-			std::unique_lock <std::mutex> lck(mtx);
-			while (!ready)
-			{
-				if (cv.wait_for(lck,std::chrono::milliseconds(timeout))==std::cv_status::timeout)
-					return false;
-			}
-			return true;
-		}
-	};
-
 	std::vector< Event*> ThreadEventMap;
 	extern std::atomic<int> tid_count;
 	extern THREAD_LOCAL int current_thread_id;
@@ -528,6 +485,8 @@ namespace Dogee
 	{
 
 		DogeeEnv::InitCurrentThread();
+		if (slave_init_proc)
+			slave_init_proc(node_id);
 		for (;;)
 		{
 			RcCommandPack cmd;

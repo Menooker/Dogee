@@ -13,7 +13,7 @@
 
 namespace Dogee
 {
-
+	int SetSlaveInitProc(void(*)(uint32_t));
 	template <class T> struct AutoRegisterObject;
 	class DObject
 	{
@@ -313,11 +313,11 @@ namespace Dogee
 		Array<T> get()
 		{
 			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
-			Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
+Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
 #ifdef DOGEE_DBG
-			lastobject = nullptr;
+lastobject = nullptr;
 #endif
-			return ret;
+return ret;
 		}
 		//read
 		operator Array<T>()
@@ -383,7 +383,7 @@ namespace Dogee
 		// So we can use a uint32_t array to represent a Dogee::Array array.
 		template<typename T2> struct Copyer<Array<T2>, 4>
 		{
-			static uint32_t* CopyType(Array<T2>* ptr){ return (uint32_t*)ptr; } 
+			static uint32_t* CopyType(Array<T2>* ptr){ return (uint32_t*)ptr; }
 		};
 		ObjectKey object_id;
 	public:
@@ -412,6 +412,26 @@ namespace Dogee
 			return ArrayAccess(k);
 		}
 
+		void Fill(std::function<T(uint32_t)> func, uint32_t start_index, uint32_t len)
+		{
+			const unsigned bsize = DSM_CACHE_BLOCK_SIZE * 8;
+			T blk[bsize];
+			for (unsigned i = 0; i < len / bsize; i++)
+			{
+				for (unsigned j = 0; j < bsize; j++)
+				{
+					blk[j] = func(i*bsize + j);
+				}
+				CopyFrom(blk, start_index + i*bsize, bsize);
+			}
+			unsigned remain_start= len / bsize *  bsize;
+			for (unsigned j = remain_start; j < len; j++)
+			{
+				blk[j - remain_start] = func(j);
+			}
+			CopyFrom(blk, start_index + remain_start, len - remain_start);
+
+		}
 
 		void CopyTo(T* localarr, uint32_t start_index,uint32_t copy_len)
 		{
@@ -461,6 +481,13 @@ namespace Dogee
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			obj.SetObjectId(x->GetObjectId());
+			return *this;
+		}
+		template <class T2,bool isV>
+		Ref<T, false>& operator=(ArrayElement<Ref<T2, isV>>& x)
+		{
+			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+			obj.SetObjectId(x.get().GetObjectId());
 			return *this;
 		}
 
@@ -518,6 +545,13 @@ namespace Dogee
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			okey = x.GetObjectId();
+			return *this;
+		}
+		template <class T2, bool isV>
+		Ref<T, false>& operator=(ArrayElement<Ref<T2, isV>>& x)
+		{
+			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+			obj.SetObjectId(x.get().GetObjectId());
 			return *this;
 		}
 

@@ -8,6 +8,7 @@
 #include "DogeeEnv.h"
 #include "DogeeDirectoryCache.h"
 #include "DogeeSocket.h"
+#include <istream>
 namespace Dogee
 {
 	class SoStorageFactory
@@ -73,7 +74,9 @@ namespace Dogee
 	};
 
 	extern void HelperInitCluster(int argc, char* argv[]);
-
+	extern std::string& HelperGetParam(const std::string& str);
+	extern int HelperGetParamInt(const std::string& str);
+	extern void ParseCSV(std::istream& str, std::function<bool(const std::string& cell, int line, int index)> func);
 }
 
 #endif

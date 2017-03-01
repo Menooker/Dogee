@@ -30,9 +30,6 @@
     <ClInclude Include="..\include\Dogee.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\DogeeAPIWrapping.h">
-      <Filter>头文件</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\DogeeBase.h">
       <Filter>头文件</Filter>
     </ClInclude>
@@ -76,6 +73,9 @@
       <Filter>头文件</Filter>
     </ClInclude>
     <ClInclude Include="..\include\DogeeMR.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\DogeeLocalSync.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
