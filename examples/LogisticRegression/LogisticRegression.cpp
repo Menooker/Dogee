@@ -25,33 +25,47 @@ class LocalDataset
 public:
 	float* dataset;
 	float* labelset;
+	int local_dataset_size;
 
-	LocalDataset() :dataset(nullptr), labelset(nullptr)
+	LocalDataset() :dataset(nullptr), labelset(nullptr), local_dataset_size(0)
 	{}
 
-	int GetThreadData(int tid, float* &odataset, float* &olabelset)
+	void GetThreadData(int tid, float* &odataset, float* &olabelset)
 	{
 		odataset = dataset + tid;
 		olabelset = labelset + tid;
-		return -1;
+		return ;
 	}
 
 	void Load(int param_len, int num_points,int node_id)
 	{
-		labelset = new float[num_points];
-		dataset = new float[param_len*num_points];
-		ParseCSV(std::ifstream("dataset.csv"), [&](const std::string& cell, int line, int index){
-			if (line >= num_points || index >= param_len)
+		const int local_line = num_points * (node_id-1) / (DogeeEnv::num_nodes-1);
+		local_dataset_size =  num_points / (DogeeEnv::num_nodes-1);
+
+		labelset = new float[local_dataset_size];
+		dataset = new float[param_len*local_dataset_size];
+		printf("LL %d LS %d\n", local_line, local_dataset_size);
+		int real_cnt = 0;
+		ParseCSV("d:\\\\LR\\gene.csv", [&](const char* cell, int line, int index){
+			if (index > param_len)
 			{
-				std::cout << "CSV out of index\n";
+				std::cout << "CSV out of index, line="<< line<<" index="<<index<<"\n";
 				return false;
 			}
-			if (index == param_len - 1)
-				labelset[line] = atof(cell.c_str());
-			else
-				dataset[line*num_points + index] = atof(cell.c_str());
+			if (line >= local_line + local_dataset_size)
+				return false;
+			if (line >= local_line )
+			{
+				if (index == param_len)
+					labelset[line - local_line] = atof(cell);
+				else
+					dataset[(line - local_line)*num_points + index] = atof(cell);
+				real_cnt++;
+			}
+
 			return true;
 		});
+		std::cout << "Loaded cells " << real_cnt << " num_data_points= " << real_cnt/param_len << std::endl;
 	}
 	void Free()
 	{
@@ -76,18 +90,17 @@ float* local_param;
 int param_len;
 LBarrier local_barrier(THREAD_NUM + 1);
 
+
 void fetch_global_param(bool is_main)
 {
-	static Event event(false);
 	if (is_main)
 	{
 		g_param->CopyTo(local_param, 0, param_len);
-		event.SetEvent();
+		local_barrier.count_down_and_wait();
 	}
 	else
 	{
-		event.WaitForEvent();
-		event.ResetEvent();
+		local_barrier.count_down_and_wait();
 	}
 }
 
@@ -95,7 +108,6 @@ void fetch_global_param(bool is_main)
 void slave_worker(float* thread_local_data, float* thread_local_label, int thread_point_num, float* local_grad)
 {
 	DogeeEnv::InitCurrentThread();
-	
 	memset(local_grad, 0, sizeof(local_grad));
 	for (int itr = 0; itr < ITER_NUM; itr++)
 	{
@@ -115,7 +127,6 @@ void slave_worker(float* thread_local_data, float* thread_local_label, int threa
 		//slave_main will accumulate the local_grad and fetch the new parameters
 		local_barrier.count_down_and_wait();
 	}
-	delete[]local_grad;
 }
 
 void slave_main(uint32_t tid)
@@ -123,13 +134,15 @@ void slave_main(uint32_t tid)
 	param_len = g_param_len;
 	float** local_grad_arr = new float*[THREAD_NUM];
 	barrier = g_barrier;
+	local_param = new float[param_len];
 	local_dataset.Load(param_len, g_num_points, DogeeEnv::self_node_id);
 	
+	int thread_point_num = local_dataset.local_dataset_size / THREAD_NUM;
 	for (int i = 0; i < THREAD_NUM; i++)
 	{
 		float* thread_local_data;
 		float* thread_local_label;
-		int thread_point_num = local_dataset.GetThreadData(tid, thread_local_data, thread_local_label);
+		local_dataset.GetThreadData(tid, thread_local_data, thread_local_label);
 		local_grad_arr[i]=new float[param_len];
 		auto th = std::thread(slave_worker, thread_local_data, thread_local_label, thread_point_num, local_grad_arr[i]);
 		th.detach();
@@ -148,20 +161,28 @@ void slave_main(uint32_t tid)
 		barrier->Enter();
 	}
 	local_dataset.Free();
+	for (int i = 0; i < THREAD_NUM; i++)
+		delete []local_grad_arr[i];
 	delete[]local_grad_arr;
+	delete[]local_param;
 }
+
 RegFunc(slave_main);
 
 
 int main(int argc, char* argv[])
 {
+	//DogeeEnv::num_nodes = 3;
+	//local_dataset.Load(22283, 5896, 1);
 	HelperInitCluster(argc, argv);
 	int param_len = HelperGetParamInt("num_param");
 	g_num_points = HelperGetParamInt("num_points");
+
+	
 	g_param = NewArray<float>();
 	g_accu = NewObj<DAddAccumulator<float>>(g_param,
 		param_len,
-		DogeeEnv::num_nodes);
+		DogeeEnv::num_nodes-1);
 	g_barrier= barrier = NewObj<DBarrier>(DogeeEnv::num_nodes);
 	g_param_len = param_len;
 	g_param->Fill([](uint32_t i){return Dogee::bit_cast<float>(rand()); },
@@ -178,6 +199,8 @@ int main(int argc, char* argv[])
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
 			<<" milliseconds\n";
 	}
+	std::string str;
+	std::cin >> str;
 	CloseCluster();
 	return 0;
 }

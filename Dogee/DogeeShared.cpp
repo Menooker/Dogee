@@ -51,7 +51,7 @@ namespace Dogee
 	}
 
 #define MyAssert(a,str) do{if(!a){MyAbort(str);}}while(0)
-
+	std::unordered_map<std::string, std::string> param;
 	void HelperInitCluster(int argc, char* argv[])
 	{
 		if (argc == 3 && std::string(argv[1]) == "-s") //if slave
@@ -60,10 +60,10 @@ namespace Dogee
 			exit(0);
 			return;
 		}
-		//for (int i = 1; i + 1 < argc; i+=2)
-		//{
-		//	param[argv[i]] = param[argv[i + 1]];
-		//}
+		for (int i = 1; i + 1 < argc; i+=2)
+		{
+			param[argv[i]] = argv[i + 1];
+		}
 		
 		std::ifstream file("DogeeConfig.txt");
 		std::string str;
@@ -133,7 +133,7 @@ namespace Dogee
 
 
 
-	std::unordered_map<std::string, std::string> param;
+	
 
 	thread_proc slave_init_proc = nullptr;
 	int SetSlaveInitProc(thread_proc p)
@@ -154,7 +154,8 @@ namespace Dogee
 
 	//http://stackoverflow.com/questions/1120140/how-can-i-read-and-parse-csv-files-in-c
 	//Modified from Loki Astari 's answer
-	void ParseCSV(std::istream& str,std::function<bool(const std::string& cell,int line,int index)> func)
+	//It is somehow too slow
+	/*void ParseCSV(std::istream& str,std::function<bool(const std::string& cell,int line,int index)> func)
 	{
 		int line_n=0;
 		while (str)
@@ -183,6 +184,60 @@ namespace Dogee
 			}
 			line_n++;
 		}
+	}*/
+
+
+	void ParseCSV(const char* path, std::function<bool(const char* cell, int line, int index)> func)
+	{
+		char buf[2048];
+		int cnt = 0;
+		int line = 0;
+		buf[0] = 0;
+		char* st;
+		uint32_t lagacy = 0;
+		char* last;
+
+		FILE* f = (FILE*)fopen(path,"r");
+
+		for (;;)
+		{
+			st = buf + lagacy;
+			fgets(st, 2048 - lagacy, f);//str.getline(st, 512 - lagacy,0);//fgets(st, 2048 - lagacy, f);
+			char *p = st;
+			last = buf;
+			while (*p)
+			{
+				if (*p == '\n')
+				{
+					*p = 0;
+					func(last, line, cnt);
+					line++;
+					cnt = 0;
+					last = p + 1;
+				}
+				else if (*p == ',')
+				{
+					*p = 0;
+					func(last, line, cnt);
+					cnt++;
+					last = p + 1;
+				}
+				p++;
+			}
+			if (p <= buf  )
+			{
+				break;
+			}
+			if (feof(f))
+			{
+				break;
+			}
+			lagacy = 2048 - 1 - (last - buf);
+			memmove(buf, last, lagacy);
+		}
+
+		func(last, line, cnt);
+		fclose(f);
 	}
 
 }

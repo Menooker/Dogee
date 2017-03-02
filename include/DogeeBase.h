@@ -523,7 +523,7 @@ return ret;
 	public:
 		T* get()
 		{
-			if (!pobj) //possible memory leak in multithreaded environment
+			if (!pobj) //fix-me : possible memory leak in multithreaded environment
 				RefObj(okey);
 			lastobject = (DObject*)pobj;
 			return pobj;
@@ -545,6 +545,7 @@ return ret;
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			okey = x.GetObjectId();
+			pobj = nullptr;
 			return *this;
 		}
 		template <class T2, bool isV>
@@ -552,6 +553,7 @@ return ret;
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			obj.SetObjectId(x.get().GetObjectId());
+			pobj = nullptr;
 			return *this;
 		}
 

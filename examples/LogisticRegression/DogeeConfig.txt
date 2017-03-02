@@ -1,9 +1,11 @@
 DogeeConfigVer= 1
-MasterPort= 8090
-NumSlaves= 0
+MasterPort= 9090
+NumSlaves= 2
 NumMemServers= 1
 DSMBackend= ChunkMemcached
 DSMCache= NoCache
 Slaves= 
+127.0.0.1 18080
+127.0.0.1 18090
 MemServers=
 127.0.0.1 11211

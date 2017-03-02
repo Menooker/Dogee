@@ -132,11 +132,11 @@ namespace Dogee
 				auto itr = sync_data.begin();
 				for (; itr != sync_data.end(); itr++)
 				{
-					if (itr->second->Kind = SyncNode::Barrier)
+					if (itr->second->Kind == SyncNode::Barrier)
 					{
 						delete itr->second->waitlist;
 					}
-					else if (itr->second->Kind = SyncNode::Semaphore)
+					else if (itr->second->Kind == SyncNode::Semaphore)
 					{
 						delete itr->second->waitqueue;
 					}
@@ -693,15 +693,17 @@ namespace Dogee
 		std::vector<std::string>& memhosts, std::vector<int>& memports,
 		BackendType backty, CacheType cachety)
 	{
+
 		//push master node as node_id=0
 		remote_nodes.PushConnection(0);
 		for (unsigned i = 1; i < hosts.size(); i++)
 		{
 			SOCKET s = (SOCKET)RcConnect((char*)hosts[i].c_str(), ports[i]);
-			if (s == 0 || RcMasterHello((SOCKET)s, hosts, ports, memhosts, memports, i,backty,cachety))
+			if (s == 0 || RcMasterHello((SOCKET)s, hosts, ports, memhosts, memports, i, backty, cachety))
 				return 1;
 			remote_nodes.PushConnection(s);
 		}
+
 		DogeeEnv::SetIsMaster(true);
 		DogeeEnv::num_nodes = hosts.size();
 		DogeeEnv::self_node_id = 0;
@@ -711,6 +713,8 @@ namespace Dogee
 		MasterZone::masterlisten.detach();
 		MasterZone::syncmanager = new MasterZone::SyncManager;
 		AcInit(Socket::RcCreateListen(ports[0]));
+		printf("Master Listen port %d\n", ports[0]);
+
 		if (!AcWaitForReady())
 		{
 			printf("Wait for data socket timeout\n");
@@ -827,7 +831,7 @@ namespace Dogee
 		ThreadEventMap[current_thread_id]->ResetEvent();
 		if (DogeeEnv::isMaster())
 		{
-			MasterZone::syncmanager->SemaphoreMsg(0, okey, current_thread_id);
+			MasterZone::syncmanager->BarrierMsg(0, okey, current_thread_id);
 		}
 		else
 		{
