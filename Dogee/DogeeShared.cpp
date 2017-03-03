@@ -198,7 +198,6 @@ namespace Dogee
 		char* last;
 
 		FILE* f = (FILE*)fopen(path,"r");
-
 		for (;;)
 		{
 			st = buf + lagacy;
@@ -210,15 +209,19 @@ namespace Dogee
 				if (*p == '\n')
 				{
 					*p = 0;
-					func(last, line, cnt);
+					if (!func(last, line, cnt))
+						return;
 					line++;
 					cnt = 0;
 					last = p + 1;
+					if (line % 100 == 0)
+						printf("line %d\n", line);
 				}
 				else if (*p == ',')
 				{
 					*p = 0;
-					func(last, line, cnt);
+					if (!func(last, line, cnt))
+						return;
 					cnt++;
 					last = p + 1;
 				}
@@ -232,7 +235,7 @@ namespace Dogee
 			{
 				break;
 			}
-			lagacy = 2048 - 1 - (last - buf);
+			lagacy = p  - last;
 			memmove(buf, last, lagacy);
 		}
 

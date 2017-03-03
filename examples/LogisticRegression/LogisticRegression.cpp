@@ -172,8 +172,6 @@ RegFunc(slave_main);
 
 int main(int argc, char* argv[])
 {
-	//DogeeEnv::num_nodes = 3;
-	//local_dataset.Load(22283, 5896, 1);
 	HelperInitCluster(argc, argv);
 	int param_len = HelperGetParamInt("num_param");
 	g_num_points = HelperGetParamInt("num_points");
