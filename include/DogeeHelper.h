@@ -76,7 +76,7 @@ namespace Dogee
 	extern void HelperInitCluster(int argc, char* argv[]);
 	extern std::string& HelperGetParam(const std::string& str);
 	extern int HelperGetParamInt(const std::string& str);
-	extern void ParseCSV(const char* path, std::function<bool(const char* cell, int line, int index)> func);
+	extern void ParseCSV(const char* path, std::function<bool(const char* cell, int line, int index)> func, int skip_to_line=0, bool use_cache=true);
 
 }
 

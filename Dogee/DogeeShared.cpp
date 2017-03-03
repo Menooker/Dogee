@@ -187,7 +187,7 @@ namespace Dogee
 	}*/
 
 
-	void ParseCSV(const char* path, std::function<bool(const char* cell, int line, int index)> func)
+	void ParseCSV(const char* path, std::function<bool(const char* cell, int line, int index)> func, int skip_to_line, bool use_cache)
 	{
 		char buf[2048];
 		int cnt = 0;
@@ -198,6 +198,24 @@ namespace Dogee
 		char* last;
 
 		FILE* f = (FILE*)fopen(path,"r");
+		if (use_cache)
+		{
+			std::stringstream pathbuf;
+			pathbuf << path <<"."<< skip_to_line << ".cache";
+			std::fstream outfile(pathbuf.str(), std::ios::in);
+			if (!outfile)
+			{
+				std::cout << "No line cache file\n";
+			}
+			else
+			{
+				long fp;
+				outfile >> fp;
+				std::cout << "Read cache file " << pathbuf.str() << "\nFile pointer is " << fp << std::endl;
+				fseek(f, fp, SEEK_SET);
+				line = skip_to_line;
+			}
+		}
 		for (;;)
 		{
 			st = buf + lagacy;
@@ -208,8 +226,17 @@ namespace Dogee
 			{
 				if (*p == '\n')
 				{
+					if (use_cache && line + 1 == skip_to_line)
+					{
+						std::stringstream pathbuf;
+						pathbuf << path <<"."<< skip_to_line << ".cache";
+						std::fstream outfile(pathbuf.str(), std::ios::out);
+						long fp = ftell(f) - (strlen(p) - 1);
+						outfile << fp;
+						std::cout << "Output cache file " << pathbuf.str() <<"\nFile pointer is "<< fp<< std::endl;
+					}
 					*p = 0;
-					if (!func(last, line, cnt))
+					if (line >= skip_to_line && !func(last, line, cnt))
 						return;
 					line++;
 					cnt = 0;
@@ -220,7 +247,7 @@ namespace Dogee
 				else if (*p == ',')
 				{
 					*p = 0;
-					if (!func(last, line, cnt))
+					if (line >= skip_to_line &&!func(last, line, cnt))
 						return;
 					cnt++;
 					last = p + 1;
@@ -239,7 +266,8 @@ namespace Dogee
 			memmove(buf, last, lagacy);
 		}
 
-		func(last, line, cnt);
+		if (line >= skip_to_line)
+			func(last, line, cnt);
 		fclose(f);
 	}
 
