@@ -20,9 +20,9 @@ using std::endl;
  
 #include <vector>
 
-#define ITER_NUM 300
+#define ITER_NUM 100
 #define THREAD_NUM 2
-#define step_size 0.01f
+#define step_size 0.005f
 #define TEST_PART 0.2f
 
 class LocalDataset
@@ -42,11 +42,12 @@ public:
 
 	void GetThreadData(int tid, float* &odataset, float* &olabelset, float* &otestset, float* &otestlabel)
 	{
-		int toff = tid * THREAD_NUM / local_train_size;
+		int toff = tid  * local_train_size / THREAD_NUM;
+		int testoff = tid  * local_testset_size / THREAD_NUM;
 		odataset = dataset + m_param_len * toff;
 		olabelset = labelset + toff;
-		otestset = dataset + local_train_size + m_param_len * toff;
-		otestlabel = labelset + local_train_size + toff;
+		otestset = dataset + (local_train_size + testoff)*m_param_len;
+		otestlabel = labelset + local_train_size + testoff;
 		return ;
 	}
 
@@ -60,11 +61,12 @@ public:
 		dataset = new float[param_len*local_dataset_size];
 		testlabel = labelset + local_train_size;
 		testset = dataset + param_len* local_train_size;
-
+		m_param_len = param_len;
 		printf("LL %d LS %d\n", local_line, local_dataset_size);
 		int real_cnt = 0;
 		int postive = 0;
-		ParseCSV("d:\\\\LR\\gene.csv", [&](const char* cell, int line, int index){
+		int datapoints = 0;
+		ParseCSV("d:\\\\LR\\gene2.csv", [&](const char* cell, int line, int index){
 			if (index > param_len)
 			{
 				std::cout << "CSV out of index, line="<< line<<" index="<<index<<"\n";
@@ -77,6 +79,7 @@ public:
 				if (index == param_len)
 				{
 					labelset[line - local_line] = atof(cell);
+					datapoints++;
 					if (cell[0] == '1')
 						postive++;
 				}
@@ -87,7 +90,7 @@ public:
 
 			return true;
 		}, local_line);
-		std::cout << "Loaded cells " << real_cnt << " num_data_points= " << real_cnt/param_len <<" Positive= "<<postive << std::endl;
+		std::cout << "Loaded cells " << real_cnt << " num_data_points= " << real_cnt / param_len << " " << datapoints << " Positive= " << postive << std::endl;
 	}
 	void Free()
 	{
@@ -151,12 +154,12 @@ void slave_worker(float* thread_local_data, float* thread_local_label, int threa
 			double delta = thread_local_label[i] - h;
 			thread_loss += delta*delta;
 			for (int j = 0; j < param_len; j++)
-			{
 				local_grad[j] += step_size * delta * curdata[j];
-			}
 			curdata += param_len;
+			//if (i % 50 == 0)
+			//	printf("i=%d curdata=%p h=%f dot=%f delta=%f\n", i, curdata, h, dot, delta);
 		}
-		//printf("TGrad %p %f\n", local_grad, local_grad[20000]);
+		//printf("TGrad %p %f %f\n", local_grad, local_grad[20000], curdata[20000]);
 		*local_loss = thread_loss;
 		//slave_main will accumulate the local_grad and fetch the new parameters
 		local_barrier.count_down_and_wait();
@@ -174,7 +177,7 @@ void slave_worker(float* thread_local_data, float* thread_local_label, int threa
 		double h = 1 / (1 + exp(-dot));
 		if (abs(thread_test_label[i] - 1)<0.001)
 			real_true++;
-		if (h >= 0.5f)
+		if (h >= 0.8f)
 		{
 			positive++;
 			if (abs(thread_test_label[i] - 1)<0.001)
@@ -207,11 +210,11 @@ void slave_main(uint32_t tid)
 		float* thread_local_label;
 		float* thread_test_data;
 		float* thread_test_label;
-		local_dataset.GetThreadData(tid, thread_local_data, thread_local_label, thread_test_data, thread_test_label);
+		local_dataset.GetThreadData(i, thread_local_data, thread_local_label, thread_test_data, thread_test_label);
 		local_grad_arr[i]=new float[param_len];
 		auto th = std::thread(slave_worker, thread_local_data, thread_local_label, thread_point_num,
 			thread_test_data, thread_test_label, thread_test_num,
-			local_grad_arr[i],loss+i);
+			local_grad_arr[i], loss + i);
 		th.detach();
 	}
 	for (int itr = 0; itr < ITER_NUM; itr++)
@@ -268,8 +271,9 @@ int main(int argc, char* argv[])
 		DogeeEnv::num_nodes-1);
 	g_barrier= barrier = NewObj<DBarrier>(DogeeEnv::num_nodes);
 	g_param_len = param_len;
-	g_param->Fill([](uint32_t i){return (float) (rand()%100) / 10000000; },
+	g_param->Fill([](uint32_t i){return (float) (rand()%100) / 100000; },
 		0, param_len);
+	
 	for (int i = 0; i < DogeeEnv::num_nodes; i++)
 	{
 		NewObj<DThread>(slave_main, i, i);
@@ -285,7 +289,8 @@ int main(int argc, char* argv[])
 	std::cout << "Learning done. Waiting for testing..." << std::endl;
 	barrier->Enter();
 	float positive = g_param[0], real_true = g_param[1], TP = g_param[2];
-	std::cout << "precision = " << TP / (positive + 0.01) << " recall = " << TP / real_true << std::endl;
+	std::cout << "positive = " << positive << " real_true = " << real_true << " TP = " << TP << std::endl;
+	std::cout << "precision = " << TP / (positive + 0.01) << " recall = " << TP / (real_true+0.01) << std::endl;
 	std::string str;
 	std::cin >> str;
 	CloseCluster();

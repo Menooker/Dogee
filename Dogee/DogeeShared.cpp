@@ -54,7 +54,7 @@ namespace Dogee
 	std::unordered_map<std::string, std::string> param;
 	void HelperInitCluster(int argc, char* argv[])
 	{
-		if (argc == 3 && std::string(argv[1]) == "-s") //if slave
+		if (argc >= 3 && std::string(argv[1]) == "-s") //if slave
 		{
 			RcSlave(atoi(argv[2]));
 			exit(0);
