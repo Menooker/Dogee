@@ -30,6 +30,39 @@ namespace Dogee
 		return !strncmp(str.c_str(), substr.c_str(), substr.length());
 	}
 
+	static std::vector<std::function<void()>>* map = nullptr;
+
+	void RegisterConstInit(std::function<void()> func)
+	{
+		if (map == nullptr)
+			map = new std::vector<std::function<void()>>;
+		map->push_back(func);
+	}
+
+	void DeleteSharedConstInitializer()
+	{
+		if (map)
+		{
+			delete map;
+			map = nullptr;
+		}
+
+	}
+
+	void InitSharedConst()
+	{
+		if (map)
+		{
+			for (auto itr : *map)
+			{
+				itr();
+			}
+			delete map;
+			map = nullptr;
+		}
+
+	}
+
 	static int FindIndex(const std::vector<std::string>& arr, std::string& f)
 	{
 		int i = -1;
@@ -150,6 +183,11 @@ namespace Dogee
 	int HelperGetParamInt(const std::string& str)
 	{
 		return atoi(HelperGetParam(str).c_str());
+	}
+
+	double HelperGetParamDouble(const std::string& str)
+	{
+		return atof(HelperGetParam(str).c_str());
 	}
 
 	//http://stackoverflow.com/questions/1120140/how-can-i-read-and-parse-csv-files-in-c

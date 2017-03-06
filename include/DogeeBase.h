@@ -235,7 +235,6 @@ namespace Dogee
 
 	};
 
-
 	template<typename T, FieldKey FieldId> class Value
 	{
 	private:
@@ -545,6 +544,7 @@ return ret;
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 			okey = x.GetObjectId();
+			delete pobj;
 			pobj = nullptr;
 			return *this;
 		}
@@ -552,7 +552,8 @@ return ret;
 		Ref<T, false>& operator=(ArrayElement<Ref<T2, isV>>& x)
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
-			obj.SetObjectId(x.get().GetObjectId());
+			okey = x.get().GetObjectId();
+			delete pobj;
 			pobj = nullptr;
 			return *this;
 		}
@@ -561,6 +562,7 @@ return ret;
 		Ref(Ref<T2, isVirtual> x)
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
+			delete pobj;
 			pobj = nullptr;
 			okey = x.GetObjectId();
 		}

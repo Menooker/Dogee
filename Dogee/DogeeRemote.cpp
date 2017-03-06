@@ -256,9 +256,12 @@ namespace Dogee
 				node->val++;
 				if (node->val >= 0)
 				{
-					SyncThreadNode& th = node->waitqueue->front();
-					RcWakeRemoteThread(th.machine, th.thread_id);
-					node->waitqueue->pop();
+					if (!node->waitqueue->empty())
+					{
+						SyncThreadNode& th = node->waitqueue->front();
+						RcWakeRemoteThread(th.machine, th.thread_id);
+						node->waitqueue->pop();
+					}
 				}
 			}
 
@@ -478,7 +481,7 @@ namespace Dogee
 	using namespace Socket;
 
 	extern void ThThreadEntry(int thread_id,int index, uint32_t param,ObjectKey okey );
-
+	extern void InitSharedConst();
 	void RcSlaveMainLoop(char* path, SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& mem_hosts, std::vector<int>& mem_ports, int node_id,
 		BackendType backty, CacheType cachety)
@@ -487,6 +490,7 @@ namespace Dogee
 		DogeeEnv::InitCurrentThread();
 		if (slave_init_proc)
 			slave_init_proc(node_id);
+
 		for (;;)
 		{
 			RcCommandPack cmd;
@@ -496,6 +500,7 @@ namespace Dogee
 				printf("Socket error!\n");
 				break;
 			}
+			InitSharedConst();
 			switch (cmd.cmd)
 			{
 			case RcCmdClose:
@@ -689,6 +694,7 @@ namespace Dogee
 	}
 
 	static void RcMasterListen();
+	extern void DeleteSharedConstInitializer();
 	int RcMaster(std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& memhosts, std::vector<int>& memports,
 		BackendType backty, CacheType cachety)
@@ -714,7 +720,7 @@ namespace Dogee
 		MasterZone::syncmanager = new MasterZone::SyncManager;
 		AcInit(Socket::RcCreateListen(ports[0]));
 		printf("Master Listen port %d\n", ports[0]);
-
+		DeleteSharedConstInitializer();
 		if (!AcWaitForReady())
 		{
 			printf("Wait for data socket timeout\n");

@@ -14,8 +14,10 @@
 #include "DogeeRemote.h"
 #include "DogeeThreading.h"
 #include "DogeeAccumulator.h"
+#include "DogeeSharedConst.h"
 #include <memory>
 using namespace Dogee;
+
 
 
 class clsb : public DObject
@@ -123,16 +125,17 @@ template<> void aaa(clsa * dummy)
 
 
 DefGlobal(g_i, int);
-
+DefConst(thres, int);
 //RegVirt(clsc);
 //RegVirt(clsd);
 
 
 DefGlobal(sem, Ref<DSemaphore>);
 
+
 void threadfun(uint32_t param)
 {
-	std::cout << "Start" << g_i << std::endl;
+	std::cout << "Start" << g_i <<" "<< thres << std::endl;
 	sem->Acquire(-1);
 	std::cout << "Second" << g_i << std::endl;
 	sem->Acquire(-1);
@@ -276,6 +279,7 @@ void cache_test()
 {
 	
 	g_i = 123445;
+	thres = 345;
 	sem = NewObj<DSemaphore>(0);
 	std::cout << sem->GetObjectId();
 	Ref<DThread> thread = NewObj<DThread>(threadfun, 1, 3232);
@@ -313,7 +317,8 @@ int main(int argc, char* argv[])
 		
 		std::cout << "Init OK" << std::endl;
 		//accutest();
-		mrtest();
+		//mrtest();
+		cache_test();
 		std::string str;
 		std::cin >> str;
 		CloseCluster(); 

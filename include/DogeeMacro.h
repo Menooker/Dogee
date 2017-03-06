@@ -19,7 +19,8 @@
 //#define ExternGlobal(Type,Name) extern Dogee::ArrayElement<Type> Name;
 #define DefGlobal(Name,...) Dogee::ArrayElement<__VA_ARGS__> Name(0,Dogee::RegisterGlobalVariable());
 #define ExternGlobal(Name,...) extern Dogee::ArrayElement<__VA_ARGS__> Name;
-
+#define DefConst(Name,...) Dogee::SharedConst<__VA_ARGS__> Name;
+#define ExternConst(Name,...) extern Dogee::SharedConst<__VA_ARGS__> Name;
 
 #define AutoRegisterFuncName(n) __REG_FUNC__##n##__
 #define _AutoRegisterFuncName(n) AutoRegisterFuncName(n)

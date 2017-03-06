@@ -164,6 +164,7 @@
     <ClInclude Include="..\include\DogeeMR.h" />
     <ClInclude Include="..\include\DogeeRemote.h" />
     <ClInclude Include="..\include\DogeeSerializerImpl.h" />
+    <ClInclude Include="..\include\DogeeSharedConst.h" />
     <ClInclude Include="..\include\DogeeSocket.h" />
     <ClInclude Include="..\include\DogeeStorage.h" />
     <ClInclude Include="..\include\DogeeThreading.h" />

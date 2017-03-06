@@ -3,13 +3,15 @@
 #endif
 
 #include "DogeeBase.h"
-#include "DogeeMacro.h"
 #include "DogeeRemote.h"
 #include <iostream>
 #include "DogeeHelper.h"
 #include "DogeeAccumulator.h"
 #include "DogeeThreading.h"
 #include "DogeeLocalSync.h"
+#include "DogeeSharedConst.h"
+#include "DogeeMacro.h"
+#include <cmath>
 #include <stdlib.h>
 #include <fstream>
 
@@ -20,10 +22,12 @@ using std::endl;
  
 #include <vector>
 
-#define ITER_NUM 100
-#define THREAD_NUM 2
-#define step_size 0.005f
-#define TEST_PART 0.2f
+
+DefConst(ITER_NUM, int); //300
+DefConst(THREAD_NUM, int); //2
+DefConst(step_size, float); //0.005f
+DefConst(TEST_PART, float); //0.2f
+
 
 class LocalDataset
 {
@@ -111,7 +115,7 @@ Ref<DBarrier> barrier(0);
 
 float* local_param;
 int param_len;
-LBarrier local_barrier(THREAD_NUM + 1);
+LBarrier* local_barrier;
 
 
 void fetch_global_param(bool is_main,float* buffer)
@@ -125,11 +129,11 @@ void fetch_global_param(bool is_main,float* buffer)
 			local_param[i] += buffer[i] / local_dataset.local_dataset_size/DogeeEnv::num_nodes;
 		}
 
-		local_barrier.count_down_and_wait();
+		local_barrier->count_down_and_wait();
 	}
 	else
 	{
-		local_barrier.count_down_and_wait();
+		local_barrier->count_down_and_wait();
 	}
 }
 
@@ -162,7 +166,7 @@ void slave_worker(float* thread_local_data, float* thread_local_label, int threa
 		//printf("TGrad %p %f %f\n", local_grad, local_grad[20000], curdata[20000]);
 		*local_loss = thread_loss;
 		//slave_main will accumulate the local_grad and fetch the new parameters
-		local_barrier.count_down_and_wait();
+		local_barrier->count_down_and_wait();
 	}
 	fetch_global_param(false, nullptr);
 	int positive = 0;
@@ -188,12 +192,14 @@ void slave_worker(float* thread_local_data, float* thread_local_label, int threa
 		cur_test_data += param_len;
 	}
 	local_grad[0] = positive; local_grad[1] = real_true; local_grad[2] = TP;
-	local_barrier.count_down_and_wait();
+	local_barrier->count_down_and_wait();
 }
 
 void slave_main(uint32_t tid)
 {
 	param_len = g_param_len;
+	local_barrier = new  LBarrier(THREAD_NUM + 1);
+
 	float** local_grad_arr = new float*[THREAD_NUM];
 	barrier = g_barrier;
 	local_param = new float[param_len];
@@ -221,7 +227,7 @@ void slave_main(uint32_t tid)
 	{
 		fetch_global_param(true,local_buffer);
 		//wait for the computation completion of slave nodes
-		local_barrier.count_down_and_wait();
+		local_barrier->count_down_and_wait();
 		for (int i = 1; i < THREAD_NUM; i++)
 		{
 			loss[0] += loss[i];
@@ -237,7 +243,7 @@ void slave_main(uint32_t tid)
 
 	fetch_global_param(true, local_buffer);
 	//wait for the computation completion of slave nodes
-	local_barrier.count_down_and_wait();
+	local_barrier->count_down_and_wait();
 	for (int i = 1; i < THREAD_NUM; i++)
 	{
 		local_grad_arr[0][0] = local_grad_arr[i][0];
@@ -253,6 +259,7 @@ void slave_main(uint32_t tid)
 	delete[]local_grad_arr;
 	delete[]local_param;
 	delete[]local_buffer;
+	delete local_barrier;
 }
 
 RegFunc(slave_main);
@@ -264,7 +271,17 @@ int main(int argc, char* argv[])
 	int param_len = HelperGetParamInt("num_param");
 	g_num_points = HelperGetParamInt("num_points");
 
-	
+	///*
+	ITER_NUM = HelperGetParamInt("iter_num"); 
+	THREAD_NUM = HelperGetParamInt("thread_num");
+	step_size = HelperGetParamDouble( "step_size"); 
+	TEST_PART = HelperGetParamDouble("test_partition"); 
+	//*/
+
+	std::cout << "Parameters:\n" << "num_param :" << param_len << "\nnum_points : " << g_num_points
+		<< "\niter_num : " << ITER_NUM << "\nthread_num : " << THREAD_NUM
+		<< "\nstep_size : " << step_size << "\ntest_partition : " << TEST_PART;
+
 	g_param = NewArray<float>();
 	g_accu = NewObj<DAddAccumulator<float>>(g_param,
 		param_len,
