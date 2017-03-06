@@ -282,7 +282,7 @@ int main(int argc, char* argv[])
 		<< "\niter_num : " << ITER_NUM << "\nthread_num : " << THREAD_NUM
 		<< "\nstep_size : " << step_size << "\ntest_partition : " << TEST_PART;
 
-	g_param = NewArray<float>();
+	g_param = NewArray<float>(param_len);
 	g_accu = NewObj<DAddAccumulator<float>>(g_param,
 		param_len,
 		DogeeEnv::num_nodes-1);

@@ -30,8 +30,9 @@ namespace Dogee
 	public:
 		static void InitInCurrentThread()
 		{};
-		virtual SoStatus newobj(ObjectKey key, uint32_t flag) = 0;
-		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag) = 0;
+		virtual SoStatus del(ObjectKey key) = 0;
+		virtual SoStatus newobj(ObjectKey key, uint32_t flag,uint32_t size) = 0;
+		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag, uint32_t& size) = 0;
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v) = 0;
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v) = 0;
 		virtual uint32_t get(ObjectKey key, FieldKey fldid) = 0;

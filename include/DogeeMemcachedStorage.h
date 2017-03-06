@@ -28,10 +28,10 @@ namespace Dogee
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v);
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v);
 		virtual uint32_t get(ObjectKey key, FieldKey fldid);
-		virtual SoStatus newobj(ObjectKey key, uint32_t flag);
-		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag);
+		virtual SoStatus newobj(ObjectKey key, uint32_t flag, uint32_t size);
+		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag, uint32_t& size);
 		
-		
+		SoStatus del(ObjectKey key);
 		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf);
 		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);
 		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);
@@ -71,7 +71,7 @@ namespace Dogee
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v);
 		virtual uint32_t get(ObjectKey key, FieldKey fldid);
 
-
+		SoStatus del(ObjectKey key);
 		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf);
 		SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);
 		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);

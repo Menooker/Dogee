@@ -31,9 +31,17 @@ public:
 	clsa(ObjectKey obj_id, int a) : DObject(obj_id)
 	{
 
-		self->m_vector = Dogee::NewArray<double>();
-		self->m_matrix = Dogee::NewArray<Array<int>>();
-		self->m_matrix[0] = Dogee::NewArray<int>();
+		self->m_vector = Dogee::NewArray<double>(10);
+		self->m_matrix = Dogee::NewArray<Array<int>>(10);
+		self->m_matrix[0] = Dogee::NewArray<int>(10);
+	}
+
+	void Destroy()
+	{
+		std::cout << "destroctor" << std::endl;
+		DelArray((Array<double>)self->m_vector);
+		DelArray((Array<int>)self->m_matrix[0]);
+		DelArray((Array<Array<int>>)self->m_matrix);
 	}
 };
 
@@ -82,7 +90,7 @@ int main(int argc, char* argv[])
 		std::cin >> dummy;
 		//Release the semaphore
 		sem->Release();
-
+		DelObj((Ref<clsa>)g_obj);
 		std::cout << "Input any string to close the cluster" << std::endl;
 		std::cin >> dummy;
 		CloseCluster();

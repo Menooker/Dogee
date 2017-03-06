@@ -96,7 +96,7 @@ RegFunc(threadproc<ACCU_TYPE>);
 void accutest()
 {
 	get_next_rand(true, DogeeEnv::self_node_id);
-	auto arr = NewArray<ACCU_TYPE>();
+	auto arr = NewArray<ACCU_TYPE>(ACCU_SIZE);
 	accu = NewObj<DFunctionalAccumulator<ACCU_TYPE, adder>>(arr, ACCU_SIZE, 3);
 
 	for (int i = 1; i < DogeeEnv::num_nodes;i++)

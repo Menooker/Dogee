@@ -36,6 +36,8 @@ namespace Dogee
 			object_id = obj_id;
 		}
 
+		void Destroy(){}
+
 
 	};
 	extern THREAD_LOCAL DObject* lastobject;
@@ -164,8 +166,8 @@ namespace Dogee
 	};
 	inline uint32_t GetClassId(ObjectKey obj_id)
 	{
-		uint32_t ret;
-		DogeeEnv::backend->getinfo(obj_id, ret);
+		uint32_t ret,size;
+		DogeeEnv::backend->getinfo(obj_id, ret, size);
 		return ret;
 	}
 /*	inline void SetClassId(ObjectKey obj_id, int cls_id)
@@ -582,7 +584,7 @@ return ret;
 	};
 
 
-	inline ObjectKey AllocObjectId(uint32_t cls_id)
+	inline ObjectKey AllocObjectId(uint32_t cls_id,uint32_t size)
 	{
 		ObjectKey key = 0;
 		bool found = false;
@@ -590,7 +592,7 @@ return ret;
 		{
 			while (key==0)
 				key = rand();
-			if (DogeeEnv::backend->newobj(key, cls_id) == SoOK)
+			if (DogeeEnv::backend->newobj(key, cls_id,size) == SoOK)
 			{
 				found = true;
 				break;
@@ -604,9 +606,21 @@ return ret;
 		return key;
 	}
 	template<typename T>
-	inline  Array<T>  NewArray()
+	inline  Array<T>  NewArray(uint32_t size)
 	{
-		return Array<T>(AllocObjectId(1));
+		return Array<T>(AllocObjectId(1, size*DSMInterface<T>::dsm_size_of));
+	}
+	template<typename T>
+	inline  void DelArray(Array<T> arr)
+	{
+		DogeeEnv::backend->del(arr.GetObjectId());
+	}
+
+	template<typename T,bool isV>
+	inline  void DelObj(Ref<T,isV> obj)
+	{
+		obj->Destroy();
+		DogeeEnv::backend->del(obj.GetObjectId());
 	}
 
 	template <class T> struct AutoRegisterObject;
@@ -615,7 +629,7 @@ return ret;
 		Ref<T> NewObj(_Types&&... _Args)
 	{	// copy from std::shared_ptr
 
-		ObjectKey ok = AllocObjectId(AutoRegisterObject<T>::id);
+		ObjectKey ok = AllocObjectId(AutoRegisterObject<T>::id, T::_LAST_ * 2);
 		//SetClassId(ok, T::CLASS_ID);
 		T ret(ok, std::forward<_Types>(_Args)...);
 		return Ref<T>(ok);

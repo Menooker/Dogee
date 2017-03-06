@@ -4,8 +4,14 @@ namespace Dogee
 {
 	THREAD_LOCAL memcached_st *memc = nullptr;
 	memcached_st *main_memc = nullptr;
-
-
+#pragma pack(push)
+#pragma pack(4)
+	struct ObjectInfo
+	{
+		uint32_t id;
+		uint32_t size;
+	};
+#pragma pack(pop)
 	void InitMemcachedStorage(std::vector<std::string>& arr_mem_hosts, std::vector<int>& arr_mem_ports)
 	{
 			memcached_return rc;
@@ -234,16 +240,33 @@ namespace Dogee
 
 		return ret;
 	}
-	SoStatus SoStorageMemcached::newobj(ObjectKey key, uint32_t flag)
+
+	SoStatus SoStorageMemcached::del(ObjectKey key)
+	{
+		uint32_t flg, size;
+		getinfo(key, flg, size);
+		LongKey k;
+		for (uint32_t i = 0; i<size; i++)
+		{
+			k = MAKE64(key, i);
+			memcached_delete(memc, (char*)&k, 8, 0);
+		}
+		k = (MAKE64(key, 0xFFFFFFFF));
+		memcached_delete(memc, (char*)&k, 8, 0);
+		return SoOK;
+	}
+
+	SoStatus SoStorageMemcached::newobj(ObjectKey key, uint32_t flag,uint32_t size)
 	{
 		uint64_t k = MAKE64(key, 0xFFFFFFFF);
-		if (memcached_add(memc, (char*)&k, 8, (char*)&flag, sizeof(flag), (time_t)0, 0) == MEMCACHED_SUCCESS)
+		ObjectInfo info = { flag, size };
+		if (memcached_add(memc, (char*)&k, 8, (char*)&info, sizeof(info), (time_t)0, 0) == MEMCACHED_SUCCESS)
 		{
 			return SoOK;
 		}
 		return SoFail;
 	}
-	SoStatus SoStorageMemcached::getinfo(ObjectKey key, uint32_t& flag)
+	SoStatus SoStorageMemcached::getinfo(ObjectKey key, uint32_t& flag, uint32_t& size)
 	{
 		uint64_t k = MAKE64(key, 0xFFFFFFFF);
 		char* mret;
@@ -255,9 +278,12 @@ namespace Dogee
 		size_t flg;
 #endif
 		memcached_return rc;
+		ObjectInfo* pinfo;
 		mret = memcached_get(memc, (char*)&k, 8, &len, &flg, &rc);
 		if (rc == MEMCACHED_SUCCESS) {
-			flag = *(uint32_t*)mret;
+			pinfo = (ObjectInfo*)mret;
+			flag = pinfo->id;
+			size = pinfo->size;
 			memcached_free2(mret);
 			return SoOK;
 		}
@@ -282,6 +308,23 @@ namespace Dogee
 	/////////////////////////////////////////////////////////////////
 	//SoStorageChunkMemcached
 	/////////////////////////////////////////////////////////////////
+
+	SoStatus SoStorageChunkMemcached::del(ObjectKey key)
+	{
+		uint32_t flg, size;
+		getinfo(key, flg, size);
+		uint32_t cnt = (size%DSM_CACHE_BLOCK_SIZE == 0) ? size / DSM_CACHE_BLOCK_SIZE : size / DSM_CACHE_BLOCK_SIZE + 1;
+		LongKey k;
+		for (uint32_t i = 0; i<cnt; i++)
+		{
+			k = MAKE64(key, i);
+			memcached_delete(memc, (char*)&k, 8, 0);
+		}
+		k = (MAKE64(key, 0xFFFFFFFF));
+		memcached_delete(memc, (char*)&k, 8, 0);
+		return SoOK;
+	}
+
 	SoStatus SoStorageChunkMemcached::put(ObjectKey key, FieldKey fldid, uint32_t v)
 	{
 		return putchunk(key, fldid, 1, &v);

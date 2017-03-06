@@ -91,10 +91,10 @@ public:
 	clsa(ObjectKey obj_id, int a) : DObject(obj_id)
 	{
 
-		self->arr = Dogee::NewArray<double>();
-		self->next = Dogee::NewArray<Ref<clsa>>();
-		self->mat = Dogee::NewArray<Array<int>>();
-		self->mat[0] = Dogee::NewArray<int>();
+		self->arr = Dogee::NewArray<double>(10);
+		self->next = Dogee::NewArray<Ref<clsa>>(10);
+		self->mat = Dogee::NewArray<Array<int>>(10);
+		self->mat[0] = Dogee::NewArray<int>(10);
 		self->arr[2] = a;
 	}
 };
@@ -147,7 +147,7 @@ RegFunc(threadfun);
 template <typename T>
 void readtest()
 {
-	auto ptr2 = Dogee::NewArray<T>();
+	auto ptr2 = Dogee::NewArray<T>(100);
 	int last = 23, cur;
 	for (int i = 0; i < 10000; i++)
 	{
@@ -174,7 +174,7 @@ void readtest()
 template <typename T>
 void writetest()
 {
-	auto ptr2 = Dogee::NewArray<T>();
+	auto ptr2 = Dogee::NewArray<T>(100);
 	ptr2[12] = 123;
 	T buf[100];
 	int last = 23, cur;
@@ -202,7 +202,7 @@ void writetest()
 template <typename T>
 void singlewritetest()
 {
-	auto ptr2 = Dogee::NewArray<T>();
+	auto ptr2 = Dogee::NewArray<T>(100);
 	int last = 23, cur;
 	for (int i = 0; i < 100; i++)
 	{
@@ -338,7 +338,7 @@ int main(int argc, char* argv[])
 void objecttest()
 {
 	Ref<clss> dd[1] = { 0 };
-	auto ptr2 = Dogee::NewArray<Ref<clss>>();
+	auto ptr2 = Dogee::NewArray<Ref<clss>>(1);
 
 	ptr2->CopyTo(dd, 0, 1);
 	auto ptr = Dogee::NewObj<clsa>(12);
