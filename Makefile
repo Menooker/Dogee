@@ -12,7 +12,7 @@ EX_SIMPLE_DIR=$(PWD_DIR)/examples/SimpleExample
 EX_LR_DIR=$(PWD_DIR)/examples/LogisticRegression
 
 CXX ?= g++
-CPPFLAGS ?= -std=c++11 -g -I$(INC_DIR) -O3
+CPPFLAGS ?= -std=c++11 -g -I$(INC_DIR) -O3 -ffast-math -march=native
 LIBS ?= -lmemcached -pthread
 
 ##
