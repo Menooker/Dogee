@@ -13,17 +13,17 @@ Include header file "DogeeBase.h" and "DogeeMacro.h" to use the features.
 
 To define a class to be stored in DSM, the class or its base class should extend the Dogee base class "Dogee::DObject". A "referenece" in Dogee is the counterpart of pointers in C++, while pointers point to objects in local memory, and refereneces point to objects in shared memory.
 
-To declare member variables in the class, you should first "call" the macro "DefBegin(BASE_CLASS_NAME);". Then define the members by macro "Def(TYPE,VARIABLE_NAME)". Define referenece by "DefRef(Type,isVirtual,Name)", or by "Def(Dogee::Ref\<TYPE>,VARIABLE_NAME)". Use "self" instead of "this" in the class's member functions. "Call" macro "DefEnd();" after defining the last member variable of a class. An example of defining a Dogee class.
+To declare member variables in the class, you should first "call" the macro "DefBegin(BASE_CLASS_NAME);". Then define the members by macro "Def(VARIABLE_NAME,TYPE)". Define referenece by "DefRef(Type,isVirtual,Name)", or by "Def(Dogee::Ref\<TYPE>,VARIABLE_NAME)". Use "self" instead of "this" in the class's member functions. "Call" macro "DefEnd();" after defining the last member variable of a class. An example of defining a Dogee class.
 
 ```C++
 class clsa : public DObject
 {
 	DefBegin(DObject);
 public:
-	Def(int, i);
-	Def(Array<float>, arr);
-	Def(Array<Ref<clsa>>, next);
-	DefRef (clsb, true, prv);
+	Def(i,int);
+	Def(arr,Array<float>);
+	Def(next,Array<Ref<clsa>>);
+	Def(prv,Ref<clsb, true>);
 	DefEnd();
 	clsa(ObjectKey obj_id) : DObject(obj_id)
 	{
