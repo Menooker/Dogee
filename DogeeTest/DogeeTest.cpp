@@ -15,6 +15,7 @@
 #include "DogeeThreading.h"
 #include "DogeeAccumulator.h"
 #include "DogeeSharedConst.h"
+#include "DogeeString.h"
 #include <memory>
 using namespace Dogee;
 
@@ -313,7 +314,7 @@ int main(int argc, char* argv[])
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
 
-		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
+/*		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
 		
 		std::cout << "Init OK" << std::endl;
 		//accutest();
@@ -321,11 +322,13 @@ int main(int argc, char* argv[])
 		cache_test();
 		std::string str;
 		std::cin >> str;
-		CloseCluster(); 
+		CloseCluster(); */
 
-		//DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
-		//DogeeEnv::InitCurrentThread();
-		
+		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
+		DogeeEnv::InitCurrentThread();
+		Ref<DString> str = NewObj<DString>("String");
+		std::cout << str->getstr() << std::endl;
+
 		//readtest<int>();
 		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);
 

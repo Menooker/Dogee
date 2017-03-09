@@ -40,9 +40,10 @@ public:
 		self->have_item = NewObj<DSemaphore>(0);
 		self->have_place = NewObj<DSemaphore>(size);
 		self->mutex = NewObj<DSemaphore>(1);
+		self->buf = NewArray<T>(size);
 	}
 
-	void Produce(T& val)
+	void Produce(T val)
 	{
 		self->have_place->Acquire();
 		self->mutex->Acquire();
@@ -59,22 +60,42 @@ public:
 		self->head = (self->head + 1) % self->size;
 		self->mutex->Release();
 		self->have_place->Release();
+		return ret;
 	}
-	void Destroy() override
+	void Destory()
 	{
-		
+		DelObj((Ref<DSemaphore>)self->have_item);
+		DelObj((Ref<DSemaphore>)self->have_place);
+		DelObj((Ref<DSemaphore>)self->mutex); 
+		DelArray((Array<T>)self->have_place);
 	}
 };
 
-
-void threadfun(uint32_t param)
+class Node : public DObject
 {
-	std::cout << "The value of g_i is " << g_i << std::endl;
-	sem->Acquire(-1);
-	g_obj->m_matrix[0][2] = 23;
-	std::cout << "The value of g_obj->i is " << g_obj->i << std::endl;
+	DefBegin(DObject);
+public:
+	Def(size, int);
+	Def(data, int);
+	Def(children, Array<Ref<Node>>);
+	Node(ObjectKey obj_id) : DObject(obj_id)
+	{
+	}
+};
+
+DefGlobal(queue,Ref < ProducerConsumerQueue<Ref<Node>>>);
+void WorkingThread(uint32_t param)
+{
+	for (;;)
+	{
+		Ref<Node> node = queue->Consume();
+		for (int i = 0; i < node->size; i++)
+		{
+			queue->Produce(node->children[i]);
+		}
+	}
 }
-RegFunc(threadfun);
+RegFunc(WorkingThread);
 
 
 

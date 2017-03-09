@@ -464,6 +464,12 @@ return ret;
 		{
 			return get();
 		}
+
+		T& operator*()
+		{
+			return *get();
+		}
+
 		ObjectKey GetObjectId()
 		{
 			return obj.GetObjectId();
@@ -533,6 +539,11 @@ return ret;
 		T* operator->()
 		{
 			return get();
+		}
+
+		T& operator*()
+		{
+			return *get();
 		}
 
 		ObjectKey GetObjectId()
@@ -624,15 +635,25 @@ return ret;
 	}
 
 	template <class T> struct AutoRegisterObject;
+
+	template<class T>
+	struct NewObjImp
+	{
+		template<class... _Types> inline
+			ObjectKey NewObj(_Types&&... _Args)
+		{
+			ObjectKey ok = AllocObjectId(AutoRegisterObject<T>::id, T::_LAST_ * 2);
+			//SetClassId(ok, T::CLASS_ID);
+			T ret(ok, std::forward<_Types>(_Args)...);
+			return (ok);
+		}
+	};
+
 	template<class T,
 	class... _Types> inline
 		Ref<T> NewObj(_Types&&... _Args)
 	{	// copy from std::shared_ptr
-
-		ObjectKey ok = AllocObjectId(AutoRegisterObject<T>::id, T::_LAST_ * 2);
-		//SetClassId(ok, T::CLASS_ID);
-		T ret(ok, std::forward<_Types>(_Args)...);
-		return Ref<T>(ok);
+		return Ref<T>(NewObjImp<T>().NewObj(std::forward<_Types>(_Args)...));
 	}
 
 	template <class T> inline T* ReferenceObject(T* obj)
