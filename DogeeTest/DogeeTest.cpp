@@ -327,7 +327,7 @@ int main(int argc, char* argv[])
 		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
 		DogeeEnv::InitCurrentThread();
 		Ref<DString> str = NewObj<DString>("String");
-		std::cout << str->getstr() << std::endl;
+		std::cout << *str+"" << std::endl;
 
 		//readtest<int>();
 		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);

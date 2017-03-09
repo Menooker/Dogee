@@ -8,6 +8,7 @@
 
 namespace Dogee
 {
+	//immutable string with cache
 	class DString : public DObject
 	{
 		bool cached;
@@ -44,6 +45,16 @@ namespace Dogee
 			return getstr();
 		}
 
+		const std::string operator+(const std::string& str)
+		{
+			return getstr()+str;
+		}
+
+		char operator[](unsigned idx)
+		{
+			return getstr().operator[](idx);
+		}
+
 		operator const std::string()
 		{
 			return getstr();
@@ -53,16 +64,18 @@ namespace Dogee
 		{
 			return &getstr();
 		}
-		DString(const std::string& str) : DObject(0), cached(false)
+		static ObjectKey Create(const std::string& str)
 		{
 			bool has_tail = (str.size() % sizeof(uint32_t) != 0);
 			uint32_t size = str.size() / sizeof(uint32_t) + (has_tail ? 1 : 0);
 			ObjectKey okey = AllocObjectId(AutoRegisterObject<DString>::id, 1 + size);
-			this->SetObjectId(okey);
 			const char* pstr = str.c_str();
 			uint32_t* ptr = (uint32_t*)pstr;
 			DogeeEnv::cache->putchunk(okey, 1, size, ptr);
-			self->m_size = str.size();
+
+			//self->m_size = str.size();
+			DogeeEnv::cache->put(okey, 0,(uint32_t)str.size());
+			return okey;
 		}
 	};
 
@@ -70,12 +83,13 @@ namespace Dogee
 	struct NewObjImp<DString>
 	{
 		template<class... _Types> inline
-			ObjectKey NewObj(_Types&&... _Args)
+			ObjectKey NewObj(const std::string& str)
 		{
-			DString ret(std::forward<_Types>(_Args)...);
-			return (ret.GetObjectId());
+			ObjectKey key = DString::Create(str);
+			return key;
 		}
 	};
+
 }
 
 #endif
