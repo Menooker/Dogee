@@ -144,8 +144,8 @@ namespace Dogee
 		{}
 		virtual uint32_t* AllocLocalBuffer(uint32_t len)=0;
 		virtual void FreeLocalBuffer(uint32_t* ptr) = 0;
-		virtual void BaseDoAccumulateDense(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len) = 0;
-		virtual void BaseDoAccumulateSparse(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len) = 0;
+		virtual void BaseDoAccumulateDense(char*__RESTRICT in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t*__RESTRICT out_data, uint32_t out_offset, uint32_t out_len) = 0;
+		virtual void BaseDoAccumulateSparse(char*__RESTRICT in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t*__RESTRICT out_data, uint32_t out_offset, uint32_t out_len) = 0;
 
 	};
 
@@ -224,7 +224,7 @@ namespace Dogee
 		- out_index : the offset of out_data within the output array "arr"
 		- out_len : the length of output buffer
 		*/
-		virtual void DoAccumulateDense(T* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len) = 0;
+		virtual void DoAccumulateDense(T*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len) = 0;
 
 
 		/*
@@ -239,16 +239,16 @@ namespace Dogee
 		- out_index : the offset of out_data within the output array "arr"
 		- out_len : the length of output buffer
 		*/
-		virtual void DoAccumulateSparse(SparseElement<T>* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len) = 0;
+		virtual void DoAccumulateSparse(SparseElement<T>*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len) = 0;
 
 
-		virtual void BaseDoAccumulateDense(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len)
+		virtual void BaseDoAccumulateDense(char*__RESTRICT in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t*__RESTRICT out_data, uint32_t out_offset, uint32_t out_len)
 		{
 			DoAccumulateDense((T*)in_data, in_bytes / sizeof(T), in_offset / DSMInterface<T>::dsm_size_of,
 				(T*)out_data, out_offset / DSMInterface<T>::dsm_size_of, out_len /  DSMInterface<T>::dsm_size_of);
 		}
 
-		virtual void BaseDoAccumulateSparse(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len)
+		virtual void BaseDoAccumulateSparse(char*__RESTRICT in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t*__RESTRICT out_data, uint32_t out_offset, uint32_t out_len)
 		{
 			DoAccumulateSparse((SparseElement<T>*)in_data, in_bytes / sizeof(SparseElement<T>),
 				in_offset / DSMInterface<T>::dsm_size_of, (T*)out_data, out_offset / DSMInterface<T>::dsm_size_of, out_len / DSMInterface<T>::dsm_size_of);
@@ -275,7 +275,7 @@ namespace Dogee
 		DAddAccumulator(ObjectKey k, Array<T> outarr, uint32_t outlen, uint32_t in_num_user) :DAccumulator<T>(k, outarr, outlen, in_num_user)
 		{}
 
-		virtual void DoAccumulateDense(T* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
+		virtual void DoAccumulateDense(T*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len)
 		{
 			const int offset = in_index - out_index;
 			assert(offset >= 0 && offset + in_len <= out_len);
@@ -285,7 +285,7 @@ namespace Dogee
 			}
 		}
 
-		virtual void DoAccumulateSparse(SparseElement<T>* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
+		virtual void DoAccumulateSparse(SparseElement<T>*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len)
 		{
 			for (uint32_t i = 0; i < in_len; i++)
 			{
@@ -317,7 +317,7 @@ namespace Dogee
 		DFunctionalAccumulator(ObjectKey k, Array<T> outarr, uint32_t outlen, uint32_t in_num_user) :DAccumulator<T>(k, outarr, outlen, in_num_user)
 		{}
 
-		virtual void DoAccumulateDense(T* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
+		virtual void DoAccumulateDense(T*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len)
 		{
 			const int offset = in_index - out_index;
 			assert(offset >= 0 && offset + in_len <= out_len);
@@ -327,7 +327,7 @@ namespace Dogee
 			}
 		}
 
-		virtual void DoAccumulateSparse(SparseElement<T>* in_data, uint32_t in_len, uint32_t in_index, T* out_data, uint32_t out_index, uint32_t out_len)
+		virtual void DoAccumulateSparse(SparseElement<T>*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len)
 		{
 			for (uint32_t i = 0; i < in_len; i++)
 			{

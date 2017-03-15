@@ -6,6 +6,9 @@
 
 #ifndef _MSC_VER
 #define SUPPORT_TLS
+#define __RESTRICT __restrict__
+#else
+#define __RESTRICT __restrict
 #endif
 
 #ifdef __x86_64__

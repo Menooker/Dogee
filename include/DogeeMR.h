@@ -78,7 +78,7 @@ namespace Dogee
 		{
 			delete (MAP *) ptr;
 		}
-		virtual void BaseDoAccumulateDense(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len)
+		virtual void BaseDoAccumulateDense(char*__RESTRICT in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t*__RESTRICT out_data, uint32_t out_offset, uint32_t out_len)
 		{
 			uint32_t word_len = in_bytes / sizeof(uint32_t);
 			uint32_t* word_data = (uint32_t*)in_data;
@@ -93,7 +93,7 @@ namespace Dogee
 			}
 		}
 
-		virtual void BaseDoAccumulateSparse(char* in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t* out_data, uint32_t out_offset, uint32_t out_len)
+		virtual void BaseDoAccumulateSparse(char*__RESTRICT in_data, uint32_t in_bytes, uint32_t in_offset, uint32_t*__RESTRICT out_data, uint32_t out_offset, uint32_t out_len)
 		{
 			assert(0);
 		}
