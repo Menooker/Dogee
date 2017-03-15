@@ -17,7 +17,7 @@ namespace Dogee
 	public:
 		uint32_t size()
 		{
-			return m_size;
+			return self->m_size;
 		}
 		DString(ObjectKey obj_id) : DObject(obj_id), cached(false)
 		{
