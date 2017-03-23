@@ -1,6 +1,7 @@
 #ifndef __DOGEE_SER_IMP_H_
 #define __DOGEE_SER_IMP_H_
 #include <string>
+#include <vector>
 
 namespace Dogee
 {
@@ -34,6 +35,45 @@ namespace Dogee
 		{
 			out = *(T*)buf;
 			return Serializer::cell_divide(sizeof(T));
+		}
+	};
+
+	template<typename T>
+	class InputSerializer<std::vector<T>>
+	{
+		InputSerializer<T> ele;
+	public:
+		uint32_t GetSize(const std::vector<T>& pair)
+		{
+			int size=0;
+			for (auto i : pair)
+			{
+				size += ele.GetSize(i);
+			}
+			return size + 1;
+		}
+		uint32_t Serialize(const std::vector<T>& in, uint32_t* buf)
+		{
+			buf[0] = in.size();
+			uint32_t* cur = buf + 1;
+			for (auto i : in)
+			{
+				cur += ele.Serialize(i, cur);
+			}
+			return GetSize(in);
+		}
+		uint32_t Deserialize(uint32_t* buf, std::vector<T>& out)
+		{
+			uint32_t sz = buf[0];
+			out.reserve(sz);
+			uint32_t cnt = 1;
+			for (uint32_t i = 0; i < sz; i++)
+			{
+				T tmp;
+				cnt += ele.Deserialize(buf + cnt, tmp);
+				out.push_back(tmp);
+			}
+			return cnt;
 		}
 	};
 

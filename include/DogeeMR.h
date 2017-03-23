@@ -3,6 +3,7 @@
 
 #include <unordered_map>
 #include <vector>
+#include <thread>
 #include "DogeeAccumulator.h"
 #include "DogeeSocket.h"
 #include "DogeeSerializerImpl.h"
@@ -38,7 +39,7 @@ namespace Dogee
 			assert(mylen <= len);
 			return mylen;
 		}
-
+		virtual bool hasGlobalReduce() { return false; }
 		DefBegin(DBaseMapReduce);
 	public:
 		DefEnd();
@@ -59,7 +60,8 @@ namespace Dogee
 
 		virtual void DoMap(MAP_IN_KEY_TYPE& key, MAP_IN_VALUE_TYPE& value,MAP& localmap) = 0;
 		virtual void DoReduce(const MAP_OUT_KEY_TYPE& key, const std::vector<MAP_OUT_VALUE_TYPE>& values) = 0;
-
+		virtual void DoGlobalReduce() {}
+		
 
 		virtual void BaseDoReduce(uint32_t* buf)
 		{
@@ -67,6 +69,14 @@ namespace Dogee
 			for (auto itr = outmap->begin(); itr != outmap->end(); itr++)
 			{
 				DoReduce(itr->first, itr->second);
+			}
+			if (hasGlobalReduce())
+			{
+				auto thread = std::thread([this](){
+					DogeeEnv::InitCurrentThread();
+					this->DoGlobalReduce();
+				});
+				thread.detach();
 			}
 		}
 
@@ -138,14 +148,16 @@ namespace Dogee
 
 	};
 
-	
+	typedef void(*pReduceDoneFunc)();
 	template<typename MAP_IN_KEY_TYPE, typename MAP_IN_VALUE_TYPE,
 		typename MAP_OUT_KEY_TYPE, typename MAP_OUT_VALUE_TYPE,
 		typename DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE, MAP_OUT_VALUE_TYPE>::pDoMapFunc MapFunc,
-		typename DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE, MAP_OUT_VALUE_TYPE>::pDoReduceFunc ReduceFunc>
+		typename DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE, MAP_OUT_VALUE_TYPE>::pDoReduceFunc ReduceFunc,
+		pReduceDoneFunc LocalReduceDoneFunc=nullptr>
 	class DFunctionMapReduce : public DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE,  MAP_OUT_VALUE_TYPE>
 	{
 		typedef DMapReduce<MAP_IN_KEY_TYPE, MAP_IN_VALUE_TYPE, MAP_OUT_KEY_TYPE, MAP_OUT_VALUE_TYPE> Parent;
+		virtual bool hasGlobalReduce() { return LocalReduceDoneFunc!=nullptr; }
 	public:
 		DFunctionMapReduce(ObjectKey key) :Parent(key)
 		{}
@@ -161,6 +173,12 @@ namespace Dogee
 		{
 			ReduceFunc(key, values);
 		}
+
+		void LocalReduceDone()
+		{
+			LocalReduceDoneFunc();
+		}
+
 	};
 }
 

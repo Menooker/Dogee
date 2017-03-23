@@ -27,6 +27,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsumerProducer", "example
 		{B25E729C-B0D7-4CC7-B6E4-246A0B038482} = {B25E729C-B0D7-4CC7-B6E4-246A0B038482}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PageRankMR", "examples\PageRankMR\PageRankMR.vcxproj", "{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -93,6 +95,16 @@ Global
 		{4F7DF7AD-AD84-4AE4-881F-4FB5D8C5CD23}.Release|Win32.ActiveCfg = Release|Win32
 		{4F7DF7AD-AD84-4AE4-881F-4FB5D8C5CD23}.Release|Win32.Build.0 = Release|Win32
 		{4F7DF7AD-AD84-4AE4-881F-4FB5D8C5CD23}.Release|x64.ActiveCfg = Release|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Debug|Win32.Build.0 = Debug|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Debug|x64.ActiveCfg = Debug|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Release|Win32.ActiveCfg = Release|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Release|Win32.Build.0 = Release|Win32
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -101,5 +113,6 @@ Global
 		{7979C85C-A19F-40E9-94BE-9A7FCD31F1F0} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 		{5A921249-6BC2-4E58-9E0E-AF0249AF7D8D} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 		{4F7DF7AD-AD84-4AE4-881F-4FB5D8C5CD23} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
+		{C26EC03D-A60C-4B2A-8A20-5E3664F145BA} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 	EndGlobalSection
 EndGlobal

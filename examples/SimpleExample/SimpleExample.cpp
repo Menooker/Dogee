@@ -31,7 +31,6 @@ public:
 	}
 	clsa(ObjectKey obj_id, int a) : DObject(obj_id)
 	{
-
 		self->m_vector = NewArray<double>(10);
 		self->m_matrix = NewArray<Array<int>>(10);
 		self->m_matrix[0] = NewArray<int>(10);
