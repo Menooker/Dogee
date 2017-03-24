@@ -28,9 +28,9 @@ namespace Dogee
 	template<typename MAP_IN_KEY_TYPE, typename MAP_IN_VALUE_TYPE, typename MAP_OUT_KEY_TYPE, typename MAP_OUT_VALUE_TYPE>
 	class DMapReduce : public DBaseMapReduce
 	{
+	private:
 		InputSerializer<MAP_IN_KEY_TYPE> key_serializer;
 		InputSerializer<MAP_IN_VALUE_TYPE> value_serializer;
-
 		uint32_t DecodeKeyValue(MAP_IN_KEY_TYPE& key, MAP_IN_VALUE_TYPE& value, uint32_t* buf, uint32_t len)
 		{
 			uint32_t mylen = key_serializer.Deserialize(buf, key);
@@ -46,7 +46,9 @@ namespace Dogee
 		typedef std::unordered_map < MAP_OUT_KEY_TYPE, std::vector<MAP_OUT_VALUE_TYPE> > MAP;
 		typedef void (*pDoMapFunc)(MAP_IN_KEY_TYPE& key, MAP_IN_VALUE_TYPE& value, MAP& localmap);
 		typedef void (*pDoReduceFunc)(const MAP_OUT_KEY_TYPE& key, const std::vector<MAP_OUT_VALUE_TYPE>& values);
-
+	protected:
+		MAP* mymap;
+	public:
 		
 		DMapReduce(ObjectKey key) :DBaseMapReduce(key)
 		{}
@@ -78,11 +80,13 @@ namespace Dogee
 				});
 				thread.detach();
 			}
+			mymap->clear();
 		}
 
 		virtual uint32_t* AllocLocalBuffer(uint32_t len)
 		{
-			return (uint32_t*)new MAP;
+			mymap = new MAP;
+			return (uint32_t*)mymap;
 		}
 		virtual void FreeLocalBuffer(uint32_t* ptr)
 		{
