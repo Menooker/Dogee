@@ -20,12 +20,36 @@ namespace Dogee
 	{
 		static int id;
 	public:
+		static int Register(thread_proc func)
+		{
+			ThRegisterThreadFunction(func, id);
+			return id++;
+		}
 		AutoRegisterThreadProcClass(thread_proc func)
 		{
-			ThRegisterThreadFunction(func,id);
-			id++;
+			Register(func);
 		}
 	};
+
+	template<typename T>
+	class AutoRegisterLambda
+	{
+	public:
+		static const int id;
+	private:
+
+		static int Register()
+		{
+			static_assert(std::is_object<T>::value && std::is_convertible<T, thread_proc>::value, "Must be a lambda");
+			T* a = nullptr;
+			thread_proc ptr = *a;
+			return AutoRegisterThreadProcClass::Register(ptr);
+		}
+
+	};
+
+	template <typename T>
+	const int AutoRegisterLambda<T>::id = AutoRegisterLambda<T>::Register();
 
 	class DThread : public DObject
 	{
@@ -44,6 +68,7 @@ namespace Dogee
 		DThread(ObjectKey obj_id) : DObject(obj_id)
 		{
 		}
+
 		DThread(ObjectKey obj_id, thread_proc func, int nd_id, uint32_t param) : DObject(obj_id)
 		{
 			self->state = ThreadCreating;
@@ -51,7 +76,17 @@ namespace Dogee
 			RcCreateThread(node_id, GetProcIDMap()[func], param, self->GetObjectId());
 		}
 
+		template<typename T>
+		DThread(ObjectKey obj_id, T func, int nd_id, uint32_t param) : DObject(obj_id)
+		{
+			self->state = ThreadCreating;
+			self->node_id = nd_id;
+			RcCreateThread(node_id, AutoRegisterLambda<T>::id, param, self->GetObjectId());
+		}
+
 	};
+
+
 
 	extern bool RcEnterBarrier(ObjectKey okey,int timeout=-1);
 	class DBarrier : public DObject

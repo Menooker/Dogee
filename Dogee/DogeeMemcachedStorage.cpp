@@ -232,8 +232,11 @@ namespace Dogee
 		}
 		else
 		{
+			if (rc == MEMCACHED_NOTFOUND)
+				return 0;
 			printf("Memc Error");
 			ret = 0;
+			_BreakPoint;
 			//throw 1;
 		}
 

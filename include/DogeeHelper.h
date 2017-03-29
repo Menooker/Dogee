@@ -8,7 +8,6 @@
 #include "DogeeEnv.h"
 #include "DogeeDirectoryCache.h"
 #include "DogeeSocket.h"
-#include <istream>
 namespace Dogee
 {
 	class SoStorageFactory

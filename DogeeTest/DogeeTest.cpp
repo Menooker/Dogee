@@ -295,8 +295,6 @@ void cache_test()
 	std::cin >> i;
 }
 
-
-
 void objecttest();
 extern void accutest();
 extern void mrtest();
@@ -314,9 +312,9 @@ int main(int argc, char* argv[])
 		std::vector<std::string> mem_hosts = { "127.0.0.1" };
 		std::vector<int> mem_ports = { 11211 };
 
-/*		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
+		RcMaster(hosts, ports, mem_hosts, mem_ports, BackendType::SoBackendMemcached, CacheType::SoNoCache);
 		
-		std::cout << "Init OK" << std::endl;
+/*		std::cout << "Init OK" << std::endl;
 		//accutest();
 		//mrtest();
 		cache_test();
@@ -324,17 +322,24 @@ int main(int argc, char* argv[])
 		std::cin >> str;
 		CloseCluster(); */
 
-		DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
-		DogeeEnv::InitCurrentThread();
+		//DogeeEnv::InitStorage(BackendType::SoBackendMemcached, CacheType::SoNoCache, mem_hosts, mem_ports, mem_hosts, mem_ports, 0);
+		//DogeeEnv::InitCurrentThread();
 		Ref<DString> str = NewObj<DString>("String");
-		std::cout << *str+"" << std::endl;
-
+		g_i = 123445;
+		auto func = [](uint32_t i){
+			std::cout << i << std::endl;
+			Ref<DString> str(i);
+			std::cout << g_i<<std::endl<< (str->getstr());
+		};
+		auto th = NewObj<DThread>(func, 1, str.GetObjectId());
+		std::cout << 0 << std::endl << str->getstr() << std::endl;
 		//readtest<int>();
 		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);
 
 		//fieldtest();
+		CloseCluster();
 	}
-
+	
 	return 0;
 }
 

@@ -8,12 +8,13 @@
 #include <stdlib.h>
 #include <iostream>
 
+#include "DogeeHelper.h" //there is a GCC bug. DogeeHelper.h should be included before DogeeMacro.h
 #include "DogeeBase.h"
-#include "DogeeMacro.h"
 #include "DogeeStorage.h"
 #include "DogeeRemote.h"
 #include "DogeeThreading.h"
-#include "DogeeHelper.h"
+#include "DogeeMacro.h"
+
 #include <memory>
 using namespace Dogee;
 

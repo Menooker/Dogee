@@ -24,7 +24,7 @@
 
 #define AutoRegisterFuncName(n) __REG_FUNC__##n##__
 #define _AutoRegisterFuncName(n) AutoRegisterFuncName(n)
-#define RegFunc(Func)  static Dogee::AutoRegisterThreadProcClass AutoRegisterFuncName(__COUNTER__)(Func);
+#define RegFunc(Func)  static Dogee::AutoRegisterThreadProcClass _AutoRegisterFuncName(__COUNTER__)(Func);
 #define RegInit(Func) int _SLAVE_INIT_DUMMY=SetSlaveInitProc(Func);
 
 #endif
