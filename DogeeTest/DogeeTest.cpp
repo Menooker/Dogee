@@ -295,6 +295,12 @@ void cache_test()
 	std::cin >> i;
 }
 
+void func2(uint32_t i){
+	std::cout << i << std::endl;
+	Ref<DString> str(i);
+	std::cout << g_i << std::endl << (str->getstr());
+};
+
 void objecttest();
 extern void accutest();
 extern void mrtest();
@@ -331,7 +337,7 @@ int main(int argc, char* argv[])
 			Ref<DString> str(i);
 			std::cout << g_i<<std::endl<< (str->getstr());
 		};
-		auto th = NewObj<DThread>(func, 1, str.GetObjectId());
+		auto th = NewObj<DThread>(THREAD_PROC(func2), 1, str.GetObjectId());
 		std::cout << 0 << std::endl << str->getstr() << std::endl;
 		//readtest<int>();
 		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);

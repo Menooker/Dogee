@@ -47,9 +47,19 @@ namespace Dogee
 		}
 
 	};
-
 	template <typename T>
 	const int AutoRegisterLambda<T>::id = AutoRegisterLambda<T>::Register();
+
+	template<thread_proc func>
+	class ThreadProcFunctionWrapper
+	{
+	public:
+		operator thread_proc()
+		{
+			return func;
+		}
+	};
+
 
 	class DThread : public DObject
 	{
@@ -69,6 +79,9 @@ namespace Dogee
 		{
 		}
 
+		/*only if you have registered the function with RegFunc can you use this
+		constructor to create a thread. Because you must make sure the function
+		has been registered*/
 		DThread(ObjectKey obj_id, thread_proc func, int nd_id, uint32_t param) : DObject(obj_id)
 		{
 			self->state = ThreadCreating;
@@ -76,6 +89,10 @@ namespace Dogee
 			RcCreateThread(node_id, GetProcIDMap()[func], param, self->GetObjectId());
 		}
 
+		/*this constructor accepts lambda(without capture) and other callable objects
+		that can be converted to thread_proc. To pass a function name, you
+		should wrap it with a THREAD_PROC wrapper.
+		*/
 		template<typename T>
 		DThread(ObjectKey obj_id, T func, int nd_id, uint32_t param) : DObject(obj_id)
 		{
@@ -136,5 +153,5 @@ namespace Dogee
 	};
 
 }
-
+#define THREAD_PROC(...) ThreadProcFunctionWrapper<__VA_ARGS__>()
 #endif
