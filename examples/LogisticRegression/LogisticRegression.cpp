@@ -295,14 +295,16 @@ int main(int argc, char* argv[])
 	{
 		NewObj<DThread>(slave_main, i, i);
 	}
+	auto t = std::chrono::system_clock::now();
 	for (int itr = 0; itr < ITER_NUM; itr++)
 	{
-		auto t=std::chrono::system_clock::now();
+		
 		barrier->Enter();
-		std::cout << "Iter"<<itr<<" took "<<
-			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
-			<<" milliseconds\n";
+		//std::cout << "Iter"<<itr<<" took "<<
+		//	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
+		//	<<" milliseconds\n";
 	}
+	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count();
 	std::cout << "Learning done. Waiting for testing..." << std::endl;
 	barrier->Enter();
 	float positive = g_param[0], real_true = g_param[1], TP = g_param[2];
