@@ -210,6 +210,7 @@ void slave_main(uint32_t tid)
 	
 	int thread_point_num = local_dataset.local_train_size / THREAD_NUM;
 	int thread_test_num = local_dataset.local_testset_size / THREAD_NUM;
+	barrier->Enter();
 	for (int i = 0; i < THREAD_NUM; i++)
 	{
 		float* thread_local_data;
@@ -280,7 +281,7 @@ int main(int argc, char* argv[])
 
 	std::cout << "Parameters:\n" << "num_param :" << param_len << "\nnum_points : " << g_num_points
 		<< "\niter_num : " << ITER_NUM << "\nthread_num : " << THREAD_NUM
-		<< "\nstep_size : " << step_size << "\ntest_partition : " << TEST_PART;
+		<< "\nstep_size : " << step_size << "\ntest_partition : " << TEST_PART << std::endl;
 
 	g_param = NewArray<float>(param_len);
 	g_accu = NewObj<DAddAccumulator<float>>(g_param,
@@ -295,6 +296,7 @@ int main(int argc, char* argv[])
 	{
 		NewObj<DThread>(slave_main, i, i);
 	}
+	barrier->Enter();
 	auto t = std::chrono::system_clock::now();
 	for (int itr = 0; itr < ITER_NUM; itr++)
 	{
@@ -304,7 +306,8 @@ int main(int argc, char* argv[])
 		//	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
 		//	<<" milliseconds\n";
 	}
-	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count();
+	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
+		<<std::endl;
 	std::cout << "Learning done. Waiting for testing..." << std::endl;
 	barrier->Enter();
 	float positive = g_param[0], real_true = g_param[1], TP = g_param[2];
