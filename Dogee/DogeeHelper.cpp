@@ -13,6 +13,8 @@ Dogee::ptDbgBreakPoint Dogee::_DbgBreakPoint = (Dogee::ptDbgBreakPoint)GetProcAd
 namespace Dogee
 {
 
+	extern void RcInitThreadSystem();
+	extern void RcFinalizeThreadSystem();
 	void DogeeEnv::InitStorage(BackendType backty, CacheType cachety, std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& mem_hosts, std::vector<int>& mem_ports, int node_id)
 	{
@@ -21,9 +23,11 @@ namespace Dogee
 		cache = factory.makecache(backend, hosts, ports, node_id);
 		std::hash<std::thread::id> h;
 		srand((int)time(NULL) ^ (int)h(std::this_thread::get_id()));
+		RcInitThreadSystem();
 	}
 	void DogeeEnv::CloseStorage()
 	{
+		RcFinalizeThreadSystem();
 		delete cache;
 		delete backend;
 	}

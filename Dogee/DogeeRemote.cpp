@@ -11,6 +11,7 @@
 #include "DogeeSocket.h"
 #include <atomic>
 #include "DogeeLocalSync.h"
+#include "DogeeAPIWrapping.h"
 
 #ifdef _WIN32
 int RcWinsockStartup()
@@ -458,26 +459,45 @@ namespace Dogee
 	std::vector< Event*> ThreadEventMap;
 	extern std::atomic<int> tid_count;
 	extern THREAD_LOCAL int current_thread_id;
+	BD_RWLOCK thread_lock;
+	int chk = 0;
 	bool RcWaitForRemoteEvent(int timeout)
 	{
-		return ThreadEventMap[current_thread_id]->WaitForEvent(timeout);
+		UaEnterReadRWLock(&thread_lock);
+		bool ret= ThreadEventMap[current_thread_id]->WaitForEvent(timeout);
+		UaLeaveReadRWLock(&thread_lock);
+		return ret;
 	}
 	void RcSetRemoteEvent(int local_thread_id)
 	{
+		UaEnterReadRWLock(&thread_lock);
 		ThreadEventMap[local_thread_id]->SetEvent();
+		UaLeaveReadRWLock(&thread_lock);
 	}
 
 	void RcResetRemoteEvent()
 	{
+		UaEnterReadRWLock(&thread_lock);
 		ThreadEventMap[current_thread_id]->ResetEvent();
+		UaLeaveReadRWLock(&thread_lock);
 	}
 
 	void RcPrepareNewThread()
-	{//fix-me : thread safety
+	{
+		UaEnterWriteRWLock(&thread_lock);
 		ThreadEventMap.resize(tid_count);
 		ThreadEventMap[current_thread_id]=new Event(false);
+		UaLeaveWriteRWLock(&thread_lock);
 	}
 
+	void RcInitThreadSystem()
+	{
+		UaInitRWLock(&thread_lock);
+	}
+	void RcFinalizeThreadSystem()
+	{
+		UaKillRWLock(&thread_lock);
+	}
 	using namespace Socket;
 
 	extern void ThThreadEntry(int thread_id,int index, uint32_t param,ObjectKey okey );
@@ -621,7 +641,7 @@ namespace Dogee
 				printf("Wait for data socket timeout\n");
 				goto ERR;
 			}
-
+			
 			master_socket = s;
 			DogeeEnv::SetIsMaster(false);
 			

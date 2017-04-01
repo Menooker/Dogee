@@ -350,6 +350,7 @@ namespace Dogee
 
 	static void AcListenData(SOCKET slisten)
 	{
+		DogeeEnv::InitCurrentThread();
 		int n = DogeeEnv::num_nodes - 1; //n is the number of sockets
 		int maxfd = 0;
 		fd_set readfds;
@@ -418,7 +419,6 @@ namespace Dogee
 				printf("Data Select Error!%d\n", RcSocketLastError());
 				break;
 			}
-			DogeeEnv::InitCurrentThread();
 			for (int i = 0; i < n; i++)
 			{
 				if (FD_ISSET(accu_manager->dataconnections[i], &readfds))
