@@ -72,11 +72,18 @@ namespace Dogee
 			ThreadStoped
 
 		};
+	private:
 		Def(state, ThreadState);
+	public:
 		Def(node_id, int);
 		DefEnd();
 		DThread(ObjectKey obj_id) : DObject(obj_id)
 		{
+		}
+		friend void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey);
+		ThreadState GetState()
+		{
+			return self->state;
 		}
 
 		/*only if you have registered the function with RegFunc can you use this
@@ -90,8 +97,9 @@ namespace Dogee
 		}
 
 		/*this constructor accepts lambda(without capture) and other callable objects
-		that can be converted to thread_proc. To pass a function name, you
-		should wrap it with a THREAD_PROC wrapper.
+		that can be converted to thread_proc. Make sure the class T is unique for 
+		different functions (one class for each function). To pass a function name,
+		you should wrap it with a THREAD_PROC wrapper.
 		*/
 		template<typename T>
 		DThread(ObjectKey obj_id, T func, int nd_id, uint32_t param) : DObject(obj_id)
