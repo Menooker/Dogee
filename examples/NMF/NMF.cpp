@@ -134,8 +134,9 @@ void slave_worker(float* thread_local_data,  int thread_point_num,
 	DogeeEnv::InitCurrentThread();
 	for (int itr = 0; itr < ITER_NUM; itr++)
 	{
-		memset(local_grad,0,sizeof(float)* features*matK);
 		fetch_global_param(false, nullptr);
+		memset(local_grad,0,sizeof(float)* features*matK);
+		
 		float thread_loss = 0;
 		int pindex = 0;
 		int base = 0;
@@ -188,6 +189,11 @@ void slave_main(uint32_t tid)
 	barrier = g_barrier;
 	alpha = stepp;
 	beta = stepq;
+
+	std::cout << "Parameters :\n" << "num_features :" << features << "\nnum_points : " << g_num_points
+		<< "\niter_num : " << ITER_NUM << "\nthread_num : " << THREAD_NUM
+		<< "\nalpha : " << stepp << "\nbeta : " << stepq 
+		<< "\npath : " << PATH->getstr() << std::endl;
 	
 	//alloc the buffer
 	shared_dsm_size = align_to_block_size(features*matK);
@@ -196,10 +202,12 @@ void slave_main(uint32_t tid)
 	
 	float* local_buffer = new float[shared_dsm_size];
 	float* loss = new float[THREAD_NUM];
+
 	local_dataset.Load(features, g_num_points, DogeeEnv::self_node_id);
 
 	float* matP = new float[local_dataset.local_dataset_size * matK];
-	memset(matP, 0, sizeof(float)*local_dataset.local_dataset_size * matK);
+	for(int i=0;i<local_dataset.local_dataset_size * matK;i++)
+		matP[i]=(float)(rand() % 100) / 10000;
 	int thread_point_num = local_dataset.local_dataset_size / THREAD_NUM;
 	barrier->Enter();
 	for (int i = 0; i < THREAD_NUM; i++)
@@ -208,7 +216,7 @@ void slave_main(uint32_t tid)
 		local_dataset.GetThreadData(i, thread_local_data);
 		local_grad_arr[i] = new float[features*matK];
 		auto th = std::thread(slave_worker, thread_local_data, thread_point_num,
-			local_grad_arr[i], loss + i, matP + thread_point_num*i);
+			local_grad_arr[i], loss + i, matP + thread_point_num*i *matK);
 		th.detach();
 	}
 	for (int itr = 0; itr < ITER_NUM; itr++)
@@ -222,6 +230,7 @@ void slave_main(uint32_t tid)
 			loss[i] = 0;
 			for (int j = 0; j < features*matK; j++)
 				local_grad_arr[0][j] = local_grad_arr[i][j];
+			//printf("grad %f\n",local_grad_arr[i][100]);
 		}
 		std::cout << "Loss " << loss[0] << std::endl;
 		loss[0] = 0;
