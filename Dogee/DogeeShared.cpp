@@ -6,6 +6,8 @@
 #include "DogeeRemote.h"
 #include "DogeeThreading.h"
 #include <sstream>
+#include <limits>
+
 
 #define DOGEE_CONFIG_VER 1
 
@@ -223,7 +225,46 @@ namespace Dogee
 			line_n++;
 		}
 	}*/
+	
+	void WriteFilePointerCache(std::istream& fs, const std::string path,int mark)
+	{
+		std::stringstream pathbuf;
+		pathbuf << path << "." << mark << ".cache";
+		std::fstream outfile(pathbuf.str(), std::ios::out);
+		long f= fs.tellg();
+		outfile << f;
+		outfile.close();
+	}
+	bool RestoreFilePointerCache(std::istream& fs, const std::string path, int mark)
+	{
+		std::stringstream pathbuf;
+		pathbuf << path << "." << mark << ".cache";
+		std::fstream outfile(pathbuf.str(), std::ios::in);
+		if (!outfile)
+			return false;
+		long f;
+		outfile >> f;
+		fs.seekg(f, std::istream::beg);
+		outfile.close();
+		return true;
+	}
 
+
+	void SkipFileToLine(std::istream& file, const std::string path, unsigned int num)
+	{
+		file.seekg(std::ios::beg);
+		if (num==0)
+			return;
+		if (!RestoreFilePointerCache(file, path, num))
+		{	
+			std::cout << "Cache file: " << path << " for line " << num << "not found" << std::endl;
+			for (int i = 0; i < num; ++i){
+				file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+			}
+			WriteFilePointerCache(file, path, num);
+		}
+
+	}
 
 	void ParseCSV(const char* path, std::function<bool(const char* cell, int line, int index)> func, int skip_to_line, bool use_cache)
 	{
