@@ -17,7 +17,11 @@ namespace Dogee
 		{
 			return (fk);
 		}
-
+		
+		T get()
+		{
+			return val;
+		}
 		void set(T& x)
 		{
 			val = x;
@@ -46,7 +50,7 @@ namespace Dogee
 			val = DSMInterface<T>::get_value(0, fk);
 		}
 
-		SharedConst()
+		SharedConst() :val(0)
 		{
 			fk = Dogee::RegisterGlobalVariable();
 			RegisterConstInit(std::bind(&SharedConst::load, this));

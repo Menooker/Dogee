@@ -225,14 +225,22 @@ namespace Dogee
 			line_n++;
 		}
 	}*/
-	
+
+	void WriteFilePointerCache(std::istream::pos_type pos, const std::string path, int mark)
+	{
+		std::stringstream pathbuf;
+		pathbuf << path << "." << mark << ".cache";
+		std::fstream outfile(pathbuf.str(), std::ios::out);
+		outfile << pos;
+		outfile.close();
+	}
+
 	void WriteFilePointerCache(std::istream& fs, const std::string path,int mark)
 	{
 		std::stringstream pathbuf;
 		pathbuf << path << "." << mark << ".cache";
 		std::fstream outfile(pathbuf.str(), std::ios::out);
-		long f= fs.tellg();
-		outfile << f;
+		outfile << fs.tellg();
 		outfile.close();
 	}
 	bool RestoreFilePointerCache(std::istream& fs, const std::string path, int mark)
@@ -242,7 +250,7 @@ namespace Dogee
 		std::fstream outfile(pathbuf.str(), std::ios::in);
 		if (!outfile)
 			return false;
-		long f;
+		unsigned long f;
 		outfile >> f;
 		fs.seekg(f, std::istream::beg);
 		outfile.close();
@@ -258,7 +266,7 @@ namespace Dogee
 		if (!RestoreFilePointerCache(file, path, num))
 		{	
 			std::cout << "Cache file: " << path << " for line " << num << "not found" << std::endl;
-			for (int i = 0; i < num; ++i){
+			for (unsigned i = 0; i < num; ++i){
 				file.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
 			}
 			WriteFilePointerCache(file, path, num);

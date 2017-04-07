@@ -7,6 +7,7 @@
 namespace Dogee
 {
 	extern void WriteFilePointerCache(std::istream& fs, const std::string path, int mark);
+	extern void WriteFilePointerCache(std::istream::pos_type pos, const std::string path, int mark);
 	extern bool RestoreFilePointerCache(std::istream& fs, const std::string path, int mark);
 
 	/*
