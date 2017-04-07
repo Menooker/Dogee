@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
 	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
 		<< std::endl;
 	for (int i = 0; i < 20; i++)
-		cout << (float)g_param.get()[i] << endl;
+		cout << (float)g_param[i]<< endl;
 	std::string str;
 	std::cin >> str;
 	CloseCluster();

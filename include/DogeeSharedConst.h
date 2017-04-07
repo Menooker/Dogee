@@ -44,7 +44,24 @@ namespace Dogee
 			set(x);
 			return x;
 		}
+		template<typename T2, bool hasIndex>
+		struct IndexingCaller
+		{
+			static void call(T2& obj, int k);
+		};
 
+		template<typename T2>
+		struct IndexingCaller<T2, true>
+		{
+			static auto call(T2& obj, int k)->decltype(obj.operator[](0))
+			{
+				return obj.operator[](k);
+			}
+		};
+		auto operator[](int k)->decltype(IndexingCaller<T, DogeeTrait<T>::has_index_operator>::call(val, k))
+		{
+			return IndexingCaller<T, DogeeTrait<T>::has_index_operator>::call(val, k);
+		}
 		void load()
 		{
 			val = DSMInterface<T>::get_value(0, fk);

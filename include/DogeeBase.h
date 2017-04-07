@@ -66,6 +66,16 @@ namespace Dogee
 	template<typename T> class Array;
 
 	template <typename T>
+	struct DogeeTrait {
+		static bool const has_index_operator = false;
+	};
+
+	template <typename T>
+	struct DogeeTrait<Array<T>> {
+		static bool const has_index_operator = true;
+	};
+
+	template <typename T>
 	class DSMInterface
 	{
 		template <typename T2,int size>
@@ -314,11 +324,11 @@ namespace Dogee
 		Array<T> get()
 		{
 			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
-Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
+			Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
 #ifdef DOGEE_DBG
-lastobject = nullptr;
+			lastobject = nullptr;
 #endif
-return ret;
+			return ret;
 		}
 		//read
 		operator Array<T>()
@@ -710,6 +720,5 @@ return ret;
 	}
 
 	template <class T> int AutoRegisterObject<T>::id = AutoRegisterObject<T>::Init();
-
 }
 #endif
