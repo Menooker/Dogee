@@ -4,7 +4,8 @@ Dogee is a C++ extension for distributed programming on distributed shared memor
 [Birdee](https://github.com/Menooker/Birdee/) is a new distributed programming language. Dogee can be viewed as Birdee in C++.
 
 ## Build instructions
-###Build Dogee on Ubuntu
+
+### Build Dogee on Ubuntu
 Make sure your g++ compiler supports c++11 features.
 ```bash
 sudo apt-get install libmemcached-dev
@@ -12,7 +13,7 @@ make
 ```
 Now the binary files will be ready in the "bin" directory.
 
-###Build Dogee on Windows
+### Build Dogee on Windows
 Dogee is based on libmemcached. This repository has included the libmemcached library (.lib and .dll) for Windows (for both debug and release mode and both x86 and x64 mode). You just need to open "Dogee.sln" and build Dogee with Visual Studio 2013 (or newer). Note that there are some bugs in the compiler of original version of VS2013, and you should update VS2013 to make Dogee compile.
 
 ## API Mannual
