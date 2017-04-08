@@ -334,7 +334,7 @@ namespace Dogee
 				else if (*p == ',')
 				{
 					*p = 0;
-					if (line >= skip_to_line &&!func(last, line, cnt))
+					if (line >= skip_to_line && !func(last, line, cnt))
 						return;
 					cnt++;
 					last = p + 1;

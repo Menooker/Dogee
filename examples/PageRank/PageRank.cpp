@@ -218,7 +218,7 @@ void slave_main(uint32_t tid)
 		for (int i = 1; i < THREAD_NUM; i++)
 		{
 			for (int j = 0; j < g_num_points; j++)
-				local_grad_arr[0][j] = local_grad_arr[i][j];
+				local_grad_arr[0][j] += local_grad_arr[i][j];
 		}
 		g_accu->AccumulateAndWait(local_grad_arr[0], g_num_points, 0.0001f);
 		barrier->Enter();

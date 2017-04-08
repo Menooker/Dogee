@@ -229,7 +229,7 @@ void slave_main(uint32_t tid)
 			loss[0] += loss[i];
 			loss[i] = 0;
 			for (int j = 0; j < features*matK; j++)
-				local_grad_arr[0][j] = local_grad_arr[i][j];
+				local_grad_arr[0][j] += local_grad_arr[i][j];
 			//printf("grad %f\n",local_grad_arr[i][100]);
 		}
 		std::cout << "Loss " << loss[0] << std::endl;

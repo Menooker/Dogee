@@ -234,7 +234,7 @@ void slave_main(uint32_t tid)
 			loss[0] += loss[i];
 			loss[i] = 0;
 			for (int j = 0; j < param_len; j++)
-				local_grad_arr[0][j] = local_grad_arr[i][j];
+				local_grad_arr[0][j] += local_grad_arr[i][j];
 		}
 		std::cout << "Loss " << loss[0] << std::endl;
 		loss[0] = 0;
