@@ -1,7 +1,7 @@
 # Dogee
-Dogee is a C++ extension for distributed programming on distributed shared memory (DSM) by shared memory multithreading model. Usually, DSM systems provide developers "get" and "set" APIs to use the shared memory. Dogee allows developers to operate the distributed shared memory in a similar way they operate local memory by C++, without using "get" and "set" explicitly. By using Birdee, developers can create arrays, shared variables and objects in DSM.
+Dogee is a C++ library for distributed programming on distributed shared memory (DSM) by shared memory multithreading model. Usually, DSM systems provide developers "get" and "set" APIs to use the shared memory. Dogee allows developers to operate the distributed shared memory in a similar way they operate local memory by C++, without using "get" and "set" explicitly. By using Birdee, developers can create arrays, shared variables and objects in DSM.
 
-[Birdee](https://github.com/Menooker/Birdee/) is a new distributed programming language. Dogee can be viewed as Birdee in C++.
+[Birdee](https://github.com/Menooker/Birdee/) is a sister project, which is a new distributed programming language. Dogee can be viewed as Birdee in C++.
 
 ## Build instructions
 
@@ -15,6 +15,38 @@ Now the binary files will be ready in the "bin" directory.
 
 ### Build Dogee on Windows
 Dogee is based on libmemcached. This repository has included the libmemcached library (.lib and .dll) for Windows (for both debug and release mode and both x86 and x64 mode). You just need to open "Dogee.sln" and build Dogee with Visual Studio 2013 (or newer). Note that there are some bugs in the compiler of original version of VS2013, and you should update VS2013 to make Dogee compile.
+
+## Execution instructions
+
+In this section, we take the logistic regression (which you can find in the "example" directory) as an example. After you build it, you will get a binary "LogsiticRegression" in "bin" directory (in Ubuntu). Copy the binary file to all machines in the cluster.
+
+### Start the slave node
+```bash
+./LogsiticRegression -s 18080
+```
+This command will make the program run in slave mode and wait for the connections from the master, listening port "18080".
+
+### Write a config file on the master
+Create a file "DogeeConfig.txt" on the master node. The content of the file should be like:
+```bash
+DogeeConfigVer= 1
+MasterPort= 9090
+NumSlaves= 2
+NumMemServers= 1
+DSMBackend= ChunkMemcached
+DSMCache= NoCache
+Slaves= 
+127.0.0.1 18080
+127.0.0.1 18090
+MemServers=
+127.0.0.1 11211
+```
+### Run the master node and the whole cluster
+Make sure the file "DogeeConfig.txt" is in the current directory. Then run
+```bash
+./LogsiticRegression num_param 22283 num_points 1000 aaa 5896 iter_num 300 thread_num 2 step_size 0.005 test_partition 0.2
+```
+Note that the parameters following the command "LogsiticRegression" are user-defined, which in this case is the settings for logistic regression.
 
 ## API Mannual
 
