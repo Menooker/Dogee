@@ -16,15 +16,56 @@ Now the binary files will be ready in the "bin" directory.
 ### Build Dogee on Windows
 Dogee is based on libmemcached. This repository has included the libmemcached library (.lib and .dll) for Windows (for both debug and release mode and both x86 and x64 mode). You just need to open "Dogee.sln" and build Dogee with Visual Studio 2013 (or newer). Note that there are some bugs in the compiler of original version of VS2013, and you should update VS2013 to make Dogee compile.
 
+## Write a Hello World program
+We now show that how to write a simple program with Dogee.
+```C++
+#include <stdio.h>
+#include <stdlib.h>
+#include <iostream>
+
+#include "DogeeHelper.h" 
+#include "DogeeBase.h"
+#include "DogeeRemote.h"
+#include "DogeeThreading.h"
+#include "DogeeMacro.h"
+
+using namespace Dogee;
+
+DefGlobal(g_int, int);
+
+void threadfun(uint32_t param)
+{
+	std::cout << "The value of g_int is " << g_int << std::endl;
+}
+int main(int argc, char* argv[])
+{
+	HelperInitCluster(argc, argv);
+
+	//initialize the shared variables
+	g_int = HelperGetParamInt("input_int");
+
+	//create a remote thread on node 1, give the parameter "3232"
+	Ref<DThread> thread = NewObj<DThread>(THREAD_PROC(threadfun), 1, 3232);
+	std::string dummy;
+	std::cout << "Input any string to close the cluster" << std::endl;
+	std::cin >> dummy;
+	CloseCluster();
+	
+	return 0;
+}
+
+```
+This program defines a global variable "g_int" which can be shared between master and slaves. And it creates a thread on slave node 1, and the thread on the slave node gets and prints the value of "g_int". The value of "g_int" is set on master by the command line argument. To compile the program using gcc, you may link it with "-lmemcached -pthread" and "libBirdee.a". On windows you may only need to link it with "Birdee.lib".
+
 ## Execution instructions
 
-In this section, we take the logistic regression (which you can find in the "example" directory) as an example. After you build it, you will get a binary "LogsiticRegression" in "bin" directory (in Ubuntu). Copy the binary file to all machines in the cluster.
+In this section, we take the Hello World program above as an example. After you build it, we assume you get a binary "HelloWorld". Copy the binary file to all machines in the cluster.
 
 ### Start the slave node
 ```bash
-./LogsiticRegression -s 18080
+./HelloWorld -s 18080
 ```
-This command will make the program run in slave mode and wait for the connections from the master, listening port "18080".
+This command will run the program in slave mode and let it wait for the connections from the master, listening port "18080".
 
 ### Write a config file on the master
 Create a file "DogeeConfig.txt" on the master node. The content of the file should be like:
@@ -42,11 +83,11 @@ MemServers=
 127.0.0.1 11211
 ```
 ### Run the master node and the whole cluster
-Make sure the file "DogeeConfig.txt" is in the current directory. Then run
+Make sure the file "DogeeConfig.txt" is in the current directory. Then on master node, run
 ```bash
-./LogsiticRegression num_param 22283 num_points 1000 aaa 5896 iter_num 300 thread_num 2 step_size 0.005 test_partition 0.2
+./HelloWorld input_int 23333
 ```
-Note that the parameters following the command "LogsiticRegression" are user-defined, which in this case is the settings for logistic regression.
+Note that the parameters following the command "./HelloWorld" will be read by the line of code "HelperGetParamInt("input_int")" in the program, and the parameter "23333" will be put into the global variable "g_int". On slave node, the program will print "The value of g_int is 23333" and then exit.
 
 ## API Mannual
 
