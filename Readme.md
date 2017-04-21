@@ -91,7 +91,7 @@ Note that the parameters following the command "./HelloWorld" will be read by th
 
 ## API Mannual
 
-### Dogee Class and Object Reference
+### Shared Class and Object Reference
 Include header file "DogeeBase.h" and "DogeeMacro.h" to use the features.
 
 To define a class to be stored in DSM, the class or its base class should extend the Dogee base class "Dogee::DObject". A "referenece" in Dogee is the counterpart of pointers in C++, while pointers point to objects in local memory, and refereneces point to objects in shared memory.
@@ -114,9 +114,15 @@ public:
 	clsa(ObjectKey obj_id,int a) : DObject(obj_id)
 	{
 
-		self->arr = NewArray<float>();
-		self->next = NewArray<Ref<clsa>>();
+		self->arr = NewArray<float>(10);
+		self->next = NewArray<Ref<clsa>>(10);
 		self->arr[2] = a;
+	}
+	void Destroy()
+	{
+		std::cout << "destroctor" << std::endl;
+		DelArray((Array<float>)self->arr);
+		DelArray((Array<Ref<clsa>>)self->next);
 	}
 };
 
@@ -126,6 +132,7 @@ IMPORTANT NOTES:
  * The macro "DefEnd();" should be delared to be public in a Dogee class. 
  * The first parameter of the consturtors should always be "ObjectKey obj_id", and the base class constructor BASE_CLASS(obj_id) should always be called
  * The constructor CLASS_NAME(ObjectKey obj_id) : BASE_CLASS_NAME(obj_id) should always be declared and have empty body.
+ * Override Destroy() as the destructor.
 
 To create Dogee class instance, use Dogee::NewObj\<CLASS_NAME>(PARAMETER_LIST), where PARAMETER_LIST is the list of parameters for the class constructor. However, the first paramter of the constructors is always "ObjectKey obj_id", which is provided by the Dogee system, and you should omit the first paramter of the constructors in PARAMETER_LIST. For example, to create a "clsa" object defined above.
 ```C++
@@ -133,11 +140,39 @@ Ref<clsa> ptr = NewObj<clsa>(32);
 ```
 The parameter "32" is passed to the variable "i" in the constructor "clsa(ObjectKey obj_id,int a)".
 
-We then have a reference to an object. A reference is declared by "Dogee:Ref\<CLASS_NAME,isVirtual>". There are two types of references in Dogee. The first one is "non-virtual reference". Non-virtual reference inteprets the referenced objects as "CLASS_NAME" in the declaration, and use virtual function table of the class "CLASS_NAME". Non-virtual references may not accurately intepret the object, since the wrong virtual function can be called by using Non-virtual references. However, for a class without virtual functions,  Non-virtual references are always accurate. Declare a Non-virtual reference by Dogee:Ref\<CLASS_NAME,false> or by Dogee:Ref\<CLASS_NAME> (References are non-virtual by default). Virtual references dynamically find the correct virtual function table for the refernced object, and virtual function calls are always accurately intepreted. Declare a Non-virtual reference by Dogee:Ref\<CLASS_NAME,true>.
+We then have a reference to an object. A reference is declared by "Dogee::Ref\<CLASS_NAME,isVirtual>". There are two types of references in Dogee. The first one is "non-virtual reference". Non-virtual reference inteprets the referenced objects as "CLASS_NAME" in the declaration, and use virtual function table of the class "CLASS_NAME". Non-virtual references may not accurately intepret the object, since the wrong virtual function can be called by using Non-virtual references. However, for a class without virtual functions,  Non-virtual references are always accurate. Declare a Non-virtual reference by Dogee::Ref\<CLASS_NAME,false> or by Dogee::Ref\<CLASS_NAME> (References are non-virtual by default). Virtual references dynamically find the correct virtual function table for the refernced object, and virtual function calls are always accurately intepreted. Declare a Non-virtual reference by Dogee::Ref\<CLASS_NAME,true>.
+
+If your class does not include any virtual functions or you know which specific class the reference exactly points to, you should use Non-virtual reference, for they are more efficient.
 
 References can be used in the same way of pointers.
 ```C++
 ptr->i = 0;
 Ref<clsb, true> p2 = Dogee::NewObj<clsb>();
 ptr->prv=p2;
+```
+
+### Shared array
+The Shared array is the array that is stored on DSM. To define a reference to a shared array, you should use the template type Dogee::Array\<Type> in "DogeeBase.h", where "Type" is in any type of primitive types of C++ (like int, float, double) or a reference to shared object or array. To allocate a shared array, use API "NewArray\<Type>(NUM_ELEMENT)" where "Type" is the element type and "NUM_ELEMENT" is the number of elements in the array.
+
+There are some advanced APIs for shared arrays, which are defined as member functions of shared arrays.
+```C++
+void Fill(std::function<T(uint32_t)> func, uint32_t start_index, uint32_t len);
+void CopyTo(T* localarr, uint32_t start_index,uint32_t copy_len);
+void CopyFrom(T* localarr, uint32_t start_index, uint32_t copy_len);
+```
+
+The "Fill" function fills the array elements starting from "start_index", and the number of elements to be filled in is "len". A std::function is passed to the API. The user-defined function takes the index to be filled in as input and returns the value to be filled in.
+
+The "CopyTo" function copies the data in the shared array from DSM to a local buffer. The "CopyTo" function copies the data a local buffer into the shared array in DSM. 
+
+We illustrate the APIs with the following example.
+```C++
+Array<float> arr = NewArray<float>(10);
+arr[0]=123;
+std::cout<<arr[0];
+arr->Fill([](uint32_t i){
+	return (float)rand();
+	},0, 10); // fill the array with random values
+float local[10];
+arr->CopyTo(local,0,10); //copy the array to local buffer
 ```
