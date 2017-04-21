@@ -137,6 +137,7 @@ IMPORTANT NOTES:
 To create Dogee class instance, use Dogee::NewObj\<CLASS_NAME>(PARAMETER_LIST), where PARAMETER_LIST is the list of parameters for the class constructor. However, the first paramter of the constructors is always "ObjectKey obj_id", which is provided by the Dogee system, and you should omit the first paramter of the constructors in PARAMETER_LIST. For example, to create a "clsa" object defined above.
 ```C++
 Ref<clsa> ptr = NewObj<clsa>(32);
+DelObj(ptr);
 ```
 The parameter "32" is passed to the variable "i" in the constructor "clsa(ObjectKey obj_id,int a)".
 
@@ -175,4 +176,26 @@ arr->Fill([](uint32_t i){
 	},0, 10); // fill the array with random values
 float local[10];
 arr->CopyTo(local,0,10); //copy the array to local buffer
+DelArray(arr);
 ```
+
+### Shared Variables
+You should include "DogeeBase.h" and "DogeeMacro.h" to use this feature. You can define a shared variable that is shared among the clusters by the macro "DefGlobal(NAME,TYPE)" in a global scope (where global variables are defined), where NAME is the variable name and TYPE is the variable type. TYPE is in any type of primitive types of C++ (like int, float, double) or a reference to shared object or array. If you want to use the shared variable defined in other ".cpp" files, you may declare a shared variable rather than defining one, where you should use the macro "ExternGlobal(NAME,TYPE)". The usage of shared variable is almost the same as global variables in C++. See the following example.
+```C++
+DefGlobal(foo,Ref<clsa>);
+DefGlobal(bar,int);
+
+void func1()
+{
+	foo=NewObj<clsa>(32);
+	bar=10;
+}
+
+void func2()
+{
+	foo->i=123;
+	bar=bar+2;
+}
+```
+
+Sometimes, we use shared variables just for storing configurations globally, e.g. the learning rate of the distributed machine learning algorithm. In these cases, using shared variables is inefficient, because accessing shared variables involves accessing DSM, which may be time consuming. Noticing that the values of some shared variables will never change after initialization in many applications, we introduce a special kind of shared variables called Const Shared Variables. Const Shared Variables are similar to normal Shared Variables, except that they cache the value of the variable in local memory. These variables are initialized by the master and they assume that the value of the variable will never change after the first remote thread is created. Every slave node will fetch the value of the variable from DSM before the first remote thread on it is started and cache the data in local DSM. Note that the Const Shared Variables are read-only for slaves and should be initialized by master before creating remote threads. Define and declare Const Shared Variables by macros "DefConst" and "ExternConst"
