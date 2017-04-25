@@ -61,6 +61,9 @@ This program defines a global variable "g_int" which can be shared between maste
 
 In this section, we take the Hello World program above as an example. After you build it, we assume you get a binary "HelloWorld". Copy the binary file to all machines in the cluster.
 
+### Run memcached
+The current version of Dogee is supported by memcached. On master and slaves, you should run mamcached in advance. Note that memcached may evict data as it is a cache service. To use it as an implementation of DSM, you should add "-M" option in the arguments when starting memcached, and adjust the memory limit by the argement "-m MEM_SIZE".
+
 ### Start the slave node
 ```bash
 ./HelloWorld -s 18080
@@ -82,6 +85,11 @@ Slaves=
 MemServers=
 127.0.0.1 11211
 ```
+
+ * "MasterPort" is the port that master node will listen.
+ * "DSMBackend" will select the kind of DSM for Dogee. Currently, we support coarse-grained mode ("ChunkMemcached") and fine-grained mode ("Memcached") of memcached as DSM. Coarse-grained mode usually works better in applications which often move large chunks of data between DSM and local memory.
+ * "DSMCache" will select the kind of cache for DSM. The available options include "NoCache" (using DSM directly) and "WriteThroughCache" (using a write through cache)
+ 
 ### Run the master node and the whole cluster
 Make sure the file "DogeeConfig.txt" is in the current directory. Then on master node, run
 ```bash
