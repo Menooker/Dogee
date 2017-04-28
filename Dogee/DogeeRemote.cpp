@@ -12,6 +12,7 @@
 #include <atomic>
 #include "DogeeLocalSync.h"
 #include "DogeeAPIWrapping.h"
+#include <map>
 
 #ifdef _WIN32
 int RcWinsockStartup()
@@ -456,7 +457,7 @@ namespace Dogee
 
 	}
 
-	std::vector< Event*> ThreadEventMap;
+	std::map<int, Event*> ThreadEventMap;
 	extern std::atomic<int> tid_count;
 	extern THREAD_LOCAL int current_thread_id;
 	BD_RWLOCK thread_lock;
@@ -485,8 +486,15 @@ namespace Dogee
 	void RcPrepareNewThread()
 	{
 		UaEnterWriteRWLock(&thread_lock);
-		ThreadEventMap.resize(tid_count);
 		ThreadEventMap[current_thread_id]=new Event(false);
+		UaLeaveWriteRWLock(&thread_lock);
+	}
+
+	void RcDeleteThread()
+	{
+		UaEnterWriteRWLock(&thread_lock);
+		delete ThreadEventMap[current_thread_id];
+		ThreadEventMap.erase(current_thread_id);
 		UaLeaveWriteRWLock(&thread_lock);
 	}
 
@@ -904,10 +912,5 @@ namespace Dogee
 		}
 	}
 
-	void RcDeleteThreadEvent(int id)
-	{
-		delete ThreadEventMap[id];
-		ThreadEventMap[id] = nullptr;
-	}
 
 }

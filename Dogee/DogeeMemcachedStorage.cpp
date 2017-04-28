@@ -307,7 +307,12 @@ namespace Dogee
 			return NULL;
 		return memc;
 	}
-
+	void destroy_memcached_this_thread()
+	{
+		if (!memc)
+			return;
+		memcached_free(memc);
+	}
 	/////////////////////////////////////////////////////////////////
 	//SoStorageChunkMemcached
 	/////////////////////////////////////////////////////////////////

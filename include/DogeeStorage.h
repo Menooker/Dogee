@@ -30,6 +30,8 @@ namespace Dogee
 	public:
 		static void InitInCurrentThread()
 		{};
+		static void DestroyInCurrentThread()
+		{};
 		virtual SoStatus del(ObjectKey key) = 0;
 		virtual SoStatus newobj(ObjectKey key, uint32_t flag,uint32_t size) = 0;
 		virtual SoStatus getinfo(ObjectKey key, uint32_t& flag, uint32_t& size) = 0;

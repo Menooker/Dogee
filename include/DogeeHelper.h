@@ -36,10 +36,12 @@ namespace Dogee
 #ifdef DOGEE_USE_MEMCACHED
 			case SoBackendChunkMemcached:
 				DogeeEnv::InitStorageCurrentThread = SoStorageChunkMemcached::InitInCurrentThread;
+				DogeeEnv::DestroyStorageCurrentThread = SoStorageChunkMemcached::DestroyInCurrentThread;
 				return new SoStorageChunkMemcached(arr_mem_hosts, arr_mem_ports);
 
 			case SoBackendMemcached:
 				DogeeEnv::InitStorageCurrentThread = SoStorageMemcached::InitInCurrentThread;
+				DogeeEnv::DestroyStorageCurrentThread = SoStorageMemcached::DestroyInCurrentThread;
 				return new SoStorageMemcached(arr_mem_hosts, arr_mem_ports);
 #endif
 			default:

@@ -15,6 +15,7 @@ namespace Dogee
 	extern THREAD_LOCAL memcached_st *memc;
 	extern memcached_st *main_memc;
 	extern void* init_memcached_this_thread();
+	extern void destroy_memcached_this_thread();
 	extern bool isMaster();
 	extern void InitMemcachedStorage(std::vector<std::string>& arr_mem_hosts, std::vector<int>& arr_mem_ports);
 	class SoStorageMemcached : public SoStorage
@@ -24,6 +25,10 @@ namespace Dogee
 		static void InitInCurrentThread()
 		{
 			init_memcached_this_thread();
+		}
+		static void DestroyInCurrentThread()
+		{
+			destroy_memcached_this_thread();
 		}
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v);
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v);
@@ -66,6 +71,10 @@ namespace Dogee
 		static void InitInCurrentThread()
 		{
 			init_memcached_this_thread();
+		}
+		static void DestroyInCurrentThread()
+		{
+			destroy_memcached_this_thread();
 		}
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint64_t v);
 		virtual SoStatus put(ObjectKey key, FieldKey fldid, uint32_t v);

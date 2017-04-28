@@ -21,6 +21,29 @@ namespace Dogee
 	int DogeeEnv::self_node_id=-1;
 	int DogeeEnv::num_nodes=0;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::InitStorageCurrentThread = nullptr;
+	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::DestroyStorageCurrentThread = nullptr;
+
+
+	void DogeeEnv::InitCurrentThread()
+	{
+		if (current_thread_id == 0)
+		{
+			current_thread_id = AllocThreadId();
+			RcPrepareNewThread();
+			InitStorageCurrentThread();
+		}
+
+	}
+
+	void  DogeeEnv::DestroyCurrentThread()
+	{
+		if (current_thread_id != 0)
+		{
+			RcDeleteThread();
+			DestroyStorageCurrentThread();
+		}
+
+	}
 
 	bool isMaster()
 	{

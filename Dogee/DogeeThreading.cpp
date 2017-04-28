@@ -29,7 +29,7 @@ namespace Dogee
 		GetProcIDMap()[func] = id;
 	}
 
-	extern void RcDeleteThreadEvent(int id);
+
 	void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey)
 	{
 		DogeeEnv::InitCurrentThread();
@@ -37,7 +37,7 @@ namespace Dogee
 		ref->state = DThread::ThreadRunning;
 		GetIDProcMap()[index](param);
 		ref->state = DThread::ThreadStoped;
-		RcDeleteThreadEvent(thread_id);
+		DogeeEnv::DestroyCurrentThread();
 	}
 
 }

@@ -28,6 +28,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ConsumerProducer", "example
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PageRankMR", "examples\PageRankMR\PageRankMR.vcxproj", "{C26EC03D-A60C-4B2A-8A20-5E3664F145BA}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B25E729C-B0D7-4CC7-B6E4-246A0B038482} = {B25E729C-B0D7-4CC7-B6E4-246A0B038482}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "K-means", "examples\K-means\K-means.vcxproj", "{E2E447D8-D6FF-47A0-A8B1-970E055C9778}"
 	ProjectSection(ProjectDependencies) = postProject
