@@ -48,6 +48,9 @@ enum RcCommand
 	RcCmdEnterBarrier,
 	RcCmdEnterSemaphore,
 	RcCmdLeaveSemaphore,
+	RcCmdWaitForEvent,
+	RcCmdSetEvent,
+	RcCmdResetEvent,
 };
 
 
@@ -114,6 +117,7 @@ namespace Dogee
 			{
 				Barrier,
 				Semaphore,
+				Event,
 			}Kind;
 			int val;
 			int data;
@@ -139,7 +143,7 @@ namespace Dogee
 					{
 						delete itr->second->waitlist;
 					}
-					else if (itr->second->Kind == SyncNode::Semaphore)
+					else if (itr->second->Kind == SyncNode::Semaphore || itr->second->Kind == SyncNode::Event)
 					{
 						delete itr->second->waitqueue;
 					}
@@ -266,6 +270,98 @@ namespace Dogee
 						node->waitqueue->pop();
 					}
 				}
+			}
+
+
+			SyncNode*  CreateEventNode(ObjectKey b_id)
+			{
+				SyncNode* node;
+				auto itr = sync_data.find(b_id);
+				if (itr == sync_data.end())
+				{
+					node = new SyncNode;
+					node->data = DogeeEnv::cache->get(b_id, 0); //->data=auto_reset
+					node->Kind = SyncNode::Event;
+					node->val = DogeeEnv::cache->get(b_id, 2); //->val=is_signal
+					node->waitqueue = new std::queue<SyncThreadNode>;
+					sync_data[b_id] = node;
+				}
+				else
+				{
+					node = itr->second;
+				}
+				return node;
+			}
+			/*
+			Process the event-wait message, may call the nodes to
+			continue, called on master
+			param: src - the source of the message (index of
+			"slavenodes", represents the master)
+			b_id - event id
+			*/
+			void EventWaitMsg(int src, ObjectKey b_id, int thread_id)
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				SyncNode* node = CreateEventNode(b_id);
+				if (node->val)//if is signaled
+				{
+					RcWakeRemoteThread(src, thread_id);
+					if (node->data)//if is autoreset
+					{
+						node->val = 0; //reset the event
+					}
+				}
+				else
+				{
+					SyncThreadNode th = { src, thread_id };
+					node->waitqueue->push(th);
+				}
+			}
+
+
+			/*
+			Process the event-set message, may call the nodes to
+			continue, called on master
+			param: src - the source of the message (index of
+			"slavenodes", represents the master)
+			b_id - event id
+			*/
+			void SetEventMsg(int src, ObjectKey b_id)
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				SyncNode* node = CreateEventNode(b_id);
+				node->val = 1;
+
+				if (node->data)//if is autoreset
+				{
+					node->val = 0; 
+					SyncThreadNode th = node->waitqueue->front();
+					node->waitqueue->pop();
+					RcWakeRemoteThread(th.machine, th.thread_id);
+				}
+				else//if not, release all threads
+				{
+					while (!node->waitqueue->empty())
+					{
+						SyncThreadNode th = node->waitqueue->front();
+						node->waitqueue->pop();
+						RcWakeRemoteThread(th.machine, th.thread_id);
+					}
+				}
+			}
+
+			/*
+			Process the event-reset message, may call the nodes to
+			continue, called on master
+			param: src - the source of the message (index of
+			"slavenodes", represents the master)
+			b_id - event id
+			*/
+			void ResetEventMsg(int src, ObjectKey b_id)
+			{
+				std::unique_lock<std::mutex> lock(mutex);
+				SyncNode* node = CreateEventNode(b_id);
+				node->val = 0;
 			}
 
 		};
@@ -895,6 +991,16 @@ namespace Dogee
 					case RcCmdLeaveSemaphore:
 						MasterZone::syncmanager->SemaphoreLeaveMsg(i, cmd.param, cmd.param2);
 						break;
+					case RcCmdWaitForEvent:
+						MasterZone::syncmanager->EventWaitMsg(i, cmd.param, cmd.param2);
+						break;
+					case RcCmdSetEvent:
+						MasterZone::syncmanager->SetEventMsg(i, cmd.param);
+						break;
+					case RcCmdResetEvent:
+						MasterZone::syncmanager->ResetEventMsg(i, cmd.param);
+						break;
+
 					default:
 						printf("Bad command %u!\n", cmd.cmd);
 					}
@@ -917,6 +1023,53 @@ namespace Dogee
 		{
 			RcCommandPack cmd;
 			cmd.cmd = RcCmdEnterBarrier;
+			cmd.param = okey;
+			cmd.param2 = current_thread_id;
+			RcSend(master_socket, &cmd, sizeof(cmd));
+		}
+		return ThreadEventMap[current_thread_id]->WaitForEvent(timeout);
+	}
+
+
+	void RcSetEvent(ObjectKey okey)
+	{
+		if (DogeeEnv::isMaster())
+		{
+			MasterZone::syncmanager->SetEventMsg(0, okey);
+		}
+		else
+		{
+			RcCommandPack cmd;
+			cmd.cmd = RcCmdSetEvent;
+			cmd.param = okey;
+			RcSend(master_socket, &cmd, sizeof(cmd));
+		}
+	}
+	void RcResetEvent(ObjectKey okey)
+	{
+		if (DogeeEnv::isMaster())
+		{
+			MasterZone::syncmanager->ResetEventMsg(0, okey);
+		}
+		else
+		{
+			RcCommandPack cmd;
+			cmd.cmd = RcCmdResetEvent;
+			cmd.param = okey;
+			RcSend(master_socket, &cmd, sizeof(cmd));
+		}
+	}
+	bool RcWaitForEvent(ObjectKey okey, int timeout)
+	{
+		ThreadEventMap[current_thread_id]->ResetEvent();
+		if (DogeeEnv::isMaster())
+		{
+			MasterZone::syncmanager->EventWaitMsg(0, okey, current_thread_id);
+		}
+		else
+		{
+			RcCommandPack cmd;
+			cmd.cmd = RcCmdWaitForEvent;
 			cmd.param = okey;
 			cmd.param2 = current_thread_id;
 			RcSend(master_socket, &cmd, sizeof(cmd));

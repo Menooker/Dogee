@@ -39,6 +39,7 @@ namespace Dogee
 		funcall(data, param);
 		delete[]data;
 		ref->state = DThread::ThreadStoped;
+		ref->Set();
 		DogeeEnv::DestroyCurrentThread();
 	}
 	void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey)
@@ -48,6 +49,7 @@ namespace Dogee
 		ref->state = DThread::ThreadRunning;
 		GetIDProcMap()[index](param);
 		ref->state = DThread::ThreadStoped;
+		ref->Set();
 		DogeeEnv::DestroyCurrentThread();
 	}
 

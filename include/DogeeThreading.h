@@ -16,6 +16,44 @@ namespace Dogee
 	std::vector<thread_proc>& GetIDProcMap();
 	std::unordered_map<thread_proc, int>& GetProcIDMap();
 
+
+	extern void RcSetEvent(ObjectKey okey);
+	extern void RcResetEvent(ObjectKey okey);
+	extern bool RcWaitForEvent(ObjectKey okey, int timeout);
+	class DEvent : public DObject
+	{
+		DefBegin(DObject);
+	public:
+		Def(auto_reset, int);
+		Def(is_signal, int);
+		DefEnd();
+		DEvent(ObjectKey obj_id) : DObject(obj_id)
+		{
+		}
+		DEvent(ObjectKey obj_id, bool auto_reset, bool is_signal) : DObject(obj_id)
+		{
+			self->auto_reset = auto_reset;
+			self->is_signal = is_signal;
+		}
+
+		void Set()
+		{
+			RcSetEvent(self->GetObjectId());
+		}
+		void Reset()
+		{
+			RcResetEvent(self->GetObjectId());
+		}
+		
+		bool Wait(int timeout = -1)
+		{
+			return RcWaitForEvent(self->GetObjectId(), timeout);
+		}
+
+
+	};
+
+
 	class AutoRegisterThreadProcClass
 	{
 		static int id;
@@ -82,9 +120,9 @@ namespace Dogee
 	};
 
 
-	class DThread : public DObject
+	class DThread : public DEvent
 	{
-		DefBegin(DObject);
+		DefBegin(DEvent);
 	public:
 		enum ThreadState
 		{
@@ -98,7 +136,7 @@ namespace Dogee
 	public:
 		Def(node_id, int);
 		DefEnd();
-		DThread(ObjectKey obj_id) : DObject(obj_id)
+		DThread(ObjectKey obj_id) : DEvent(obj_id, false, false)
 		{
 		}
 		friend void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey);
@@ -111,7 +149,7 @@ namespace Dogee
 		/*only if you have registered the function with RegFunc can you use this
 		constructor to create a thread. Because you must make sure the function
 		has been registered*/
-		DThread(ObjectKey obj_id, thread_proc func, int nd_id, uint32_t param) : DObject(obj_id)
+		DThread(ObjectKey obj_id, thread_proc func, int nd_id, uint32_t param) : DEvent(obj_id, false, false)
 		{
 			self->state = ThreadCreating;
 			self->node_id = nd_id;
@@ -124,7 +162,7 @@ namespace Dogee
 		you should wrap it with a THREAD_PROC wrapper.
 		*/
 		template<typename T>
-		DThread(ObjectKey obj_id, T func, int nd_id, uint32_t param) : DObject(obj_id)
+		DThread(ObjectKey obj_id, T func, int nd_id, uint32_t param) : DEvent(obj_id, false, false)
 		{
 			self->state = ThreadCreating;
 			self->node_id = nd_id;
