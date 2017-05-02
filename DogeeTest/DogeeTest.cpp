@@ -16,6 +16,7 @@
 #include "DogeeAccumulator.h"
 #include "DogeeSharedConst.h"
 #include "DogeeString.h"
+#include <chrono>
 #include <memory>
 #include <thread>
 using namespace Dogee;
@@ -341,7 +342,7 @@ int main(int argc, char* argv[])
 		};
 		int lambd = 2132123;
 		auto func_comp = [lambd](uint32_t i){
-			Sleep(1000);
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
 			std::cout << i << std::endl;
 			Ref<DString> str(i);
 			std::cout << lambd << std::endl << (str->getstr());
@@ -351,7 +352,7 @@ int main(int argc, char* argv[])
 		std::cout << 0 << std::endl << str->getstr() << std::endl;
 		//readtest<int>();
 		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);
-		th->Wait();
+		th->Join();
 		std::cout << "Input any to continue";
 		std::string dummy;
 		std::cin >> dummy;

@@ -694,7 +694,7 @@ namespace Dogee
 		{
 			static_assert(!std::is_abstract<T>::value, "No need to register abstract class.");
 			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
-			return dynamic_cast<DObject*> (new T(key));
+			return (DObject*) (new T(key));
 		}
 	public:
 

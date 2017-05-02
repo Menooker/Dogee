@@ -120,7 +120,7 @@ namespace Dogee
 	};
 
 
-	class DThread : public DEvent
+	class DThread : protected DEvent
 	{
 		DefBegin(DEvent);
 	public:
@@ -146,6 +146,10 @@ namespace Dogee
 			return self->state;
 		}
 
+		bool Join(int timeout = -1)
+		{
+			return self->Wait(timeout);
+		}
 		/*only if you have registered the function with RegFunc can you use this
 		constructor to create a thread. Because you must make sure the function
 		has been registered*/
