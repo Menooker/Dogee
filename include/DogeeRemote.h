@@ -46,7 +46,7 @@ namespace Dogee
 	Can be called by the master node. Create a thread on "node_id", with function index "idx"
 	*/
 	int RcCreateThread(int node_id, uint32_t idx, uint32_t param, ObjectKey okey);
-
+	int RcCreateThread(int node_id, uint32_t idx, uint32_t param, ObjectKey okey, void* data, uint32_t len);
 	/*
 	Can be called by the master node. Close the whole cluster.
 	*/

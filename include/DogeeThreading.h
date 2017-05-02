@@ -35,15 +35,36 @@ namespace Dogee
 	class AutoRegisterLambda
 	{
 	public:
+		static const bool is_simple = std::is_convertible<T, thread_proc>::value;
 		static const int id;
 	private:
-
+		template<typename T2,bool _is_simple>
+		struct RegisterImp
+		{//default case: if type T is a complex function object
+			static void _Call(T2* ptr, uint32_t param)
+			{
+				ptr->operator()(param);
+			}
+			static int Reg()
+			{
+				return AutoRegisterThreadProcClass::Register((thread_proc)_Call);
+			}
+		};
+		template<typename T2>
+		struct RegisterImp<T2,true>
+		{//if type T is a simple function object
+			static int Reg()
+			{
+				T* a = nullptr;
+				thread_proc ptr = *a;
+				return AutoRegisterThreadProcClass::Register(ptr);
+			}
+		};
+		
 		static int Register()
 		{
-			static_assert(std::is_object<T>::value && std::is_convertible<T, thread_proc>::value, "Must be a lambda");
-			T* a = nullptr;
-			thread_proc ptr = *a;
-			return AutoRegisterThreadProcClass::Register(ptr);
+			static_assert(std::is_object<T>::value, "Must be a lambda");
+			return RegisterImp < T, is_simple >::Reg();
 		}
 
 	};
@@ -81,6 +102,7 @@ namespace Dogee
 		{
 		}
 		friend void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey);
+		friend void ThThreadEntryObject(int thread_id, int index, uint32_t param, ObjectKey okey, char* data);
 		ThreadState GetState()
 		{
 			return self->state;
@@ -106,7 +128,10 @@ namespace Dogee
 		{
 			self->state = ThreadCreating;
 			self->node_id = nd_id;
-			RcCreateThread(node_id, AutoRegisterLambda<T>::id, param, self->GetObjectId());
+			if (AutoRegisterLambda<T>::is_simple) //just too lazy to use a template to do this
+				RcCreateThread(node_id, AutoRegisterLambda<T>::id, param, self->GetObjectId());
+			else
+				RcCreateThread(node_id, AutoRegisterLambda<T>::id, param, self->GetObjectId(), &func, sizeof(func));
 		}
 
 	};

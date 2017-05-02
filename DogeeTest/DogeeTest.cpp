@@ -304,6 +304,7 @@ void func2(uint32_t i){
 void objecttest();
 extern void accutest();
 extern void mrtest();
+
 int main(int argc, char* argv[])
 {
 	if (argc == 3 && std::string(argv[1]) == "-s")
@@ -337,11 +338,19 @@ int main(int argc, char* argv[])
 			Ref<DString> str(i);
 			std::cout << g_i<<std::endl<< (str->getstr());
 		};
-		auto th = NewObj<DThread>(THREAD_PROC(func2), 1, str.GetObjectId());
+		int lambd = 2132123;
+		auto func_comp = [lambd](uint32_t i){
+			std::cout << i << std::endl;
+			Ref<DString> str(i);
+			std::cout << lambd << std::endl << (str->getstr());
+		};
+		//auto th = NewObj<DThread>(THREAD_PROC(func2), 1, str.GetObjectId());
+		auto th = NewObj<DThread>(func_comp, 1, str.GetObjectId());
 		std::cout << 0 << std::endl << str->getstr() << std::endl;
 		//readtest<int>();
 		//auto acc = NewObj<DFunctionalAccumulator<int, adder>>(Array<int>(0),0,0);
-
+		std::string dummy;
+		std::cin >> dummy;
 		//fieldtest();
 		CloseCluster();
 	}

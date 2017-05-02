@@ -29,7 +29,18 @@ namespace Dogee
 		GetProcIDMap()[func] = id;
 	}
 
-
+	void ThThreadEntryObject(int thread_id, int index, uint32_t param, ObjectKey okey,char* data)
+	{
+		DogeeEnv::InitCurrentThread();
+		Ref<DThread> ref(okey);
+		ref->state = DThread::ThreadRunning;
+		typedef void(*pCall)(char* ptr, uint32_t param);
+		pCall funcall = (pCall)GetIDProcMap()[index];
+		funcall(data, param);
+		delete[]data;
+		ref->state = DThread::ThreadStoped;
+		DogeeEnv::DestroyCurrentThread();
+	}
 	void ThThreadEntry(int thread_id, int index, uint32_t param, ObjectKey okey)
 	{
 		DogeeEnv::InitCurrentThread();

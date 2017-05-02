@@ -13,6 +13,7 @@
 #include "DogeeLocalSync.h"
 #include "DogeeAPIWrapping.h"
 #include <map>
+#include <assert.h>
 
 #ifdef _WIN32
 int RcWinsockStartup()
@@ -507,7 +508,7 @@ namespace Dogee
 		UaKillRWLock(&thread_lock);
 	}
 	using namespace Socket;
-
+	extern void ThThreadEntryObject(int thread_id, int index, uint32_t param, ObjectKey okey,char* data);
 	extern void ThThreadEntry(int thread_id,int index, uint32_t param,ObjectKey okey );
 	extern void InitSharedConst();
 	void RcSlaveMainLoop(char* path, SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
@@ -536,7 +537,28 @@ namespace Dogee
 				goto CLOSE;
 				break;
 			case RcCmdCreateThread:
-				std::thread(ThThreadEntry, 0, cmd.param, cmd.param2, cmd.param3).detach();
+				char pbuf[2048];
+				if (cmd.param4)
+				{
+					if (cmd.param4 > 2048)
+					{
+						printf("function object too large\n");
+						break;
+					}
+					int ret2 = RcRecv(s, pbuf, cmd.param4);
+					if (ret2 != cmd.param4)
+					{
+						printf("Socket error!\n");
+						break;
+					}
+					char* data = new char[cmd.param4];
+					memcpy(data, pbuf, cmd.param4);
+					std::thread(ThThreadEntryObject, 0, cmd.param, cmd.param2, cmd.param3,data).detach();
+				}
+				else
+				{
+					std::thread(ThThreadEntry, 0, cmd.param, cmd.param2, cmd.param3).detach();
+				}
 				break;
 			case RcCmdWakeSync:
 				RcSetRemoteEvent(cmd.param);
@@ -773,12 +795,36 @@ namespace Dogee
 
 	int RcCreateThread(int node_id,uint32_t idx,uint32_t param,ObjectKey okey)
 	{
+		assert(DogeeEnv::isMaster);
 		int _idx = idx;
 		int _param = param;
 		RcCommandPack cmd = { RcCmdCreateThread, _idx, _param };
 		cmd.param3 = okey;
+		cmd.param4 = 0;
 		int sret = RcSendCmd(remote_nodes.GetConnection(node_id), &cmd);
 		return sret;
+	}
+
+	int RcCreateThread(int node_id, uint32_t idx, uint32_t param, ObjectKey okey,void* data,uint32_t len)
+	{
+		assert(DogeeEnv::isMaster);
+		int _idx = idx;
+		int _param = param;
+		assert(len <= 2048);
+		char pbuf[2048 + sizeof(RcCommandPack)];
+		RcCommandPack* pcmd = (RcCommandPack*)pbuf;
+		pcmd->cmd = RcCmdCreateThread;
+		pcmd->param = _idx;
+		pcmd->param2 = _param;
+		pcmd->param3 = okey;
+		pcmd->param4 = len;
+		memcpy(pbuf + sizeof(RcCommandPack), data, len);
+		int ret = RcSend(remote_nodes.GetConnection(node_id), pcmd, sizeof(RcCommandPack)+len);
+		if (ret == SOCKET_ERROR)
+		{
+			return RcSocketLastError();
+		}
+		return 0;
 	}
 
 	void RcWakeRemoteThread(int dest, int thread_id)
