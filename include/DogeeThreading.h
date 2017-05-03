@@ -160,10 +160,10 @@ namespace Dogee
 			RcCreateThread(node_id, GetProcIDMap()[func], param, self->GetObjectId());
 		}
 
-		/*this constructor accepts lambda(without capture) and other callable objects
-		that can be converted to thread_proc. Make sure the class T is unique for 
-		different functions (one class for each function). To pass a function name,
-		you should wrap it with a THREAD_PROC wrapper.
+		/*this constructor accepts lambda and other callable objects.
+		Callable objects that can be converted to thread_proc is called in a simple way.
+		Make sure the class T is unique for different functions (one class for each function).
+		To pass a function name, you should wrap it with a THREAD_PROC wrapper.
 		*/
 		template<typename T>
 		DThread(ObjectKey obj_id, T func, int nd_id, uint32_t param) : DEvent(obj_id, false, false)

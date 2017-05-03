@@ -41,6 +41,7 @@ namespace Dogee
 		{
 			RcDeleteThread();
 			DestroyStorageCurrentThread();
+			current_thread_id = 0;
 		}
 
 	}
