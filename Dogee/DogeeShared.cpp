@@ -7,13 +7,15 @@
 #include "DogeeThreading.h"
 #include <sstream>
 #include <limits>
-
+#include <mutex>
+#include <set>
 
 #define DOGEE_CONFIG_VER 1
 
 namespace Dogee
 {
 	ObjectKey objid=1;
+	FieldKey gloabl_fid = 0;
 	THREAD_LOCAL DObject* lastobject = nullptr;
 	SoStorage* DogeeEnv::backend=nullptr;
 	DSMCache* DogeeEnv::cache=nullptr;
@@ -22,7 +24,58 @@ namespace Dogee
 	int DogeeEnv::num_nodes=0;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::InitStorageCurrentThread = nullptr;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::DestroyStorageCurrentThread = nullptr;
+	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::DeleteCheckpoint = nullptr;
+	void* DogeeEnv::checkboject = nullptr;
 
+	std::mutex object_list_lock;
+	std::set<ObjectKey> object_list;
+
+	int GetObjectNumber()
+	{
+		std::lock_guard<std::mutex> lock(object_list_lock);
+		return object_list.size();
+	}
+	void DeleteObject(ObjectKey key)
+	{
+		std::lock_guard<std::mutex> lock(object_list_lock);
+		object_list.erase(key);
+	}
+
+	void PushObject(ObjectKey key)
+	{
+		std::lock_guard<std::mutex> lock(object_list_lock);
+		object_list.insert(key);
+	}
+
+	void ForEachObject(std::function<void(ObjectKey key)> func)
+	{
+		std::lock_guard<std::mutex> lock(object_list_lock);
+		for(auto key:object_list)
+			func(key);
+	}
+
+	ObjectKey AllocObjectId(uint32_t cls_id, uint32_t size)
+	{
+		ObjectKey key = 0;
+		bool found = false;
+		for (int i = 0; i<DOGEE_MAX_SHARED_KEY_TRIES; i++)
+		{
+			while (key == 0)
+				key = rand();
+			if (DogeeEnv::backend->newobj(key, cls_id, size) == SoOK)
+			{
+				PushObject(key);
+				found = true;
+				break;
+			}
+		}
+		if (!found)
+		{
+			abort();
+			//fix-me : raise some hard error here			
+		}
+		return key;
+	}
 
 	void DogeeEnv::InitCurrentThread()
 	{
@@ -111,7 +164,7 @@ namespace Dogee
 
 #define MyAssert(a,str) do{if(!a){MyAbort(str);}}while(0)
 	std::unordered_map<std::string, std::string> param;
-	void HelperInitCluster(int argc, char* argv[])
+	void _HelperInitCluster(int argc, char* argv[])
 	{
 		if (argc >= 3 && std::string(argv[1]) == "-s") //if slave
 		{

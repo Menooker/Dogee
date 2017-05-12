@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <iostream>
 
+#include "DogeeHelper.h" 
 #include "DogeeBase.h"
 #include "DogeeMacro.h"
 #include "DogeeStorage.h"
@@ -307,7 +308,69 @@ void objecttest();
 extern void accutest();
 extern void mrtest();
 
+
+////////////////////////////checkpoint
+int shared_local = -1;
+int slave_done_i = -1;
+DefGlobal(mycounter, int);
+DefGlobal(barrier, Ref<DBarrier>);
+void thread_for_checkpoint(uint32_t param)
+{
+	std::cout << "Slave process = " << slave_done_i << std::endl;
+	for (int i = slave_done_i + 1; i < 100; i++)
+	{
+		std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+		mycounter = mycounter + 2;
+		std::cout << (int) mycounter << std:: endl;
+		slave_done_i = i;
+		barrier->Enter();
+	}
+}
+
+void main_process()
+{
+	if (barrier->GetObjectId() == 0)
+		barrier = NewObj<DBarrier>(2);
+	std::cout << "shared_local : " << shared_local << std::endl;
+	Ref<DThread> th = NewObj<DThread>(THREAD_PROC(thread_for_checkpoint), 1, 123);
+	for (int i = shared_local + 1; i < 100; i++)
+	{
+		shared_local = i;
+		barrier->Enter();
+	}
+	th->Join();
+	CloseCluster();
+}
+class MasterCheckPoint:public CheckPoint
+{
+public:
+	SerialDef(shared_local, std::reference_wrapper<int>);
+	MasterCheckPoint() :shared_local(::shared_local)
+	{}
+	void DoRestart()
+	{
+		main_process();
+	}
+};
+SerialDecl(MasterCheckPoint,shared_local, std::reference_wrapper<int>);
+
+class SlaveCheckPoint :public CheckPoint
+{
+public:
+	SerialDef(slave_done_i, std::reference_wrapper<int>);
+	SlaveCheckPoint() :slave_done_i(::slave_done_i)
+	{}
+};
+SerialDecl(SlaveCheckPoint, slave_done_i, std::reference_wrapper<int>);
+
 int main(int argc, char* argv[])
+{
+	HelperInitCluster<MasterCheckPoint, SlaveCheckPoint>(argc, argv);
+	main_process();
+}
+////////////////////////////checkpoint
+
+int main2(int argc, char* argv[])
 {
 	if (argc == 3 && std::string(argv[1]) == "-s")
 	{

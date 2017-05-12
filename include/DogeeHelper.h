@@ -8,6 +8,7 @@
 #include "DogeeEnv.h"
 #include "DogeeDirectoryCache.h"
 #include "DogeeSocket.h"
+#include "DogeeCheckpoint.h"
 namespace Dogee
 {
 	class SoStorageFactory
@@ -74,7 +75,19 @@ namespace Dogee
 
 	};
 
-	extern void HelperInitCluster(int argc, char* argv[]);
+	extern void _HelperInitCluster(int argc, char* argv[]);
+
+	template<typename MasterCheckPointType, typename SlaveCheckPointType, class... _Types>
+	void HelperInitCluster(int argc, char* argv[], _Types&&... _Args)
+	{
+		InitCheckPoint<MasterCheckPointType, SlaveCheckPointType>(std::forward<_Types>(_Args)...);
+		_HelperInitCluster(argc,argv);
+	}
+
+	inline void HelperInitCluster(int argc, char* argv[])
+	{
+		_HelperInitCluster(argc, argv);
+	}
 	extern std::string& HelperGetParam(const std::string& str);
 	extern int HelperGetParamInt(const std::string& str);
 	extern double HelperGetParamDouble(const std::string& str);

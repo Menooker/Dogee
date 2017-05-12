@@ -887,6 +887,8 @@ namespace Dogee
 		delete MasterZone::syncmanager;
 		AcClose();
 		DogeeEnv::CloseStorage();
+		if (DogeeEnv::DeleteCheckpoint)
+			DogeeEnv::DeleteCheckpoint();
 	}
 
 	int RcCreateThread(int node_id,uint32_t idx,uint32_t param,ObjectKey okey)

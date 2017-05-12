@@ -87,6 +87,9 @@
     <ClInclude Include="..\include\DogeeFileTools.h">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\DogeeCheckpoint.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="stdafx.cpp">
@@ -114,6 +117,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
     <ClCompile Include="DogeeAccumulator.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="DogeeCheckpoint.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

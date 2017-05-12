@@ -29,13 +29,16 @@ namespace Dogee
 	private:
 		static bool _isMaster;
 	public:
+		static void* checkboject;
 		static SoStorage* backend;
 		static DSMCache* cache;
 		static int self_node_id;
 		static int num_nodes;
 		typedef void(*InitStorageCurrentThreadProc)();
+		static InitStorageCurrentThreadProc DeleteCheckpoint;
 		static InitStorageCurrentThreadProc InitStorageCurrentThread;
 		static InitStorageCurrentThreadProc DestroyStorageCurrentThread;
+		
 
 		static void InitCurrentThread();
 

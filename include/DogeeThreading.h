@@ -120,7 +120,7 @@ namespace Dogee
 	};
 
 
-	class DThread : protected DEvent
+	class DThread : public DEvent
 	{
 		DefBegin(DEvent);
 	public:
