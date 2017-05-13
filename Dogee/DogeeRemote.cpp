@@ -67,6 +67,7 @@ struct MasterInfo
 	int32_t localport;
 	Dogee::BackendType backty;
 	Dogee::CacheType cachety;
+	int32_t checkpoint;
 };
 
 struct SlaveInfo
@@ -607,15 +608,23 @@ namespace Dogee
 	extern void ThThreadEntryObject(int thread_id, int index, uint32_t param, ObjectKey okey,char* data);
 	extern void ThThreadEntry(int thread_id,int index, uint32_t param,ObjectKey okey );
 	extern void InitSharedConst();
+	extern void DoRestart();
+	extern int checkpoint_cnt;
 	void RcSlaveMainLoop(char* path, SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& mem_hosts, std::vector<int>& mem_ports, int node_id,
-		BackendType backty, CacheType cachety)
+		BackendType backty, CacheType cachety,int checkpoint)
 	{
 
 		DogeeEnv::InitCurrentThread();
 		if (slave_init_proc)
 			slave_init_proc(node_id);
-
+		if (DogeeEnv::InitCheckpoint)
+			DogeeEnv::InitCheckpoint();
+		if (checkpoint >= 0)
+		{
+			checkpoint_cnt = checkpoint;
+			DoRestart();
+		}
 		for (;;)
 		{
 			RcCommandPack cmd;
@@ -771,7 +780,7 @@ namespace Dogee
 			master_socket = s;
 			DogeeEnv::SetIsMaster(false);
 			
-			RcSlaveMainLoop(mainmod, s, hosts, ports, memhosts, memports, mi.node_id,mi.backty,mi.cachety);
+			RcSlaveMainLoop(mainmod, s, hosts, ports, memhosts, memports, mi.node_id,mi.backty,mi.cachety,mi.checkpoint);
 			
 		}
 		else
@@ -790,7 +799,7 @@ namespace Dogee
 
 	int RcMasterHello(SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& memhosts, std::vector<int>& memports, uint32_t node_id,
-		BackendType backty, CacheType cachety)
+		BackendType backty, CacheType cachety,int checkpoint)
 	{
 		SlaveInfo si;
 		unsigned mem_cnt;
@@ -804,7 +813,7 @@ namespace Dogee
 		{
 			return 2;
 		}
-		MasterInfo mi = { RC_MAGIC_MASTER, mem_cnt, host_cnt, node_id, ports[0] ,backty,  cachety };
+		MasterInfo mi = { RC_MAGIC_MASTER, mem_cnt, host_cnt, node_id, ports[0] ,backty,  cachety,checkpoint };
 		RcSend(s, &mi, sizeof(mi));
 
 		for (unsigned i = 1; i<host_cnt; i++)
@@ -841,17 +850,18 @@ namespace Dogee
 
 	static void RcMasterListen();
 	extern void DeleteSharedConstInitializer();
+	extern int MasterCheckCheckPoint();
 	int RcMaster(std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& memhosts, std::vector<int>& memports,
 		BackendType backty, CacheType cachety)
 	{
-
+		int checkpoint=MasterCheckCheckPoint();
 		//push master node as node_id=0
 		remote_nodes.PushConnection(0);
 		for (unsigned i = 1; i < hosts.size(); i++)
 		{
 			SOCKET s = (SOCKET)RcConnect((char*)hosts[i].c_str(), ports[i]);
-			if (s == 0 || RcMasterHello((SOCKET)s, hosts, ports, memhosts, memports, i, backty, cachety))
+			if (s == 0 || RcMasterHello((SOCKET)s, hosts, ports, memhosts, memports, i, backty, cachety, checkpoint))
 				return 1;
 			remote_nodes.PushConnection(s);
 		}
@@ -866,12 +876,20 @@ namespace Dogee
 		MasterZone::syncmanager = new MasterZone::SyncManager;
 		AcInit(Socket::RcCreateListen(ports[0]));
 		printf("Master Listen port %d\n", ports[0]);
-		DeleteSharedConstInitializer();
 		if (!AcWaitForReady())
 		{
 			printf("Wait for data socket timeout\n");
 			return 1;
 		}
+		if (DogeeEnv::InitCheckpoint)
+			DogeeEnv::InitCheckpoint();
+		if (checkpoint >= 0)
+		{
+			checkpoint_cnt = checkpoint;
+			DoRestart();
+			exit(0);
+		}
+		DeleteSharedConstInitializer();
 		return 0;
 
 	}
@@ -884,11 +902,11 @@ namespace Dogee
 		{
 			RcSendCmd(remote_nodes.GetConnection(i), &cmd);
 		}
+		if (DogeeEnv::DeleteCheckpoint)
+			DogeeEnv::DeleteCheckpoint();
 		delete MasterZone::syncmanager;
 		AcClose();
 		DogeeEnv::CloseStorage();
-		if (DogeeEnv::DeleteCheckpoint)
-			DogeeEnv::DeleteCheckpoint();
 	}
 
 	int RcCreateThread(int node_id,uint32_t idx,uint32_t param,ObjectKey okey)

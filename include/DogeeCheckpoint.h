@@ -1,10 +1,11 @@
 #ifndef __DOGEE_CHECKPOINT_H_ 
 #define __DOGEE_CHECKPOINT_H_
-
+#include <iostream> 
 #include <functional>
 #include <string>
 #include <vector>
 #include "DogeeEnv.h"
+#include "DogeeThreading.h"
 
 #define SerialDef(NAME,...) __VA_ARGS__ NAME; static int __REG_MEMBER__##NAME##__;
 #define SerialDecl(selfclass,NAME,...)  int selfclass::__REG_MEMBER__##NAME##__=Dogee::ClassSerializer<selfclass>::RegMember<__VA_ARGS__>(offsetof(selfclass,NAME));
@@ -19,12 +20,30 @@ namespace Dogee
 		static void Serialize(size_t offset, std::ostream& os, void* obj)
 		{
 			T* buf = (T*)((char*)obj + offset);
-			os << *buf;
+			os.write((char*)buf,sizeof(T));
 		}
 		static void Deserialize(size_t offset, std::istream& os, void* obj)
 		{
 			T* buf = (T*)((char*)obj + offset);
-			os >> *buf;
+			os.read((char*)buf, sizeof(T));
+		}
+	};
+	template<typename T>
+	struct CheckPointSerializer < std ::reference_wrapper<T>>
+	{
+		static T* getaddr(std::reference_wrapper<T>& r)
+		{
+			return &(T&)r;
+		}
+		static void Serialize(size_t offset, std::ostream& os, void* obj)
+		{
+			std::reference_wrapper<T>* buf = (std::reference_wrapper<T>*)((char*)obj + offset);
+			os.write((char*)getaddr(*buf), sizeof(T));
+		}
+		static void Deserialize(size_t offset, std::istream& os, void* obj)
+		{
+			std::reference_wrapper<T>* buf = (std::reference_wrapper<T>*)((char*)obj + offset);
+			os.read((char*)getaddr(*buf), sizeof(T));
 		}
 	};
 
@@ -101,6 +120,8 @@ namespace Dogee
 		funcDeserialize = std::bind(ClassSerializer<T>::Deserialize, std::placeholders::_1, obj);
 	}
 
+	void remove_checkpoint_files();
+	int MasterCheckCheckPoint();
 
 	template<typename MasterCheckPointType, typename SlaveCheckPointType>
 	void DeleteCheckPoint()
@@ -119,6 +140,7 @@ namespace Dogee
 			delete obj;
 			DogeeEnv::checkboject = nullptr;
 		}
+		remove_checkpoint_files();
 		DogeeEnv::DeleteCheckpoint = nullptr;
 	}
 
@@ -139,6 +161,21 @@ namespace Dogee
 		}
 		DogeeEnv::DeleteCheckpoint = DeleteCheckPoint<MasterCheckPointType, SlaveCheckPointType>;
 	}
+
+	class DCheckpointBarrier : public DBarrier
+	{
+		DefBegin(DBarrier);
+	public:
+		DefEnd();
+		DCheckpointBarrier(ObjectKey obj_id) : DBarrier(obj_id)
+		{
+		}
+		DCheckpointBarrier(ObjectKey obj_id, int count) : DBarrier(obj_id)
+		{
+			self->count = count;
+		}
+		bool Enter();
+	};
 
 }
 

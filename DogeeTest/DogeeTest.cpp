@@ -310,10 +310,11 @@ extern void mrtest();
 
 
 ////////////////////////////checkpoint
+#include "DogeeCheckpoint.h"
 int shared_local = -1;
 int slave_done_i = -1;
 DefGlobal(mycounter, int);
-DefGlobal(barrier, Ref<DBarrier>);
+DefGlobal(barrier, Ref<DCheckpointBarrier>);
 void thread_for_checkpoint(uint32_t param)
 {
 	std::cout << "Slave process = " << slave_done_i << std::endl;
@@ -330,7 +331,7 @@ void thread_for_checkpoint(uint32_t param)
 void main_process()
 {
 	if (barrier->GetObjectId() == 0)
-		barrier = NewObj<DBarrier>(2);
+		barrier = NewObj<DCheckpointBarrier>(2);
 	std::cout << "shared_local : " << shared_local << std::endl;
 	Ref<DThread> th = NewObj<DThread>(THREAD_PROC(thread_for_checkpoint), 1, 123);
 	for (int i = shared_local + 1; i < 100; i++)
@@ -365,7 +366,7 @@ SerialDecl(SlaveCheckPoint, slave_done_i, std::reference_wrapper<int>);
 
 int main(int argc, char* argv[])
 {
-	HelperInitCluster<MasterCheckPoint, SlaveCheckPoint>(argc, argv);
+	HelperInitClusterCheckPoint<MasterCheckPoint, SlaveCheckPoint>(argc, argv,"Test");
 	main_process();
 }
 ////////////////////////////checkpoint

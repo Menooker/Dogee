@@ -623,8 +623,8 @@ namespace Dogee
 	inline  void DelObj(Ref<T,isV> obj)
 	{
 		obj->Destroy();
-		DeleteObject(arr->GetObjectId());
-		DogeeEnv::backend->del(obj.GetObjectId());
+		DeleteObject(obj->GetObjectId());
+		DogeeEnv::backend->del(obj->GetObjectId());
 	}
 
 	template <class T> struct AutoRegisterObject;

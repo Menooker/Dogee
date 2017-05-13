@@ -25,8 +25,9 @@ namespace Dogee
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::InitStorageCurrentThread = nullptr;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::DestroyStorageCurrentThread = nullptr;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::DeleteCheckpoint = nullptr;
+	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::InitCheckpoint = nullptr;
 	void* DogeeEnv::checkboject = nullptr;
-
+	std::string DogeeEnv::application_name;
 	std::mutex object_list_lock;
 	std::set<ObjectKey> object_list;
 
@@ -37,19 +38,19 @@ namespace Dogee
 	}
 	void DeleteObject(ObjectKey key)
 	{
-		std::lock_guard<std::mutex> lock(object_list_lock);
+		std::unique_lock<std::mutex> lock(object_list_lock);
 		object_list.erase(key);
 	}
 
 	void PushObject(ObjectKey key)
 	{
-		std::lock_guard<std::mutex> lock(object_list_lock);
+		std::unique_lock<std::mutex> lock(object_list_lock);
 		object_list.insert(key);
 	}
 
 	void ForEachObject(std::function<void(ObjectKey key)> func)
 	{
-		std::lock_guard<std::mutex> lock(object_list_lock);
+		std::unique_lock<std::mutex> lock(object_list_lock);
 		for(auto key:object_list)
 			func(key);
 	}
@@ -164,8 +165,12 @@ namespace Dogee
 
 #define MyAssert(a,str) do{if(!a){MyAbort(str);}}while(0)
 	std::unordered_map<std::string, std::string> param;
-	void _HelperInitCluster(int argc, char* argv[])
+	void HelperInitCluster(int argc, char* argv[],const char* appname)
 	{
+		if (appname)
+			DogeeEnv::application_name = appname;
+		else
+			DogeeEnv::application_name = "Unnamed";
 		if (argc >= 3 && std::string(argv[1]) == "-s") //if slave
 		{
 			RcSlave(atoi(argv[2]));

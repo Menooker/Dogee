@@ -36,9 +36,10 @@ namespace Dogee
 		static int num_nodes;
 		typedef void(*InitStorageCurrentThreadProc)();
 		static InitStorageCurrentThreadProc DeleteCheckpoint;
+		static InitStorageCurrentThreadProc InitCheckpoint;
 		static InitStorageCurrentThreadProc InitStorageCurrentThread;
 		static InitStorageCurrentThreadProc DestroyStorageCurrentThread;
-		
+		static std::string application_name;
 
 		static void InitCurrentThread();
 

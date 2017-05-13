@@ -75,19 +75,15 @@ namespace Dogee
 
 	};
 
-	extern void _HelperInitCluster(int argc, char* argv[]);
+	extern void HelperInitCluster(int argc, char* argv[], const char* appname = nullptr);
 
-	template<typename MasterCheckPointType, typename SlaveCheckPointType, class... _Types>
-	void HelperInitCluster(int argc, char* argv[], _Types&&... _Args)
+	template<typename MasterCheckPointType, typename SlaveCheckPointType>
+	void HelperInitClusterCheckPoint(int argc, char* argv[], const char* appname = nullptr)
 	{
-		InitCheckPoint<MasterCheckPointType, SlaveCheckPointType>(std::forward<_Types>(_Args)...);
-		_HelperInitCluster(argc,argv);
+		DogeeEnv::InitCheckpoint=InitCheckPoint<MasterCheckPointType, SlaveCheckPointType>;
+		HelperInitCluster(argc, argv, appname);
 	}
 
-	inline void HelperInitCluster(int argc, char* argv[])
-	{
-		_HelperInitCluster(argc, argv);
-	}
 	extern std::string& HelperGetParam(const std::string& str);
 	extern int HelperGetParamInt(const std::string& str);
 	extern double HelperGetParamDouble(const std::string& str);

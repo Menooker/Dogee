@@ -4,7 +4,7 @@
 #Dogee: Dogee.o DogeeMemcachedStorage.o DogeeShared.o  DogeeRemote.o  DogeeThreading.o DogeeMemcachedStorage.o DogeeHelper.o DogeeDirectoryCache.o
 #	$(CXX) -o $@ $(CXXFLAGS) -Wl,--start-group $^ $(LIBS) -Wl,--end-group 
 	# Other rules could be implicitly deduced
-libDogee.a: Dogee.o DogeeMemcachedStorage.o DogeeShared.o  DogeeRemote.o  DogeeThreading.o DogeeMemcachedStorage.o DogeeHelper.o DogeeDirectoryCache.o DogeeAccumulator.o
+libDogee.a: DogeeMemcachedStorage.o DogeeShared.o  DogeeRemote.o  DogeeThreading.o DogeeMemcachedStorage.o DogeeHelper.o DogeeDirectoryCache.o DogeeAccumulator.o DogeeCheckpoint.o
 	ar -crv $(BIN_DIR)/$@ $^ 
 .PHONY:clean
 clean:
@@ -18,5 +18,6 @@ clean:
 	rm -f DogeeHelper.o
 	rm -f DogeeDirectoryCache.o
 	rm -f DogeeAccumulator.o
+	rm -f DogeeCheckpoint.o
 	rm -f $(BIN_DIR)/libDogee.a
 remake: clean libDogee.a
