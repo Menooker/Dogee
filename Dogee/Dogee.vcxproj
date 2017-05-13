@@ -178,7 +178,6 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Dogee.cpp" />
     <ClCompile Include="DogeeAccumulator.cpp" />
     <ClCompile Include="DogeeDirectoryCache.cpp" />
     <ClCompile Include="DogeeMemcachedStorage.cpp" />

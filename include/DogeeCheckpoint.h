@@ -14,9 +14,28 @@
 
 namespace Dogee
 {
+
+	//copied from stackoverflow user jrok
+	//http://stackoverflow.com/a/22759544/4790873
+	template<typename S, typename T>
+	class is_streamable
+	{
+		template<typename SS, typename TT>
+		static auto test(int)
+			-> decltype(std::declval<SS&>() << std::declval<TT>(), std::true_type());
+
+		template<typename, typename>
+		static auto test(...)->std::false_type;
+
+	public:
+		static const bool value = decltype(test<S, T>(0))::value;
+	};
+
+
 	template<typename T>
 	struct CheckPointSerializer
 	{
+		static_assert(is_streamable<std::ostream, T>::value, "The type must be streamable!");
 		static void Serialize(size_t offset, std::ostream& os, void* obj)
 		{
 			T* buf = (T*)((char*)obj + offset);
@@ -38,12 +57,12 @@ namespace Dogee
 		static void Serialize(size_t offset, std::ostream& os, void* obj)
 		{
 			std::reference_wrapper<T>* buf = (std::reference_wrapper<T>*)((char*)obj + offset);
-			os.write((char*)getaddr(*buf), sizeof(T));
+			CheckPointSerializer<T>::Serialize(0, os, getaddr(*buf));
 		}
 		static void Deserialize(size_t offset, std::istream& os, void* obj)
 		{
 			std::reference_wrapper<T>* buf = (std::reference_wrapper<T>*)((char*)obj + offset);
-			os.read((char*)getaddr(*buf), sizeof(T));
+			CheckPointSerializer<T>::Deserialize(0, os, getaddr(*buf));
 		}
 	};
 

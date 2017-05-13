@@ -95,9 +95,6 @@
     <ClCompile Include="stdafx.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="Dogee.cpp">
-      <Filter>源文件</Filter>
-    </ClCompile>
     <ClCompile Include="DogeeShared.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
