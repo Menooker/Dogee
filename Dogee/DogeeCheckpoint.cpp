@@ -110,13 +110,13 @@ namespace Dogee
 		funcRestart();
 	}
 
-	void DoCheckPoint()
+	static bool DoCheckPoint()
 	{
 		if (!DogeeEnv::checkboject)
-			return;
+			return false;
 		if (checkpointlock.exchange(1) == 1)
 		{
-			return; //if another thread is doing checkpoint, return
+			return false; //if another thread is doing checkpoint, return
 		}
 		std::stringstream path;
 		path << DogeeEnv::application_name << "."<< DogeeEnv::self_node_id<<"."<< checkpoint_cnt<<".checkpoint";
@@ -147,6 +147,11 @@ namespace Dogee
 		removepath << DogeeEnv::application_name << "." << DogeeEnv::self_node_id<< "." << (checkpoint_cnt - 2) << ".checkpoint";
 		remove(removepath.str().c_str());
 		checkpoint_cnt++;
+		return true;
+	}
+
+	static void ResetCheckpointLock()
+	{
 		checkpointlock = 0;
 	}
 
@@ -172,13 +177,17 @@ namespace Dogee
 		if (DogeeEnv::isMaster())
 		{
 			self->DBarrier::Enter(-1);
-			DoCheckPoint();
+			bool needrelease=DoCheckPoint();
+			if (needrelease)
+				ResetCheckpointLock();
 			self->DBarrier::Enter(-1);
 		}
 		else
 		{
-			DoCheckPoint();
+			bool needrelease = DoCheckPoint();
 			self->DBarrier::Enter(-1);
+			if (needrelease)
+				ResetCheckpointLock();
 			self->DBarrier::Enter(-1);
 		}
 		return true;
