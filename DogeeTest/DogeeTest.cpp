@@ -364,12 +364,36 @@ public:
 };
 SerialDecl(SlaveCheckPoint, slave_done_i, std::reference_wrapper<int>);
 
-int main(int argc, char* argv[])
+int main3(int argc, char* argv[])
 {
 	HelperInitClusterCheckPoint<MasterCheckPoint, SlaveCheckPoint>(argc, argv,"Test");
 	main_process();
+	return 0;
 }
 ////////////////////////////checkpoint
+
+
+
+/////////////////////////thread pool test
+#include "DogeeThreadPool.h"
+int main(int argc, char* argv[])
+{
+	LThreadPool pool(2);
+	for (int i = 0; i < 50; i++)
+	{
+		auto lam = [](int i){
+			std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+			std::cout << i << std::endl;
+			return i + 1;
+		};
+		pool.submit2(lam,i);
+		pool.submit2(lam, i);
+	}
+	int dummy;
+	std::cin >>dummy;
+	return 0;
+}
+////////////////////////thread pool test end
 
 int main2(int argc, char* argv[])
 {
