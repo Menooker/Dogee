@@ -6,6 +6,7 @@
 #include <vector>
 #include "DogeeEnv.h"
 #include "DogeeThreading.h"
+#include <stddef.h>
 
 #define SerialDef(NAME,...) __VA_ARGS__ NAME; static int __REG_MEMBER__##NAME##__;
 #define SerialDecl(selfclass,NAME,...)  int selfclass::__REG_MEMBER__##NAME##__=Dogee::ClassSerializer<selfclass>::RegMember<__VA_ARGS__>(offsetof(selfclass,NAME));
