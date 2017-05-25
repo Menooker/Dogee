@@ -207,3 +207,72 @@ void func2()
 ```
 
 Sometimes, we use shared variables just for storing configurations globally, e.g. the learning rate of the distributed machine learning algorithm. In these cases, using shared variables is inefficient, because accessing shared variables involves accessing DSM, which may be time consuming. Noticing that the values of some shared variables will never change after initialization in many applications, we introduce a special kind of shared variables called Const Shared Variables. Const Shared Variables are similar to normal Shared Variables, except that they cache the value of the variable in local memory. These variables are initialized by the master and they assume that the value of the variable will never change after the first remote thread is created. Every slave node will fetch the value of the variable from DSM before the first remote thread on it is started and cache the data in local DSM. Note that the Const Shared Variables are read-only for slaves and should be initialized by master before creating remote threads. Define and declare Const Shared Variables by macros "DefConst" and "ExternConst"
+
+### Cluster management
+```C++
+extern void HelperInitCluster(int argc, char* argv[]);
+extern void CloseCluster();
+```
+The above is the main interfaces for cluster management. For simplicity, we have omitted some trivial codes in the declaration of the APIs provided in this section.
+
+The HelperInitCluster API is responsible for initializing Dogee environment and establishing connections among the compute nodes during initialization. 
+This function acts differently on the master and slaves. 
+Specifically, it parses the arguments from the command line, and then decides whether the current process will run under master mode or slave mode. HelperInitCluster should be called in "main()" before any Dogee APIs are called. You should forward argc and argv parameters of main to it too. Note that the master node and the slave nodes runs the same program, but with different starting arguments. If you start a Dogee program by command "-s PORT", where PORT is the port number, it will run in slave mode.
+
+In master mode, HelperInitCluster initializes the cluster by i) reading the settings from local configuration file, "DogeeConfig.txt" at the "current" directory, ii) connecting Dogee master to the selected slaves and key-value store servers, and iii) forwarding configuration information to all slaves. In master mode, the function will return and continue the execution of "main()". In slave mode, HelperInitCluster makes the slave node wait for the connection from the master and respond to the master's commands and it will never return to "main()" (it will call exit() when the cluster is closed).
+
+The CloseCluster API is used to shut down the cluster, which can only be invoked by \bird master.
+
+### Thread management
+```C++
+class DThread : public DEvent{
+	ThreadState GetState();
+	template<typename T>
+	DThread(ObjectKey obj_id, T func, int node_id, uint32_t param);
+	bool Join(int timeout=-1);
+};
+```
+Dogee allows users to specify the number of working threads to be created in each slave. This is achieved by using the DThread class, a shared class in Dogee. To create a working thread on a slave node and specify the entry function of it, users need to create a DThread object using NewObj API.
+An instance of \texttt{DThread} represents a working thread on a slave node.
+
+The constructor of DThread takes three arguments: 
+ * func is a user-defined entry function for working threads. For normal C++ function, you should wrap the function name with a THREAD_PROC macro. This parameter also accepts function objects and you do not need to wrap a function object by the macro. You need to make sure there are no local pointers contained in the function object. You can use lambda with/without capture in "func" parameter. Note that don't capture variables by reference and don't capture pointers in lambda for the parameter, or an undefiend bahavior will occur. 
+ * node_id is the ID of the slave node where the working thread is created.
+ * param is the parameter forwarded to the user-defined entry function.
+ 
+Users can get the state of a thread (i.e., alive or completed) via the member function GetState. 
+
+"Join" API will let the current thread blocked until the completion of the thread. It takes an parameter of "timeout", in milliseconds. If timeout is not -1, the current thread will be waiting at most "timeout" milliseconds. If the wait time is out, Join will return false. Otherwise, it returns true.
+
+Note that we declare DThread as a shared class so that all its instances are stored in DSM and publicly available to Dogee cluster, which is critical for communication among Dogee master and slaves. 
+
+
+### Distributed Thread Synchronization
+
+```C++
+class DBarrier : public DObject{
+	DBarrier(ObjectKey obj_id, int count);
+	bool Enter(int timeout = -1);
+};
+class DSemaphore : public DObject{
+	DSemaphore(ObjectKey obj_id, int count);
+	bool Acquire(int timeout = -1);
+	void Release();
+};
+class DEvent : public DObject{
+	DEvent(ObjectKey obj_id, bool auto_reset, bool is_signal);
+	void Set();
+	void Reset();
+	bool Wait(int timeout = -1);
+};
+```
+
+The above lists Dogee interfaces for synchronizing distributed threads. They are encapsulated as shared classes.
+
+Note that just like the "Join" method of DThread, the interfaces that involves blocking the current thread has a parameter of "timeout". If timeout is -1, it will wait infinitely until the event it waits happens. Otherwise, the waiting has a timeout of "timeout" in milliseconds. If the waiting time is out, "false" will be returned.
+
+The DBarrier class provides barrier synchronization pattern to keep distributed threads (i.e., main thread and working threads) in the same pace, which is useful in performing synchronous iterative computation. Typically, a DBarrier object is created by the main thread in the master. The constructor in DBarrier is then invoked to create the barrier and specify the total number of threads to be synchronized on the barrier. The reference to a DBarrier object can be stored in a shared global variable so that all threads in the cluster can share this barrier. After setting up all the working threads in slaves, a thread calls Enter function and waits at the barrier until all the invloved working threads reach the barrier. When the last thread arrives at the barrier, all the threads will resume their execution. 
+
+The DSemaphore class allows a specified number of threads to access a resource. During the creation of a RSemaphore object, we set a non-negative resource count as its value. There are two ways to manipulate a semaphore. Acquire function is used to request a resource and decrement the resource count; Release function is used to release the resource and increment the resource count. Threads that request a resource with non-positive semaphore value will be blocked until other threads release that resource and the semaphore value becomes positive. 
+
+The DEvent class acts as a distributed version of [Windows Event](https://msdn.microsoft.com/zh-cn/library/windows/desktop/ms682655(v=vs.85).aspx). It can either be signaled or un-signaled. If it is signaled, all threads waiting for the DEvent will continue executing after calling "Wait". Otherwise, threads are blocked until some other thread calls "Set". Note that in the constructor of DEvent, it takes two parameters. "auto_reset" specifies the mode of the DEvent. If it is set "true", the DEvent object is in auto reset mode, and the event will be automatically reset after "Set" is called. If there are multiple threads waiting for a "auto reset" DEvent, only one of the thread will resume working after a call to "Set". If "auto_reset" is set "false", all threads waiting for the event will continue working after a call to "Set". The parameter "is_signal" specifies the initial state of the event. The "Reset" method will reset the event.
