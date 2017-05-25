@@ -233,7 +233,7 @@ class DThread : public DEvent{
 };
 ```
 Dogee allows users to specify the number of working threads to be created in each slave. This is achieved by using the DThread class, a shared class in Dogee. To create a working thread on a slave node and specify the entry function of it, users need to create a DThread object using NewObj API.
-An instance of \texttt{DThread} represents a working thread on a slave node.
+An instance of DThread represents a working thread on a slave node.
 
 The constructor of DThread takes three arguments: 
  * func is a user-defined entry function for working threads. For normal C++ function, you should wrap the function name with a THREAD_PROC macro. This parameter also accepts function objects and you do not need to wrap a function object by the macro. You need to make sure there are no local pointers contained in the function object. You can use lambda with/without capture in "func" parameter. Note that don't capture variables by reference and don't capture pointers in lambda for the parameter, or an undefiend bahavior will occur. 
@@ -276,3 +276,109 @@ The DBarrier class provides barrier synchronization pattern to keep distributed 
 The DSemaphore class allows a specified number of threads to access a resource. During the creation of a RSemaphore object, we set a non-negative resource count as its value. There are two ways to manipulate a semaphore. Acquire function is used to request a resource and decrement the resource count; Release function is used to release the resource and increment the resource count. Threads that request a resource with non-positive semaphore value will be blocked until other threads release that resource and the semaphore value becomes positive. 
 
 The DEvent class acts as a distributed version of [Windows Event](https://msdn.microsoft.com/zh-cn/library/windows/desktop/ms682655(v=vs.85).aspx). It can either be signaled or un-signaled. If it is signaled, all threads waiting for the DEvent will continue executing after calling "Wait". Otherwise, threads are blocked until some other thread calls "Set". Note that in the constructor of DEvent, it takes two parameters. "auto_reset" specifies the mode of the DEvent. If it is set "true", the DEvent object is in auto reset mode, and the event will be automatically reset after "Set" is called. If there are multiple threads waiting for a "auto reset" DEvent, only one of the thread will resume working after a call to "Set". If "auto_reset" is set "false", all threads waiting for the event will continue working after a call to "Set". The parameter "is_signal" specifies the initial state of the event. The "Reset" method will reset the event.
+
+### Accumulator
+We found that many real applications require to perform vector-wise accumulation.
+For example, in PageRank computation, each working thread maintains a subset of vertices with their outgoing edges and computes the PageRank credits from its own vertices to the destination vertices along the edges. In each iteration, 
+credit vectors from the working threads are summed together to produce the new PageRank values for all vertices.
+
+A straightforward way for vector accumulation with Dogee is to ask working threads to transfer local vectors to DSM and then choose one thread to fetch all vectors to perform the final accumulation. 
+Let $N$ be the number of working threads. The above method incurs high network cost, i.e., the size of data to be transferred is (2N+1)*vector_size.
+
+#### Addition Accumulator
+```C++
+template<typename T>
+	class DAddAccumulator : public DAccumulator<T>
+	{
+	public:
+		DAccumulator(ObjectKey k, Array<T> outarr, uint32_t outlen, uint32_t in_num_user) :DBaseAccumulator(k);
+		bool AccumulateAndWait(T* buf, uint32_t len, T threshold = 0, int timeout = -1);
+	}
+```
+Dogee provides DAddAccumulator class for users to perform vector accumulation more efficiently as well as hide data transfer details involved in vector accumulation.
+Users can create a shared DAddAccumulator object and initialize it with the number N of working threads involved in the accumulation (in_num_user) and an output shared array (outarr) in DSM and its length (outlen).
+The working threads can invoke AccumulateAndWait function defined in DAddAccumulator to send out their local vectors and Dogee will compute the final accumulated result and store it in the output shared array automatically.
+The AccumulateAndWait function also serves as a synchronization point which will not return until all the $N$ threads send out their local vectors.
+ * "buf" is the local vector to send.
+ * "len" is its length. 
+ * "threshold" is the "zero-threshold". Any number of absolute value less than it will be treated as zero.
+ * "timeout" is the synchronization timeout, in milliseconds
+ * AccumulateAndWait returns false when the waiting time is out. Otherwise, it returns true.
+
+Our implementation of Accumulator reduces the data transfer cost to (N+1)*vector_size.
+
+#### User Accumulator
+Also, we provide a more general Accumulator class that can do any user function (other than Addition in AddAccumulator) in accumuation. Users should extend the abstract class DAccumulator.
+```C++
+	template<typename T>
+	class DAccumulator : public DBaseAccumulator
+	{
+		/*
+		param :
+		- outarr : the output shared array
+		- outlen : the count of elements in output/input array 
+		- in_num_user : the number of nodes that will send the vector for accumulation
+		*/
+		DAccumulator(ObjectKey k, Array<T> outarr, uint32_t outlen, uint32_t in_num_user) :DBaseAccumulator(k)
+		{
+			self->arr = outarr.GetObjectId();
+			self->len = outlen * DSMInterface<T>::dsm_size_of;
+			self->num_users = in_num_user;
+		}
+
+		/*
+		input a local array "buf" of length "len"(defined in class member), dispatch it to each node of the
+		cluster. Then wait for the accumulation is ready.
+		param :
+		- buf : local input buffer
+		- timeout : the timeout for waiting for the accumulation
+		*/
+		bool AccumulateAndWait(T* buf, uint32_t len, T threshold = 0, int timeout = -1);
+
+		/*
+		User defined function to do the acutal accumulation for dense vector. See the input of the Accumulator as a vector. 
+		Each node is responsible for a part of the vector. This function will be called when a node has
+		received a part of its responsible vector from the peer nodes.
+		param:
+		- in_data : the input data buffer
+		- in_len : the input buffer length (count of elements)
+		- in_index : the offset of in_data within the output array "arr"
+		- out_data : the output data buffer, may have the accumulation results from previously received vectors
+		- out_index : the offset of out_data within the output array "arr"
+		- out_len : the length of output buffer
+		*/
+		virtual void DoAccumulateDense(T*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len) = 0;
+
+
+		/*
+		User defined function to do the acutal accumulation for sparse vector. See the input of the Accumulator as a vector.
+		Each node is responsible for a part of the vector. This function will be called when a node has
+		received a part of its responsible vector from the peer nodes.
+		param:
+		- in_data : the input data buffer
+		- in_len : the input buffer length (count of elements)
+		- in_index : the offset of in_data within the output array "arr"
+		- out_data : the output data buffer, may have the accumulation results from previously received vectors
+		- out_index : the offset of out_data within the output array "arr"
+		- out_len : the length of output buffer
+		*/
+		virtual void DoAccumulateSparse(SparseElement<T>*__RESTRICT in_data, uint32_t in_len, uint32_t in_index, T*__RESTRICT out_data, uint32_t out_index, uint32_t out_len) = 0;
+	}
+
+
+```
+There are two virtual method that should be overrided. One is DoAccumulateDense, and the other is DoAccumulateSparse.
+
+#### Functional Accumulator
+You can use DFunctionalAccumulator to write your own accumulator. You just need to write an accumlate function like:
+```C++
+void multiply(float in,uint32_t index,float& out)
+{
+	out=out*in;
+}
+```
+Now define your own DFunctionalAccumulator by using
+```C++
+typedef DFunctionalAccumulator<float,multiply> MulAccumulator;
+auto ptr=NewObj<MulAccumulator>(arr,len,thread_count);
+```
