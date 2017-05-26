@@ -382,3 +382,58 @@ Now define your own DFunctionalAccumulator by using
 typedef DFunctionalAccumulator<float,multiply> MulAccumulator;
 auto ptr=NewObj<MulAccumulator>(arr,len,thread_count);
 ```
+
+### Fault tolerance: Checkpoint
+Dogee provides fault tolerance by checkpoints via files. Dogee will peroidically write the whole DSM data and user-specified local memory data to local files. Dogee provides a special barrier DCheckpointBarrier. Every time a node enters DCheckpointBarrier, Dogee will do a checkpoint on disk.
+
+#### Core of Dogee Fault tolerance: Checkpoint class
+To use Dogee's checkpoint, you should first write two checkpoint class, one for slave nodes, one for master node. A checkpoint class specifies the local variables that a master/slave node wants to save, the bahavior of creating a checkpoint and the behavior of restoring from a checkpoint. Note that all data in DSM (including global shared variables) will be automatically dumped into the checkpoint file when Dogee is doing a checkpoint.
+
+We now illustrate Checkpoint class by an example. Suoopose on slave nodes, we have a global variable (stored in local memory) called "slave_count" that we want to store in/restore from the checkpoints. Similarly we have a global variable (stored in local memory) called "master_count". We first create a checkpoint class for slave nodes.
+
+```C++
+class SlaveCheckPoint :public CheckPoint
+{
+public:
+	SerialDef(slave_count, std::reference_wrapper<int>);
+	SlaveCheckPoint() :slave_count(::slave_count)
+	{}
+};
+SerialDecl(SlaveCheckPoint, slave_count, std::reference_wrapper<int>);
+```
+
+In this class, we use macro SerialDef(variable_name,type) to declare a member in the class, and macro SerialDecl(class_name,variable_name,type) outside of the class to define a member. The members of Checkpoint classes will be serialized into checkpoint files. Note that we use a std::reference_wrapper to define the member slave_count, and associate it with the gloabl variable slave_count in local memory. Dogee will automatically write the value of global variable "slave_count" into checkpoint file and restore it from checkpoint file.
+
+In this example, we write a different checkpoint class for master node.
+
+```C++
+class MasterCheckPoint:public CheckPoint
+{
+public:
+	SerialDef(master_count, std::reference_wrapper<int>);
+	MasterCheckPoint() :master_count(::master_count)
+	{}
+	void DoRestart()
+	{
+		cout<<"Restored";
+		real_main();
+	}
+	void DoCheckpoint()
+	{
+		cout<<"Do checkpoint";
+	}	
+};
+SerialDecl(MasterCheckPoint,master_count, std::reference_wrapper<int>);
+```
+We similarly store a reference to "master_count" in MasterCheckPoint, and it will also automatically saved and restored. Also, in checkpoint classes for both master and slave nodes, we can override DoRestart() and DoCheckpoint() method to specify the behavior of restarting and checkpointing. Note that if a Dogee program will checkpoint on breaks down half way and gets restarted, the process on master node will invoke DoRestart() of checkpoint class of master node and will invoke exit() when DoRestart() is done.
+
+#### Use of Dogee Fault tolerance
+To start a Dogee program with checkpoint on, we call HelperInitClusterCheckPoint instead of HelperInitClusterCheck at the start of main().
+```C++
+template<typename MasterCheckPointType, typename SlaveCheckPointType>
+void HelperInitClusterCheckPoint(int argc, char* argv[], const char* appname = nullptr)
+```
+MasterCheckPointType and SlaveCheckPointType are checkpoint classes for master and slave. "appname" is the name of the current application. (appname will be used to name the checkpoint files) For the example above, we call:
+```C++
+HelperInitClusterCheckPoint<MasterCheckPoint, SlaveCheckPoint>(argc, argv,"Test");
+```
