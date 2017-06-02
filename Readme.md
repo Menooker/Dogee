@@ -428,7 +428,7 @@ SerialDecl(MasterCheckPoint,master_count, std::reference_wrapper<int>);
 We similarly store a reference to "master_count" in MasterCheckPoint, and it will also automatically saved and restored. Also, in checkpoint classes for both master and slave nodes, we can override DoRestart() and DoCheckpoint() method to specify the behavior of restarting and checkpointing. Note that if a Dogee program will checkpoint on breaks down half way and gets restarted, the process on master node will invoke DoRestart() of checkpoint class of master node and will invoke exit() when DoRestart() is done.
 
 #### Use of Dogee Fault tolerance
-To start a Dogee program with checkpoint on, we call HelperInitClusterCheckPoint instead of HelperInitClusterCheck at the start of main().
+To start a Dogee program with checkpoint on, we call HelperInitClusterCheckPoint instead of HelperInitCluster at the start of main().
 ```C++
 template<typename MasterCheckPointType, typename SlaveCheckPointType>
 void HelperInitClusterCheckPoint(int argc, char* argv[], const char* appname = nullptr)

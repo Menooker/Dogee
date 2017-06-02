@@ -36,15 +36,31 @@ namespace Dogee
 			self->is_signal = is_signal;
 		}
 
+		/*
+		Signal the event. If auto_reset is set, and multiple threads are waiting for 
+		the event, only one of the thread in the queue will resume. If there is only
+		one thread waiting, the thread will resume running and the event will be 
+		automatically reset. If auto_reset is not set, all threads waiting for the 
+		event will continue running and the event will stay signaled.
+		*/
 		void Set()
 		{
 			RcSetEvent(self->GetObjectId());
 		}
+
+		/*
+		Reset the event. You only need to reset the event when auto_reset is set.
+		*/
 		void Reset()
 		{
 			RcResetEvent(self->GetObjectId());
 		}
 		
+		/*
+		Wait for the event.
+		Param: timeout - the timeout for the waiting. -1 means infinity
+		Returns: True if time is not out. False if timeout happens.
+		*/
 		bool Wait(int timeout = -1)
 		{
 			return RcWaitForEvent(self->GetObjectId(), timeout);
@@ -146,6 +162,11 @@ namespace Dogee
 			return self->state;
 		}
 
+		/*
+		Wait for the completion of the thread.
+		Params : timeout  - the timeout for the waiting. -1 means infinity
+		Returns: True if time is not out. False if timeout happens.
+		*/
 		bool Join(int timeout = -1)
 		{
 			return self->Wait(timeout);
@@ -164,6 +185,10 @@ namespace Dogee
 		Callable objects that can be converted to thread_proc is called in a simple way.
 		Make sure the class T is unique for different functions (one class for each function).
 		To pass a function name, you should wrap it with a THREAD_PROC wrapper.
+		params: 
+		- func: the function/function object to be executed
+		- nd_id: the id of a slave node to create a thread on.
+		- param: the parameter to pass to the function
 		*/
 		template<typename T>
 		DThread(ObjectKey obj_id, T func, int nd_id, uint32_t param) : DEvent(obj_id, false, false)

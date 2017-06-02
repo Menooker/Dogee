@@ -6,6 +6,11 @@
 namespace Dogee
 {
 	extern void RegisterConstInit(std::function<void()> func);
+	/*
+	Cached shared constant. You should assign a value to it before the first
+	slave thread is created. On initialization, slaves will fetch the value
+	of shared constants and cache them in local memory.
+	*/
 	template<typename T> class SharedConst
 	{
 	private:

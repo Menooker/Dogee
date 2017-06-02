@@ -8,7 +8,9 @@
 
 namespace Dogee
 {
-	//immutable string with cache
+	//immutable string on DSM with local cache
+	//use the str.getstr() to get local std::string for the DString
+	//you can initialize it with a std::string by "NewObj<DString>("123")"
 	class DString : public DObject
 	{
 		bool cached;

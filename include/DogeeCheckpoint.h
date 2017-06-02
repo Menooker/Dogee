@@ -182,6 +182,10 @@ namespace Dogee
 		DogeeEnv::DeleteCheckpoint = DeleteCheckPoint<MasterCheckPointType, SlaveCheckPointType>;
 	}
 
+	/*
+	The DCheckpointBarrier acts like normal barriers, but every time a node enter a DCheckpointBarrier, it will
+	trigger the Checkpoint event.
+	*/
 	class DCheckpointBarrier : public DBarrier
 	{
 		DefBegin(DBarrier);
