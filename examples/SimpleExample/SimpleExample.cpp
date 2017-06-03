@@ -40,9 +40,9 @@ public:
 	void Destroy()
 	{
 		std::cout << "destroctor" << std::endl;
-		DelArray((Array<double>)self->m_vector);
-		DelArray((Array<int>)self->m_matrix[0]);
-		DelArray((Array<Array<int>>)self->m_matrix);
+		DelArray(self->m_vector);
+		DelArray(self->m_matrix[0]);
+		DelArray(self->m_matrix);
 	}
 };
 
@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
 	std::cin >> dummy;
 	//Release the semaphore
 	sem->Release();
-	DelObj((Ref<clsa>)g_obj);
+	DelObj(g_obj);
 	std::cout << "Input any string to close the cluster" << std::endl;
 	std::cin >> dummy;
 	CloseCluster();

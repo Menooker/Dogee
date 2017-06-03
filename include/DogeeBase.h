@@ -31,7 +31,7 @@ namespace Dogee
 		{
 			object_id = ok;
 		}
-		DObject(ObjectKey obj_id)
+		explicit DObject(ObjectKey obj_id)
 		{
 			object_id = obj_id;
 		}
@@ -185,21 +185,21 @@ namespace Dogee
 		//test code
 		DogeeEnv::cache->put(obj_id, 97, cls_id);
 	}*/
-	template<typename T> class ArrayElement
+	template<typename T> class BaseArrayElement
 	{
 	private:
 		ObjectKey ok;
 		FieldKey fk;
 		template<typename Ty> static Ty getarray(Ty, int);
 		template<typename Ty>
-		ArrayElement<Ty> static getarray(Array<Ty> arr, int k)
+		BaseArrayElement<Ty> static getarray(Array<Ty> arr, int k)
 		{
 			return arr.ArrayAccess(k);
 		}
 	public:
 
 		//copy 
-		ArrayElement<T>& operator=(ArrayElement<T>& x)
+		BaseArrayElement<T>& operator=(BaseArrayElement<T>& x)
 		{
 			set(x.get());
 			return *this;
@@ -241,19 +241,54 @@ namespace Dogee
 		}
 
 
-		ArrayElement(ObjectKey o_key, FieldKey f_key) : ok(o_key), fk(f_key)
+		BaseArrayElement(ObjectKey o_key, FieldKey f_key) : ok(o_key), fk(f_key)
 		{
 		}
 
 	};
-
-	template<typename T, FieldKey FieldId> class Value
+	template<typename T> class ArrayElement : public BaseArrayElement<T>
 	{
-	private:
-		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
-		template<typename T2, FieldKey FieldId2>Value<T, FieldId>& operator=(Value<T2, FieldId2>& x);
-		Value<T, FieldId>& operator=(Value<T, FieldId>& x);
 	public:
+		ArrayElement(ObjectKey o_key, FieldKey f_key) :BaseArrayElement<T>(o_key, f_key){}
+		using BaseArrayElement<T>::operator=;
+		using BaseArrayElement<T>::operator->;
+		using BaseArrayElement<T>::operator T;
+		using BaseArrayElement<T>::operator[];
+	};
+	template<typename T> class ArrayElement<Ref<T>> : public BaseArrayElement<Ref<T>>
+	{
+	public:
+		ArrayElement(ObjectKey o_key, FieldKey f_key) :BaseArrayElement<Ref<T>>(o_key, f_key){}
+		using BaseArrayElement<Ref<T>>::operator=;
+		using BaseArrayElement<Ref<T>>::operator->;
+		using BaseArrayElement<Ref<T>>::operator Ref<T>;
+		using BaseArrayElement<Ref<T>>::operator[];
+		operator bool()
+		{
+			return (bool)BaseArrayElement<Ref<T>>::get();
+		}
+	};
+	template<typename T> class ArrayElement<Array<T>> : public BaseArrayElement<Array<T>>
+	{
+	public:
+		ArrayElement(ObjectKey o_key, FieldKey f_key) :BaseArrayElement<Array<T>>(o_key, f_key){}
+		using BaseArrayElement<Array<T>>::operator=;
+		using BaseArrayElement<Array<T>>::operator->;
+		using BaseArrayElement<Array<T>>::operator Array<T>;
+		using BaseArrayElement<Array<T>>::operator[];
+		operator bool()
+		{
+			return (bool)BaseArrayElement<Array<T>>::get();
+		}
+	};
+
+	template<typename T, FieldKey FieldId> class BaseValue
+	{
+	public:
+		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
+		template<typename T2, FieldKey FieldId2>BaseValue<T, FieldId>& operator=(BaseValue<T2, FieldId2>& x)=delete;
+		BaseValue<T, FieldId>& operator=(BaseValue<T, FieldId>& x) = delete;
+	
 		int GetFieldId()
 		{
 			return FieldId;
@@ -281,7 +316,7 @@ namespace Dogee
 		}
 
 		//write
-		Value<T, FieldId>& operator=(T x)
+		BaseValue<T, FieldId>& operator=(T x)
 		{
 			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
 			DSMInterface<T>::set_value(lastobject->GetObjectId(), FieldId, x);
@@ -290,74 +325,45 @@ namespace Dogee
 #endif
 			return *this;
 		}
-		Value()
+		BaseValue()
 		{
 		}
 
 	};
-
-	/* A dirty implementation for operator [] of array.
-	 As you can see, most of the members of Value<Array<T>,FieldId> are
-	 the same as Value<Array<T>,FieldId> 's. We just add the method
-	 ArrayElement<T> operator[](int k).
-	 Why not use 
-	 decltype(getarray(T(0), 0)) operator[](int k)
-	 declared in ArrayElement?
-	 It is because when we define a class having a member referencing it self (like a node of
-	 linked list), the compiler won't pass, throwing "the class has as incomplete type". 
-	 (Note that "decltype(getarray(T(0), 0))" references the class T, which is incomplete 
-	 when we are still declaring the member variables of the class T.)
-	*/
-	template<typename T, FieldKey FieldId> class Value<Array<T>,FieldId>
+	template<typename T, FieldKey FieldId> class Value : public BaseValue<T, FieldId>
 	{
-	private:
-		//copy functions are forbidden, you should copy the value like "a->val = b->val +0"
-		template<typename T2, FieldKey FieldId2>Value<Array<T>, FieldId>& operator=(Value<T2, FieldId2>& x);
-		Value<Array<T>, FieldId>& operator=(Value<Array<T>, FieldId>& x);
 	public:
-		int GetFieldId()
-		{
-			return FieldId;
-		}
+		using BaseValue<T, FieldId>::operator->;
+		using BaseValue<T, FieldId>::operator T;
+		using BaseValue<T, FieldId>::operator =;
+	};
 
-
-		Array<T> get()
-		{
-			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
-			Array<T> ret = DSMInterface<Array<T>>::get_value(lastobject->GetObjectId(), FieldId);
-#ifdef DOGEE_DBG
-			lastobject = nullptr;
-#endif
-			return ret;
-		}
-		//read
-		operator Array<T>()
-		{
-			return get();
-		}
-
-		//write
-		Value<Array<T>, FieldId>& operator=(Array<T> x)
-		{
-			assert(lastobject != nullptr);// "You should use a Ref<T> to access the member"
-			DSMInterface<Array<T>>::set_value(lastobject->GetObjectId(), FieldId, x);
-#ifdef DOGEE_DBG
-			lastobject = nullptr;
-#endif
-			return *this;
-		}
-		Value()
-		{
-		}
+	template<typename T, FieldKey FieldId> class Value<Array<T>, FieldId> : public BaseValue<Array<T>, FieldId>
+	{
+	public:
+		using BaseValue<Array<T>, FieldId>::operator->;
+		using BaseValue<Array<T>, FieldId>::operator Array<T>;
+		using BaseValue<Array<T>, FieldId>::operator =;
 		ArrayElement<T> operator[](int k)
 		{
-			return get().ArrayAccess(k);
+			return BaseValue<Array<T>, FieldId>::get().ArrayAccess(k);
 		}
-		Array<T> operator->()
+		operator bool()
 		{
-			return get();
+			return (bool)BaseValue<Array<T>, FieldId>::get();
 		}
+	};
 
+	template<typename T, FieldKey FieldId> class Value<Ref<T>, FieldId> : public BaseValue<Ref<T>, FieldId>
+	{
+	public:
+		using BaseValue<Ref<T>, FieldId>::operator->;
+		using BaseValue<Ref<T>, FieldId>::operator Ref<T>;
+		using BaseValue<Ref<T>, FieldId>::operator =;
+		operator bool()
+		{
+			return (bool)BaseValue<Array<T>, FieldId>::get();
+		}
 	};
 
 	template<typename T> class Array
@@ -403,9 +409,13 @@ namespace Dogee
 		{
 			return object_id;
 		}
-		Array(ObjectKey obj_id)
+		explicit Array(ObjectKey obj_id)
 		{
 			object_id = obj_id;
+		}
+		Array()
+		{
+			object_id = 0;
 		}
 		Array<T>* operator->()
 		{
@@ -422,7 +432,10 @@ namespace Dogee
 		{
 			return ArrayAccess(k);
 		}
-
+		operator bool()
+		{
+			return (object_id != 0);
+		}
 		void Fill(std::function<T(uint32_t)> func, uint32_t start_index, uint32_t len)
 		{
 			const unsigned bsize = DSM_CACHE_BLOCK_SIZE * 8;
@@ -475,6 +488,11 @@ namespace Dogee
 			return get();
 		}
 
+		operator bool()
+		{
+			return (obj.GetObjectId() != 0);
+		}
+
 		T& operator*()
 		{
 			return *get();
@@ -513,8 +531,8 @@ namespace Dogee
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 		}
-
-		Ref(ObjectKey key) :obj(key)
+		explicit Ref() :obj(0){}
+		explicit Ref(ObjectKey key) :obj(key)
 		{
 			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
 		}
@@ -545,7 +563,10 @@ namespace Dogee
 			lastobject = (DObject*)pobj;
 			return pobj;
 		}
-
+		operator bool()
+		{
+			return (okey != 0);
+		}
 		T* operator->()
 		{
 			return get();
@@ -591,7 +612,7 @@ namespace Dogee
 		}
 
 
-		Ref(ObjectKey key)
+		explicit Ref(ObjectKey key)
 		{
 			static_assert(std::is_base_of<DObject, T>::value, "T should be subclass of DObject.");
 			pobj = nullptr;
@@ -613,19 +634,20 @@ namespace Dogee
 		return Array<T>(AllocObjectId(1, size*DSMInterface<T>::dsm_size_of));
 	}
 	template<typename T>
-	inline  void DelArray(Array<T> arr)
+	inline  void DelArray(T arr)
 	{
 		DeleteObject(arr->GetObjectId());
-		DogeeEnv::backend->del(arr.GetObjectId());
+		DogeeEnv::backend->del(arr->GetObjectId());
 	}
 
-	template<typename T,bool isV>
-	inline  void DelObj(Ref<T,isV> obj)
+	template<typename T>
+	inline  void DelObj(T obj)
 	{
 		obj->Destroy();
 		DeleteObject(obj->GetObjectId());
 		DogeeEnv::backend->del(obj->GetObjectId());
 	}
+
 
 	template <class T> struct AutoRegisterObject;
 
@@ -700,7 +722,11 @@ namespace Dogee
 	{
 		return TDest(src.GetObjectId());
 	}
-
+	template<class TDest>
+	inline TDest force_cast(uint32_t src)
+	{
+		return TDest(src);
+	}
 	template <class T> int AutoRegisterObject<T>::id = AutoRegisterObject<T>::Init();
 }
 #endif

@@ -67,7 +67,7 @@ class clss : public DObject
 public:
 	//Def(int, i);
 	//Def(Array<float>, arr);
-	//Def(Array<Ref<clss>>, next);
+	Def(next, Array<Ref<clss>>);
 	//Def(Array<Array<int>>, mat);
 	//DefRef(clsb, true, prv);
 	DefEnd();
@@ -330,7 +330,7 @@ void thread_for_checkpoint(uint32_t param)
 
 void main_process()
 {
-	if (barrier->GetObjectId() == 0)
+	if (barrier)
 		barrier = NewObj<DCheckpointBarrier>(2);
 	std::cout << "shared_local : " << shared_local << std::endl;
 	Ref<DThread> th = NewObj<DThread>(THREAD_PROC(thread_for_checkpoint), 1, 123);
@@ -376,7 +376,7 @@ int main3(int argc, char* argv[])
 
 /////////////////////////thread pool test
 #include "DogeeThreadPool.h"
-int main(int argc, char* argv[])
+int main_threadpool(int argc, char* argv[])
 {
 	LThreadPool pool(2);
 	for (int i = 0; i < 50; i++)
@@ -395,7 +395,7 @@ int main(int argc, char* argv[])
 }
 ////////////////////////thread pool test end
 
-int main2(int argc, char* argv[])
+int main(int argc, char* argv[])
 {
 	if (argc == 3 && std::string(argv[1]) == "-s")
 	{
@@ -454,7 +454,7 @@ int main2(int argc, char* argv[])
 
 void objecttest()
 {
-	Ref<clss> dd[1] = { 0 };
+	Ref<clss> dd[1] ;
 	auto ptr2 = Dogee::NewArray<Ref<clss>>(1);
 
 	ptr2->CopyTo(dd, 0, 1);
@@ -467,7 +467,7 @@ void objecttest()
 	double buf[10];
 	ptr->arr->CopyTo(buf, 0, 10);
 
-	Array<int> arr_int[1] = { 0 };
+	Array<int> arr_int[1];
 	ptr->mat[0][2] = 123;
 	ptr->mat->CopyTo(arr_int, 0, 1);
 	aaa((clsb*)0);
