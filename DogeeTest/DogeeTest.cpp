@@ -397,10 +397,21 @@ int main_threadpool(int argc, char* argv[])
 ////////////////////////thread pool test end
 
 /////////////////////////Dthread pool test
+#include "DogeeFunctional.h"
 int main(int argc, char* argv[])
 {
 	DogeeEnv::ThreadPoolConfig::thread_pool_count = -1;
 	HelperInitCluster(argc, argv);
+
+	Array<float> arr = NewArray<float>(10000);
+	Array<float> arr2 = NewArray<float>(10000);
+	float fff = 1.5;
+	GetDData(arr, 10000).Map(arr2, 10000,[fff](float data){
+		return data + fff;
+	}).Map(arr,10000,[fff](float data){
+		return data / fff;
+	});
+
 	for (int i = 0; i < 50; i++)
 	{
 		int j = i * 2;

@@ -405,7 +405,7 @@ namespace Dogee
 		ObjectKey object_id;
 	public:
 		//test code
-		ObjectKey GetObjectId()
+		ObjectKey GetObjectId() const
 		{
 			return object_id;
 		}
@@ -417,26 +417,26 @@ namespace Dogee
 		{
 			object_id = 0;
 		}
-		Array<T>* operator->()
+		const Array<T>*const operator->() const
 		{
 			return this;
 		}
 
-		ArrayElement<T> ArrayAccess(int k)
+		ArrayElement<T> ArrayAccess(int k) const
 		{
 			FieldKey key = k * DSMInterface<T>::dsm_size_of;
 			return ArrayElement<T>(object_id, key);
 		}
 
-		ArrayElement<T> operator[](int k)
+		ArrayElement<T> operator[](int k) const
 		{
 			return ArrayAccess(k);
 		}
-		operator bool()
+		operator bool() const
 		{
 			return (object_id != 0);
 		}
-		void Fill(std::function<T(uint32_t)> func, uint32_t start_index, uint32_t len)
+		void Fill(std::function<T(uint32_t)> func, uint32_t start_index, uint32_t len) const
 		{
 			const unsigned bsize = DSM_CACHE_BLOCK_SIZE * 8;
 			T blk[bsize];
@@ -457,12 +457,12 @@ namespace Dogee
 
 		}
 
-		void CopyTo(T* localarr, uint32_t start_index,uint32_t copy_len)
+		void CopyTo(T* localarr, uint32_t start_index, uint32_t copy_len) const
 		{
 			DogeeEnv::cache->getchunk(object_id, start_index, copy_len, Copyer<T, sizeof(T)>::CopyType(localarr));
 		}
 
-		void CopyFrom(T* localarr, uint32_t start_index, uint32_t copy_len)
+		void CopyFrom(T* localarr, uint32_t start_index, uint32_t copy_len) const
 		{
 			DogeeEnv::cache->putchunk(object_id, start_index, copy_len, Copyer<T, sizeof(T)>::CopyType(localarr));
 		}

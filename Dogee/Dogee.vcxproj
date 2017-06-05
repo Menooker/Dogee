@@ -159,6 +159,7 @@
     <ClInclude Include="..\include\DogeeDirectoryCache.h" />
     <ClInclude Include="..\include\DogeeDThreadPool.h" />
     <ClInclude Include="..\include\DogeeEnv.h" />
+    <ClInclude Include="..\include\DogeeFunctional.h" />
     <ClInclude Include="..\include\DogeeHelper.h" />
     <ClInclude Include="..\include\DogeeLocalSync.h" />
     <ClInclude Include="..\include\DogeeMacro.h" />
