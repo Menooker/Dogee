@@ -26,6 +26,7 @@ namespace Dogee
 		AcDataAccumulate,
 		AcDataAccumulatePartialDone,
 		AcDataLocalReduce,
+		AcThreadPoolExec,
 	};
 
 
@@ -246,6 +247,19 @@ namespace Dogee
 		return true;
 	}
 
+	void AcExecuteClosureInThreadPool(int nodeid, uint32_t param, uint32_t event, int id, char* obj, size_t sz)
+	{
+		char buf[BD_DATA_PROCESS_SIZE];
+		RcDataPack* cmd = (RcDataPack*)buf;
+		cmd->cmd = AcThreadPoolExec;
+		cmd->id = id;
+		cmd->param0 = event;
+		cmd->param1 = param;
+		memcpy(cmd->buf, obj, sz);
+		cmd->size = sz;
+		Socket::RcSend(accu_manager->GetConnection(nodeid), cmd, sizeof(RcDataPack)+sz);
+	}
+
 
 	void AcAccumulatePartialDoneMsg(int src, ObjectKey aid, bool locked)
 	{
@@ -347,7 +361,8 @@ namespace Dogee
 		UaLeaveLock(&accu_manager->lock);
 	}
 
-
+	extern void ExecuteClosureInLocalThreadPool(char* obj, uint32_t param, int id, uint32_t devent, bool need_free);
+	extern void InitDThreadPool();
 	static void AcListenData(SOCKET slisten)
 	{
 		DogeeEnv::InitCurrentThread();
@@ -356,6 +371,7 @@ namespace Dogee
 		fd_set readfds;
 		RcDataPack cmd;
 		char buf[BD_DATA_PROCESS_SIZE];
+		InitDThreadPool();
 		for (int i = DogeeEnv::self_node_id; i < n; i++)
 		{
 			sockaddr_in remoteAddr;
@@ -466,6 +482,12 @@ namespace Dogee
 						break;
 					case AcDataLocalReduce:
 						AcLocalReduceMsg(accu_manager->idx2nodeid(i), cmd.id, false);
+						break;
+					case AcThreadPoolExec:
+						char* obj;
+						obj=new char[cmd.size];
+						memcpy(obj, buf, cmd.size);
+						ExecuteClosureInLocalThreadPool(obj, cmd.param1, cmd.id, cmd.param0, true);
 						break;
 					default:
 						printf("Bad command %u!\n", cmd.cmd);

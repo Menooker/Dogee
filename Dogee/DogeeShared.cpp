@@ -22,6 +22,11 @@ namespace Dogee
 	bool DogeeEnv::_isMaster = false;
 	int DogeeEnv::self_node_id=-1;
 	int DogeeEnv::num_nodes=0;
+	int DogeeEnv::ThreadPoolConfig::thread_pool_count = 0;
+	DThreadPool* DogeeEnv::ThreadPoolConfig::thread_pool = nullptr;
+	DThreadPoolScheduler* DogeeEnv::ThreadPoolConfig::scheduler = nullptr;
+	int DogeeEnv::ThreadPoolConfig::thread_pool_max_wait = 256;
+
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::InitStorageCurrentThread = nullptr;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::DestroyStorageCurrentThread = nullptr;
 	DogeeEnv::InitStorageCurrentThreadProc DogeeEnv::DeleteCheckpoint = nullptr;

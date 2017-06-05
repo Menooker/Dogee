@@ -17,6 +17,7 @@
 #include "DogeeAccumulator.h"
 #include "DogeeSharedConst.h"
 #include "DogeeString.h"
+#include "DogeeDThreadPool.h"
 #include <chrono>
 #include <memory>
 #include <thread>
@@ -395,7 +396,36 @@ int main_threadpool(int argc, char* argv[])
 }
 ////////////////////////thread pool test end
 
+/////////////////////////Dthread pool test
 int main(int argc, char* argv[])
+{
+	DogeeEnv::ThreadPoolConfig::thread_pool_count = -1;
+	HelperInitCluster(argc, argv);
+	for (int i = 0; i < 50; i++)
+	{
+		int j = i * 2;
+		std::vector<DThreadPool::DThreadPoolEvent> events;
+		for (int k = 0; k < 5; k++)
+		{
+			auto event = DogeeEnv::ThreadPoolConfig::thread_pool->submit([j](int i){
+				std::this_thread::sleep_for(std::chrono::milliseconds(1000));
+				std::cout << i << " " << j << std::endl;
+				return i + 1;
+			}, i);
+			events.push_back(event);
+		}
+		for (auto e : events)
+			e.Wait(-1);
+		std::cout << i<< std::endl;
+	}
+	int dummy;
+	std::cin >> dummy;
+	return 0;
+}
+////////////////////////Dthread pool test end
+
+
+int main2(int argc, char* argv[])
 {
 	if (argc == 3 && std::string(argv[1]) == "-s")
 	{

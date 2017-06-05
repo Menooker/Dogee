@@ -335,10 +335,17 @@ namespace Dogee
 
 				if (node->data)//if is autoreset
 				{
-					node->val = 0; 
-					SyncThreadNode th = node->waitqueue->front();
-					node->waitqueue->pop();
-					RcWakeRemoteThread(th.machine, th.thread_id);
+					if (node->waitqueue->empty())
+					{
+						node->val = 1;
+					}
+					else
+					{
+						node->val = 0;
+						SyncThreadNode th = node->waitqueue->front();
+						node->waitqueue->pop();
+						RcWakeRemoteThread(th.machine, th.thread_id);
+					}
 				}
 				else//if not, release all threads
 				{
@@ -610,6 +617,8 @@ namespace Dogee
 	extern void InitSharedConst();
 	extern void DoRestart();
 	extern int checkpoint_cnt;
+	extern void InitDThreadPool();
+	extern void DeleteDThreadPool();
 	void RcSlaveMainLoop(char* path, SOCKET s, std::vector<std::string>& hosts, std::vector<int>& ports,
 		std::vector<std::string>& mem_hosts, std::vector<int>& mem_ports, int node_id,
 		BackendType backty, CacheType cachety,int checkpoint)
@@ -792,6 +801,7 @@ namespace Dogee
 		DogeeEnv::CloseStorage(); //*/
 		RcCloseSocket(s);
 		AcClose();
+		DeleteDThreadPool();
 		//fix-me : kill control listen thread
 	}
 
@@ -907,6 +917,7 @@ namespace Dogee
 		delete MasterZone::syncmanager;
 		AcClose();
 		DogeeEnv::CloseStorage();
+		DeleteDThreadPool();
 	}
 
 	int RcCreateThread(int node_id,uint32_t idx,uint32_t param,ObjectKey okey)

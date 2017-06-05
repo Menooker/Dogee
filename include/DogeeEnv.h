@@ -9,6 +9,8 @@ namespace Dogee
 {
 	class SoStorage;
 	class DSMCache;
+	class DThreadPool;
+	class DThreadPoolScheduler;
 	enum BackendType
 	{
 		SoBackendTest,
@@ -40,6 +42,15 @@ namespace Dogee
 		static InitStorageCurrentThreadProc InitStorageCurrentThread;
 		static InitStorageCurrentThreadProc DestroyStorageCurrentThread;
 		static std::string application_name;
+
+		class ThreadPoolConfig
+		{
+		public:
+			static int thread_pool_count;
+			static DThreadPool* thread_pool;
+			static DThreadPoolScheduler* scheduler;
+			static int thread_pool_max_wait;
+		};
 
 		static void InitCurrentThread();
 

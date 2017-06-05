@@ -157,6 +157,7 @@
     <ClInclude Include="..\include\DogeeBase.h" />
     <ClInclude Include="..\include\DogeeCheckpoint.h" />
     <ClInclude Include="..\include\DogeeDirectoryCache.h" />
+    <ClInclude Include="..\include\DogeeDThreadPool.h" />
     <ClInclude Include="..\include\DogeeEnv.h" />
     <ClInclude Include="..\include\DogeeHelper.h" />
     <ClInclude Include="..\include\DogeeLocalSync.h" />
@@ -186,6 +187,7 @@
     <ClCompile Include="DogeeShared.cpp" />
     <ClCompile Include="DogeeThreading.cpp" />
     <ClCompile Include="DogeeHelper.cpp" />
+    <ClCompile Include="DogeeThreadPool.cpp" />
     <ClCompile Include="stdafx.cpp" />
     <ClCompile Include="DogeeCheckpoint.cpp" />
   </ItemGroup>
