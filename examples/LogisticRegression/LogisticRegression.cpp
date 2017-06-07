@@ -179,12 +179,12 @@ void slave_worker(float* thread_local_data, float* thread_local_label, int threa
 		for (int j = 0; j < param_len; j++)
 			dot += local_param[j] * cur_test_data[j];
 		double h = 1 / (1 + exp(-dot));
-		if (abs(thread_test_label[i] - 1)<0.001)
+		if (std::abs(thread_test_label[i] - 1)<0.001)
 			real_true++;
 		if (h >= 0.8f)
 		{
 			positive++;
-			if (abs(thread_test_label[i] - 1)<0.001)
+			if (std::abs(thread_test_label[i] - 1)<0.001)
 			{
 				TP++;
 			}
