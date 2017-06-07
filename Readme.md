@@ -129,8 +129,8 @@ public:
 	void Destroy()
 	{
 		std::cout << "destroctor" << std::endl;
-		DelArray((Array<float>)self->arr);
-		DelArray((Array<Ref<clsa>>)self->next);
+		DelArray<float>(self->arr);
+		DelArray<Ref<clsa>>(self->next);
 	}
 };
 
@@ -184,7 +184,7 @@ arr->Fill([](uint32_t i){
 	},0, 10); // fill the array with random values
 float local[10];
 arr->CopyTo(local,0,10); //copy the array to local buffer
-DelArray(arr);
+DelArray<float>(arr);
 ```
 
 ### Shared Variables

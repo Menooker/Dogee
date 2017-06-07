@@ -40,9 +40,9 @@ public:
 	void Destroy()
 	{
 		std::cout << "destroctor" << std::endl;
-		DelArray(self->m_vector);
-		DelArray(self->m_matrix[0]);
-		DelArray(self->m_matrix);
+		DelArray<double>(self->m_vector);
+		DelArray<int>(self->m_matrix[0]);
+		DelArray<Array<int>>(self->m_matrix);
 	}
 };
 

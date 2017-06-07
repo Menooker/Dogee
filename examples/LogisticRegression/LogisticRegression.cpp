@@ -28,7 +28,7 @@ DefConst(ITER_NUM, int); //300
 DefConst(THREAD_NUM, int); //2
 DefConst(step_size, float); //0.005f
 DefConst(TEST_PART, float); //0.2f
-DefConst(PATH,Ref<DString>)
+DefGlobal(PATH, Ref<DString>)
 
 class LocalDataset
 {

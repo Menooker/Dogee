@@ -178,7 +178,7 @@ namespace Dogee
 		{
 			self->state = ThreadCreating;
 			self->node_id = nd_id;
-			RcCreateThread(node_id, GetProcIDMap()[func], param, self->GetObjectId());
+			RcCreateThread(nd_id, GetProcIDMap()[func], param, self->GetObjectId());
 		}
 
 		/*this constructor accepts lambda and other callable objects.

@@ -634,10 +634,11 @@ namespace Dogee
 		return Array<T>(AllocObjectId(1, size*DSMInterface<T>::dsm_size_of));
 	}
 	template<typename T>
-	inline  void DelArray(T arr)
+	inline  void DelArray(Array<T> arr)
 	{
-		DeleteObject(arr->GetObjectId());
-		DogeeEnv::backend->del(arr->GetObjectId());
+		ObjectKey key = arr->GetObjectId();
+		DeleteObject(key);
+		DogeeEnv::backend->del(key);
 	}
 
 	template<typename T>
