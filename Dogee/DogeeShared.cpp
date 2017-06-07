@@ -214,7 +214,7 @@ namespace Dogee
 		file >> str;
 		MyAssert(str_starts_with(str, "DSMBackend="), "No DSMBackend\n");
 		file >> str;
-		int back = FindIndex({ "BackendTest","ChunkMemcached","Memcached" }, str);
+		int back = FindIndex({ "BackendTest","ChunkMemcached","Memcached","NVDS" }, str);
 		MyAssert((back >= 0), "Bad DSMBackend Name:" + str + "\n");
 
 		file >> str;

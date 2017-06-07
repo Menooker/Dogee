@@ -152,6 +152,7 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\include\client.h" />
     <ClInclude Include="..\include\Dogee.h" />
     <ClInclude Include="..\include\DogeeAccumulator.h" />
     <ClInclude Include="..\include\DogeeBase.h" />
@@ -165,6 +166,7 @@
     <ClInclude Include="..\include\DogeeMacro.h" />
     <ClInclude Include="..\include\DogeeMemcachedStorage.h" />
     <ClInclude Include="..\include\DogeeMR.h" />
+    <ClInclude Include="..\include\DogeeNVDSStorage.h" />
     <ClInclude Include="..\include\DogeeRemote.h" />
     <ClInclude Include="..\include\DogeeSerializerImpl.h" />
     <ClInclude Include="..\include\DogeeSharedConst.h" />
@@ -181,6 +183,7 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="..\include\DogeeNVDSStorage.cpp" />
     <ClCompile Include="DogeeAccumulator.cpp" />
     <ClCompile Include="DogeeDirectoryCache.cpp" />
     <ClCompile Include="DogeeMemcachedStorage.cpp" />

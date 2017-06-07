@@ -9,6 +9,7 @@
 #include "DogeeDirectoryCache.h"
 #include "DogeeSocket.h"
 #include "DogeeCheckpoint.h"
+#include "DogeeNVDSStorage.h"
 namespace Dogee
 {
 	class SoStorageFactory
@@ -45,6 +46,10 @@ namespace Dogee
 				DogeeEnv::DestroyStorageCurrentThread = SoStorageMemcached::DestroyInCurrentThread;
 				return new SoStorageMemcached(arr_mem_hosts, arr_mem_ports);
 #endif
+			case SoBackendNVDS:
+				DogeeEnv::InitStorageCurrentThread = SoStorageNVDS::InitInCurrentThread;
+				DogeeEnv::DestroyStorageCurrentThread = SoStorageNVDS::DestroyInCurrentThread;
+				return new SoStorageNVDS(arr_mem_hosts[0]);
 			default:
 				assert(0);
 			}

@@ -16,6 +16,7 @@ namespace Dogee
 		SoBackendTest,
 		SoBackendChunkMemcached,
 		SoBackendMemcached,
+		SoBackendNVDS,
 	};
 	enum CacheType
 	{
