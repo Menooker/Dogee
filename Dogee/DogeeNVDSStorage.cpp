@@ -39,8 +39,8 @@ namespace Dogee
 		std::string _k((char*)&myk, sizeof(myk));
 		ObjectInfoNVDS info = { flag, size };
 		std::string _v((char*)&info, sizeof(info));
-		assert(0 && "Not implemented!");
-		//if (nvds_client->Add(_k,_v)) //fix-me : Uncomment until "add" is added into NVDS
+		//assert(0 && "Not implemented!");
+		if (nvds_client->Put(_k,_v)) //fix-me : Uncomment until "add" is added into NVDS
 		{
 			return SoOK;
 		}
