@@ -137,7 +137,7 @@
     <ClCompile Include="DogeeThreadPool.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
-    <ClCompile Include="..\include\DogeeNVDSStorage.cpp">
+    <ClCompile Include="DogeeNVDSStorage.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>

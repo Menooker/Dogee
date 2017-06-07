@@ -183,10 +183,10 @@
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\include\DogeeNVDSStorage.cpp" />
     <ClCompile Include="DogeeAccumulator.cpp" />
     <ClCompile Include="DogeeDirectoryCache.cpp" />
     <ClCompile Include="DogeeMemcachedStorage.cpp" />
+    <ClCompile Include="DogeeNVDSStorage.cpp" />
     <ClCompile Include="DogeeRemote.cpp" />
     <ClCompile Include="DogeeShared.cpp" />
     <ClCompile Include="DogeeThreading.cpp" />

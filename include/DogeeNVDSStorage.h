@@ -2,7 +2,7 @@
 #define __DOGEE_NVDS_H_ 
 
 #include "DogeeStorage.h"
-#include "client.h"
+#include "nvds/client.h"
 #include <string>
 namespace Dogee
 {
