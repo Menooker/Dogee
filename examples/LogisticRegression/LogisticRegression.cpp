@@ -14,6 +14,7 @@
 #include <cmath>
 #include <stdlib.h>
 #include <fstream>
+#include "DogeeString.h"
 
 using namespace Dogee;
 using std::cin;
@@ -27,7 +28,7 @@ DefConst(ITER_NUM, int); //300
 DefConst(THREAD_NUM, int); //2
 DefConst(step_size, float); //0.005f
 DefConst(TEST_PART, float); //0.2f
-
+DefConst(PATH,Ref<DString>)
 
 class LocalDataset
 {
@@ -70,7 +71,7 @@ public:
 		int real_cnt = 0;
 		int postive = 0;
 		int datapoints = 0;
-		ParseCSV("d:\\\\LR\\gene2.csv", [&](const char* cell, int line, int index){
+		ParseCSV(PATH->getstr().c_str(), [&](const char* cell, int line, int index){
 			if (index > param_len)
 			{
 				std::cout << "CSV out of index, line="<< line<<" index="<<index<<"\n";
@@ -271,7 +272,7 @@ int main(int argc, char* argv[])
 	HelperInitCluster(argc, argv);
 	int param_len = HelperGetParamInt("num_param");
 	g_num_points = HelperGetParamInt("num_points");
-
+	PATH = NewObj<DString>( HelperGetParam("path"));
 	///*
 	ITER_NUM = HelperGetParamInt("iter_num"); 
 	THREAD_NUM = HelperGetParamInt("thread_num");
