@@ -12,7 +12,7 @@ namespace Dogee
 	{
 		LongKey myk = MAKE64(key, fldid);
 		std::string _k((char*)&myk,sizeof(myk));
-		std::string _v(sizeof(v), v);
+		std::string _v((char*)&v, sizeof(v));
 		return nvds_client->Put(_k, _v)?SoOK:SoFail;
 	}
 	uint32_t SoStorageNVDS::get(ObjectKey key, FieldKey fldid)
