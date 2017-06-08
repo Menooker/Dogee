@@ -102,7 +102,7 @@
     <ClInclude Include="..\include\DogeeNVDSStorage.h">
       <Filter>头文件</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\client.h">
+    <ClInclude Include="..\include\nvds\client.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>

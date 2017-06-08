@@ -152,7 +152,6 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\include\client.h" />
     <ClInclude Include="..\include\Dogee.h" />
     <ClInclude Include="..\include\DogeeAccumulator.h" />
     <ClInclude Include="..\include\DogeeBase.h" />
@@ -177,6 +176,7 @@
     <ClInclude Include="..\include\DogeeThreadPool.h" />
     <ClInclude Include="..\include\DogeeUtil.h" />
     <ClInclude Include="..\include\DogeeFileTools.h" />
+    <ClInclude Include="..\include\nvds\client.h" />
     <ClInclude Include="DogeeAtomicCounter.h" />
     <ClInclude Include="Instruction.h" />
     <ClInclude Include="stdafx.h" />

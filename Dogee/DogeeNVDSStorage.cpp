@@ -11,15 +11,12 @@ namespace Dogee
 	SoStatus SoStorageNVDS::put(ObjectKey key, FieldKey fldid, uint32_t v)
 	{
 		LongKey myk = MAKE64(key, fldid);
-		std::string _k((char*)&myk,sizeof(myk));
-		std::string _v((char*)&v, sizeof(v));
-		return nvds_client->Put(_k, _v)?SoOK:SoFail;
+		return nvds_client->Put((const char*)&myk, sizeof(myk), (const char*)&v,sizeof(v)) ? SoOK : SoFail;
 	}
 	uint32_t SoStorageNVDS::get(ObjectKey key, FieldKey fldid)
 	{
 		LongKey myk = MAKE64(key, fldid);
-		std::string _k((char*)&myk, sizeof(myk));
-		std::string _v = nvds_client->Get(_k);
+		std::string _v = nvds_client->Get((const char*)&myk, sizeof(myk));
 		assert(_v.size() == sizeof(uint32_t));
 		return *(uint32_t*)_v.c_str();
 	}
@@ -36,11 +33,8 @@ namespace Dogee
 	SoStatus SoStorageNVDS::newobj(ObjectKey key, uint32_t flag, uint32_t size)
 	{
 		uint64_t myk = MAKE64(key, 0xFFFFFFFF);
-		std::string _k((char*)&myk, sizeof(myk));
 		ObjectInfoNVDS info = { flag, size };
-		std::string _v((char*)&info, sizeof(info));
-		//assert(0 && "Not implemented!");
-		if (nvds_client->Put(_k,_v)) //fix-me : Uncomment until "add" is added into NVDS
+		if (nvds_client->Add((const char*)&myk, sizeof(myk), (const char*)&info, sizeof(info)))
 		{
 			return SoOK;
 		}
@@ -49,8 +43,7 @@ namespace Dogee
 	SoStatus SoStorageNVDS::getinfo(ObjectKey key, uint32_t& flag, uint32_t& size)
 	{
 		uint64_t myk = MAKE64(key, 0xFFFFFFFF);
-		std::string _k((char*)&myk, sizeof(myk));
-		std::string _v = nvds_client->Get(_k);
+		std::string _v = nvds_client->Get((const char*)&myk, sizeof(myk));
 		assert(_v.size() == sizeof(ObjectInfoNVDS));
 		ObjectInfoNVDS* pinfo = (ObjectInfoNVDS*)_v.c_str();
 		flag = pinfo->id;
@@ -65,12 +58,10 @@ namespace Dogee
 		for (uint32_t i = 0; i<size; i++)
 		{
 			k = MAKE64(key, i);
-			std::string _k((char*)&k, sizeof(k));
-			nvds_client->Del(_k);
+			nvds_client->Del((const char*)&k, sizeof(k));
 		}
 		k = (MAKE64(key, 0xFFFFFFFF));
-		std::string _k((char*)&k, sizeof(k));
-		nvds_client->Del(_k);
+		nvds_client->Del((const char*)&k, sizeof(k));
 		return SoOK;
 	}
 	SoStatus SoStorageNVDS::getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)
