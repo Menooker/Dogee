@@ -196,9 +196,9 @@ namespace Dogee
 			self->state = ThreadCreating;
 			self->node_id = nd_id;
 			if (AutoRegisterLambda<T>::is_simple) //just too lazy to use a template to do this
-				RcCreateThread(node_id, AutoRegisterLambda<T>::id, param, self->GetObjectId());
+				RcCreateThread(nd_id, AutoRegisterLambda<T>::id, param, self->GetObjectId());
 			else
-				RcCreateThread(node_id, AutoRegisterLambda<T>::id, param, self->GetObjectId(), &func, sizeof(func));
+				RcCreateThread(nd_id, AutoRegisterLambda<T>::id, param, self->GetObjectId(), &func, sizeof(func));
 		}
 
 	};

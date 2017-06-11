@@ -86,7 +86,7 @@ namespace Dogee
 		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf);
 		SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf);
 		SoStatus getblock(LongKey id, uint32_t* buf);
-		~SoStorageChunkMemcached();
+		~SoStorageChunkMemcached(){};
 
 
 		SoStorageChunkMemcached(std::vector<std::string>& arr_mem_hosts, std::vector<int>& arr_mem_ports) :SoStorageMemcached(arr_mem_hosts,arr_mem_ports)

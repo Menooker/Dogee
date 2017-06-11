@@ -922,7 +922,7 @@ namespace Dogee
 
 	int RcCreateThread(int node_id,uint32_t idx,uint32_t param,ObjectKey okey)
 	{
-		assert(DogeeEnv::isMaster);
+		assert(DogeeEnv::isMaster());
 		int _idx = idx;
 		int _param = param;
 		RcCommandPack cmd = { RcCmdCreateThread, _idx, _param };
@@ -934,7 +934,7 @@ namespace Dogee
 
 	int RcCreateThread(int node_id, uint32_t idx, uint32_t param, ObjectKey okey,void* data,uint32_t len)
 	{
-		assert(DogeeEnv::isMaster);
+		assert(DogeeEnv::isMaster());
 		int _idx = idx;
 		int _param = param;
 		assert(len <= 2048);

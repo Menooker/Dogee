@@ -621,7 +621,7 @@ namespace Dogee
 
 	bool _Reduce(ObjectKey key,int timeout)
 	{
-		if (DogeeEnv::isMaster == false)
+		if (DogeeEnv::isMaster() == false)
 		{
 			printf("Only master node can send \'Reduce\' command.\n");
 			return false;

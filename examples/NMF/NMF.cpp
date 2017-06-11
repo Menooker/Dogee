@@ -40,11 +40,11 @@ DefGlobal(g_features, int);
 DefGlobal(g_barrier, Ref<DBarrier>);
 DefGlobal(g_K, int);
 
-int features;
+static int features;
 LBarrier* local_barrier;
-int matK;
+static int matK;
 int shared_dsm_size;
-float* matQ;
+static float* __RESTRICT matQ;
 Ref<DBarrier> barrier(0);
 static float alpha;
 static float beta;
@@ -129,7 +129,7 @@ void fetch_global_param(bool is_main, float* buffer)
 
 
 void slave_worker(float* thread_local_data,  int thread_point_num,
-	float* local_grad, float* local_loss, float* myP)
+	float* __RESTRICT local_grad, float* local_loss, float* __RESTRICT myP)
 {
 	DogeeEnv::InitCurrentThread();
 	for (int itr = 0; itr < ITER_NUM; itr++)
@@ -144,20 +144,25 @@ void slave_worker(float* thread_local_data,  int thread_point_num,
 		{
 			int qindex = 0;
 			float objv = 0.0f;
+			float* __RESTRICT  mp = myP + pindex;
 			for (int j = 0; j < features; j++)
 			{
+				float* __RESTRICT mq = matQ + qindex;
+				float* __RESTRICT mg = local_grad + qindex;
 				//Q[k][j]
 				float dot = 0;
 				for (int k = 0; k < matK; k++)
 				{
-					dot += myP[pindex + k] * matQ[qindex + k];
+					dot += mp[k] * mq[k];
 				}
 				dot = thread_local_data[base + j] - dot;
 				objv += dot*dot;
+				float ad = alpha*dot;
+				float bd = beta*dot;
 				for (int k = 0; k < matK; k++)
 				{
-					myP[pindex + k] += alpha * dot * matQ[qindex + k];
-					local_grad[qindex + k] += beta * dot * myP[pindex + k];
+					mp[k] += ad* mq[k];
+					mg[k] += bd * mp[k];
 				}
 				qindex += matK;
 			}
