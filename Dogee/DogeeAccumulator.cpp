@@ -137,7 +137,7 @@ namespace Dogee
 			if (blocks*DSM_CACHE_BLOCK_SIZE*(DogeeEnv::self_node_id + 1) > sz)
 			{
 				node->size = sz - blocks * DogeeEnv::self_node_id * DSM_CACHE_BLOCK_SIZE;
-				if (node->size < 0)
+				if (sz < blocks * DogeeEnv::self_node_id * DSM_CACHE_BLOCK_SIZE)
 					node->size = 0;
 			}
 			node->buf = node->accu->AllocLocalBuffer(node->size);//new uint32_t[node->size];
@@ -545,6 +545,10 @@ namespace Dogee
 		cmd = (RcDataPack*)buf2;
 		cmd->cmd = AcDataAccumulate;
 		cmd->id = okey;
+		cmd->param12 = current_thread_id;
+		cmd->size = 0;
+		cmd->datatype = TypeDense;
+		int done = 1;
 		for (int i = 0; i<DogeeEnv::num_nodes; i++)
 		{
 			send_idx[i] = i*blocks*DSM_CACHE_BLOCK_SIZE;
@@ -552,14 +556,21 @@ namespace Dogee
 				send_size[i] = sz;
 			else
 				send_size[i] = send_idx[i] + blocks*DSM_CACHE_BLOCK_SIZE;
+			if (send_size[i] <= send_idx[i])
+			{
+				if (i != DogeeEnv::self_node_id)
+					Socket::RcSend(accu_manager->GetConnection(i), cmd, sizeof(RcDataPack));
+				done++;
+			}
 		}
-
+		uint32_t localsend = (send_size[DogeeEnv::self_node_id] > send_idx[DogeeEnv::self_node_id]) ? send_size[DogeeEnv::self_node_id] - send_idx[DogeeEnv::self_node_id] : 0;
+		
 		AcAccumulateMsg(DogeeEnv::self_node_id, okey, current_thread_id, send_idx[DogeeEnv::self_node_id],
-			(send_size[DogeeEnv::self_node_id] - send_idx[DogeeEnv::self_node_id])*sizeof(uint32_t),
+			localsend*sizeof(uint32_t),
 			(char*)((uint32_t*)in_buf + send_idx[DogeeEnv::self_node_id]), TypeDense);
+		
 		send_idx[DogeeEnv::self_node_id] = send_size[DogeeEnv::self_node_id];
 
-		int done = 1;
 		int maxfd = 0;
 		fd_set writefds;
 		if (DogeeEnv::num_nodes > 0)

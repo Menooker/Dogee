@@ -116,6 +116,7 @@ namespace Dogee
 		virtual SoStatus getchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
 		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint64_t* buf)=0;
 		virtual SoStatus putchunk(ObjectKey key, FieldKey fldid, uint32_t len, uint32_t* buf)=0;
+		~DSMCache(){}
 #ifdef BD_DSM_STAT
 		virtual void get_stat(long& mwrites, long& mwhit, long& mreads, long& mrhit)
 		{

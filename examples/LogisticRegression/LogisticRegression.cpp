@@ -301,11 +301,11 @@ int main(int argc, char* argv[])
 	auto t = std::chrono::system_clock::now();
 	for (int itr = 0; itr < ITER_NUM; itr++)
 	{
-		
+		auto t2 = std::chrono::system_clock::now();
 		barrier->Enter();
-		//std::cout << "Iter"<<itr<<" took "<<
-		//	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
-		//	<<" milliseconds\n";
+		std::cout << "Iter"<<itr<<" took "<<
+			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t2).count()
+			<<" milliseconds\n";
 	}
 	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
 		<<std::endl;
@@ -314,8 +314,8 @@ int main(int argc, char* argv[])
 	float positive = g_param[0], real_true = g_param[1], TP = g_param[2];
 	std::cout << "positive = " << positive << " real_true = " << real_true << " TP = " << TP << std::endl;
 	std::cout << "precision = " << TP / (positive + 0.01) << " recall = " << TP / (real_true+0.01) << std::endl;
-	std::string str;
-	std::cin >> str;
+	//std::string str;
+	//std::cin >> str;
 	CloseCluster();
 	return 0;
 }

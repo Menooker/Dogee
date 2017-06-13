@@ -1,0 +1,1 @@
+../bin/PageRank num_points 3997962 iter_num 10 thread_num 4 path /home/ddst200/shared2/mei/dataset/PageRank/lj/com-lj.ungraph_clean.txt

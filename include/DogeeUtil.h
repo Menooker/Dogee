@@ -1,6 +1,7 @@
 #ifndef __DOGEE_UTIL_H_
 #define __DOGEE_UTIL_H_
 #include <string.h>
+#include <string>
 namespace Dogee
 {
 
@@ -34,6 +35,16 @@ extern ptDbgBreakPoint _DbgBreakPoint;
 		Source src=source;
 		memcpy(&dest, &src, sizeof(dest));
 		return dest;
+	}
+
+	//https://stackoverflow.com/a/874160/4790873
+	inline bool hasEnding(std::string const &fullString, std::string const &ending) {
+		if (fullString.length() >= ending.length()) {
+			return (0 == fullString.compare(fullString.length() - ending.length(), ending.length(), ending));
+		}
+		else {
+			return false;
+		}
 	}
 
 }

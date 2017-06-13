@@ -65,16 +65,27 @@ public:
 	{
 		const int local_line = num_points * (node_id - 1) / (DogeeEnv::num_nodes - 1);
 		local_dataset_size = num_points / (DogeeEnv::num_nodes - 1);
-		dataset = new float[param_len*local_dataset_size];
+		dataset = new float[param_len*(local_dataset_size+1)];
 		m_param_len = param_len;
 		printf("LL %d LS %d\n", local_line, local_dataset_size);
-		std::ifstream f(PATH->getstr());
-		SkipFileToLine(f, PATH->getstr(), local_line);
-		for (int i = 0; i < local_dataset_size*param_len; i++)
+		std::string path = PATH->getstr();
+		if (hasEnding(path, ".csv"))
 		{
-			float data;
-			f >> data;
-			dataset[i] = data;
+			ParseCSV(path.c_str(), [&](const char* cell, int line, int index){
+				dataset[(line - local_line)*param_len + index] = atof(cell);
+				return (line - local_line)<local_dataset_size;
+			}, local_line);
+		}
+		else
+		{
+			std::ifstream f(PATH->getstr());
+			SkipFileToLine(f, PATH->getstr(), local_line);
+			for (int i = 0; i < local_dataset_size*param_len; i++)
+			{
+				float data;
+				f >> data;
+				dataset[i] = data;
+			}
 		}
 	}
 	void Free()
@@ -259,14 +270,14 @@ int main(int argc, char* argv[])
 		std::cout << "Iter"<<itr<<" took "<<
 			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t2).count()
 		<<" milliseconds\nCount in clusters: ";
-		for (int i = 0; i < matK; i++)
-			cout << (float)g_param[features*matK+i] << " ";
-		cout << endl;
+		//for (int i = 0; i < matK; i++)
+		//	cout << (float)g_param[features*matK+i] << " ";
+		//cout << endl;
 	}
 	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
 		<< std::endl;
-	std::string str;
-	std::cin >> str;
+	//std::string str;
+	//std::cin >> str;
 	CloseCluster();
 	return 0;
 }

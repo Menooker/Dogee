@@ -294,16 +294,16 @@ int main(int argc, char* argv[])
 	auto t = std::chrono::system_clock::now();
 	for (int itr = 0; itr < ITER_NUM; itr++)
 	{
-
+		auto t2 = std::chrono::system_clock::now();
 		barrier->Enter();
-		//std::cout << "Iter"<<itr<<" took "<<
-		//	std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
-		//	<<" milliseconds\n";
+		std::cout << "Iter"<<itr<<" took "<<
+			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t2).count()
+			<<" milliseconds\n";
 	}
 	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
 		<< std::endl;
-	std::string str;
-	std::cin >> str;
+	//std::string str;
+	//std::cin >> str;
 	CloseCluster();
 	return 0;
 }

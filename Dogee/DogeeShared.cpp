@@ -415,8 +415,8 @@ namespace Dogee
 					line++;
 					cnt = 0;
 					last = p + 1;
-					if (line % 100 == 0)
-						printf("line %d\n", line);
+					//if (line % 100 == 0)
+					//	printf("line %d\n", line);
 				}
 				else if (*p == ',')
 				{
