@@ -13,6 +13,7 @@ EX_LR_DIR=$(PWD_DIR)/examples/LogisticRegression
 EX_KM_DIR=$(PWD_DIR)/examples/K-means
 EX_NMF_DIR=$(PWD_DIR)/examples/NMF
 EX_PR_DIR=$(PWD_DIR)/examples/PageRank
+EX_KM_CP_DIR=$(PWD_DIR)/examples/K-means-checkpoint
 
 CXX ?= g++
 CPPFLAGS ?= -std=c++11 -g -I$(INC_DIR) -O3 -ffast-math -march=native
@@ -50,6 +51,9 @@ example_nmf:
 example_pagerank:
 	make -C $(EX_PR_DIR)
 
+example_kmeans_checkpoint:
+	make -C $(EX_KM_CP_DIR)
+
 ##
 clean:
 	make -C $(LIB_DIR) clean
@@ -59,6 +63,7 @@ clean:
 	make -C $(EX_KM_DIR) clean
 	make -C $(EX_NMF_DIR) clean
 	make -C $(EX_PR_DIR) clean
+	make -C $(EX_KM_CP_DIR) clean
 	rm -rf ${BIN_DIR}
 
  ##
@@ -67,6 +72,7 @@ remake_all:
 	make -C $(TEST_DIR) remake
 	make -C $(EX_SIMPLE_DIR) remake
 	make -C $(EX_LR_DIR) remake
-	make -C $(EX_KM_DIR) clean
-	make -C $(EX_NMF_DIR) clean
-	make -C $(EX_PR_DIR) clean
+	make -C $(EX_KM_DIR) remake
+	make -C $(EX_NMF_DIR) remake
+	make -C $(EX_PR_DIR) remake
+	make -C $(EX_KM_CP_DIR) remake

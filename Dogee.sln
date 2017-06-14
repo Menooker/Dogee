@@ -47,6 +47,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PageRank", "examples\PageRa
 		{B25E729C-B0D7-4CC7-B6E4-246A0B038482} = {B25E729C-B0D7-4CC7-B6E4-246A0B038482}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "K-means-checkpoint", "examples\K-means-checkpoint\K-means-checkpoint.vcxproj", "{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{B25E729C-B0D7-4CC7-B6E4-246A0B038482} = {B25E729C-B0D7-4CC7-B6E4-246A0B038482}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Mixed Platforms = Debug|Mixed Platforms
@@ -153,6 +158,16 @@ Global
 		{729B9206-4C68-4C47-8D38-4A1ECA6EE2FC}.Release|Win32.ActiveCfg = Release|Win32
 		{729B9206-4C68-4C47-8D38-4A1ECA6EE2FC}.Release|Win32.Build.0 = Release|Win32
 		{729B9206-4C68-4C47-8D38-4A1ECA6EE2FC}.Release|x64.ActiveCfg = Release|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Debug|Win32.Build.0 = Debug|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Debug|x64.ActiveCfg = Debug|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|Win32.ActiveCfg = Release|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|Win32.Build.0 = Release|Win32
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -165,5 +180,6 @@ Global
 		{E2E447D8-D6FF-47A0-A8B1-970E055C9778} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 		{9D081298-0C7B-4EE4-AE85-3CF7999C87E1} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 		{729B9206-4C68-4C47-8D38-4A1ECA6EE2FC} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
+		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 	EndGlobalSection
 EndGlobal

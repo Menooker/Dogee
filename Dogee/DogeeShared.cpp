@@ -9,6 +9,9 @@
 #include <limits>
 #include <mutex>
 #include <set>
+#include <string>
+#include <vector>
+#include <iterator>
 
 #define DOGEE_CONFIG_VER 1
 
@@ -168,6 +171,32 @@ namespace Dogee
 		exit(3);
 	}
 
+	//https://stackoverflow.com/a/236803/4790873
+	template<typename Out>
+	void str_split(const std::string &s, char delim, Out result) {
+		std::stringstream ss;
+		ss.str(s);
+		std::string item;
+		while (std::getline(ss, item, delim)) {
+			*(result++) = item;
+		}
+	}
+	void str_split_set(const std::string &s, char delim, std::set<std::string>& outset) {
+		std::stringstream ss;
+		ss.str(s);
+		std::string item;
+		while (std::getline(ss, item, delim)) {
+			outset.insert(item);
+		}
+	}
+
+	std::vector<std::string> str_split(const std::string &s, char delim) {
+		std::vector<std::string> elems;
+		str_split(s, delim, std::back_inserter(elems));
+		return elems;
+	}
+	//////////////////////////////////////////
+
 #define MyAssert(a,str) do{if(!a){MyAbort(str);}}while(0)
 	std::unordered_map<std::string, std::string> param;
 	void HelperInitCluster(int argc, char* argv[],const char* appname)
@@ -185,6 +214,17 @@ namespace Dogee
 		for (int i = 1; i + 1 < argc; i+=2)
 		{
 			param[argv[i]] = argv[i + 1];
+		}
+		
+		auto excludes_ips = param.find("----exclude");
+		std::set<std::pair<std::string,int>> excludes;
+		if (excludes_ips != param.end())
+		{
+			for (auto& str : str_split(excludes_ips->second, ';'))
+			{
+				auto ip_port = str_split(str, ':');
+				excludes.insert(std::make_pair(ip_port[0], atoi(ip_port[1].c_str())));
+			}
 		}
 		
 		std::ifstream file("DogeeConfig.txt");
@@ -234,6 +274,8 @@ namespace Dogee
 		{
 			file >> str;
 			file >> port;
+			if (excludes.count(std::make_pair(str,port)))
+				continue;
 			slaves.push_back(str);
 			ports.push_back(port);
 		}
@@ -246,6 +288,8 @@ namespace Dogee
 		{
 			file >> str;
 			file >> port;
+			if (excludes.count(std::make_pair(str, port)))
+				continue;
 			mem.push_back(str);
 			mem_ports.push_back(port);
 		}
