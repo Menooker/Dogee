@@ -12,8 +12,10 @@
 #include <string>
 #include <vector>
 #include <iterator>
+#include "DogeeAPIWrapping.h"
 
 #define DOGEE_CONFIG_VER 1
+#undef max
 
 namespace Dogee
 {
@@ -199,6 +201,9 @@ namespace Dogee
 
 #define MyAssert(a,str) do{if(!a){MyAbort(str);}}while(0)
 	std::unordered_map<std::string, std::string> param;
+	static int myargc;
+	static char** myargv;
+
 	void HelperInitCluster(int argc, char* argv[],const char* appname)
 	{
 		if (appname)
@@ -215,7 +220,8 @@ namespace Dogee
 		{
 			param[argv[i]] = argv[i + 1];
 		}
-		
+		myargc = argc;
+		myargv = argv;
 		auto excludes_ips = param.find("----exclude");
 		std::set<std::pair<std::string,int>> excludes;
 		if (excludes_ips != param.end())
@@ -227,6 +233,13 @@ namespace Dogee
 			}
 		}
 		
+		auto restart_pid = param.find("----restart");
+		if (restart_pid != param.end())
+		{
+			ProcessIdentifier pid = (ProcessIdentifier) atoi(restart_pid->second.c_str());
+			UaWaitForProcess(pid);
+		}
+
 		std::ifstream file("DogeeConfig.txt");
 		std::string str;
 		std::string err_msg;
@@ -488,5 +501,45 @@ namespace Dogee
 			func(last, line, cnt);
 		fclose(f);
 	}
+	void __regarg(int argc, char* argv[])
+	{
+		myargc = argc;
+		myargv = argv;
+	}
+	void RestartCurrentProcess()
+	{
+#ifdef _WIN32
+		char* cmd=GetCommandLineA();
+		const char addcmd[] = "----restart ";
+		STARTUPINFO si;
+		PROCESS_INFORMATION pi;
 
+		ZeroMemory(&si, sizeof(si));
+		ZeroMemory(&pi, sizeof(pi));
+		std::stringstream pathbuf;
+		HANDLE handle;
+		DuplicateHandle(GetCurrentProcess(), GetCurrentProcess(), GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
+		pathbuf << cmd << addcmd << (int)handle;
+
+		CreateProcessA(NULL, (char*)pathbuf.str().c_str(), NULL, NULL, TRUE,0 , NULL, NULL,&si,&pi );
+		CloseCluster();
+		exit(0);
+#else
+		int pid=(int)getpid();
+		char** newargv =new char*[myargc+3];
+		for (int i = 0; i < myargc; i++)
+		{
+			newargv[i] = myargv[i];
+		}
+		std::stringstream ss;
+		ss << pid;
+		std::string str;
+		ss >> str;
+		newargv[myargc] = "----restart";
+		newargv[myargc + 1] =  (char*)str.c_str();
+		newargv[myargc + 2] = NULL;
+		CloseCluster();
+		execv(myargv[0],newargv);
+#endif
+	}
 }

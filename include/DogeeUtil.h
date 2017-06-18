@@ -46,6 +46,7 @@ extern ptDbgBreakPoint _DbgBreakPoint;
 			return false;
 		}
 	}
+	extern void RestartCurrentProcess();
 
 }
 

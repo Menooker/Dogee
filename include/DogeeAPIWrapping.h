@@ -1,7 +1,6 @@
 #ifndef __DOGEE_WRAPPING_H_
 #define __DOGEE_WRAPPING_H_
 
-
 #ifdef _WIN32
 #include <Windows.h>
 #include <WinBase.h>
@@ -21,9 +20,13 @@
 #define UaTryEnterReadRWLock(a) TryAcquireSRWLockShared(a)
 #define UaLeaveReadRWLock(a) ReleaseSRWLockShared(a)
 #define UaKillRWLock(a)
+#define UaWaitForProcess(a) WaitForSingleObject(a,-1)
+typedef  HANDLE ProcessIdentifier;
 #else
 #include <unistd.h>
 #include <semaphore.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 #define BD_LOCK pthread_spinlock_t
 #define BD_RWLOCK pthread_rwlock_t
 
@@ -40,6 +43,8 @@
 #define UaTryEnterReadRWLock(a) pthread_rwlock_tryrdlock(a)
 #define UaLeaveReadRWLock(a) pthread_rwlock_unlock(a)
 #define UaKillRWLock(a) pthread_rwlock_destroy(a)
+#define UaWaitForProcess(a) waitpid(a,NULL,0)
+typedef  pid_t ProcessIdentifier;
 #endif
 
 

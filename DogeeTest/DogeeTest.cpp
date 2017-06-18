@@ -398,7 +398,7 @@ int main_threadpool(int argc, char* argv[])
 
 /////////////////////////Dthread pool test
 #include "DogeeFunctional.h"
-int main(int argc, char* argv[])
+int main_functional(int argc, char* argv[])
 {
 	DogeeEnv::ThreadPoolConfig::thread_pool_count = -1;
 	HelperInitCluster(argc, argv);
@@ -490,6 +490,34 @@ int main2(int argc, char* argv[])
 		CloseCluster();
 	}
 	
+	return 0;
+}
+namespace Dogee{
+
+	extern void __regarg(int argc, char* argv[]);
+}
+int main(int argc, char* argv[])
+{
+	Dogee::__regarg(argc, argv);
+	std::unordered_map < std::string, std::string> param;
+	for (int i = 1; i + 1 < argc; i += 2)
+	{
+		param[argv[i]] = argv[i + 1];
+	}
+
+	auto restart_pid = param.find("----restart");
+	if (restart_pid != param.end())
+	{
+		ProcessIdentifier pid = (ProcessIdentifier)atoi(restart_pid->second.c_str());
+		std::cout << "Child waiting\n";
+		UaWaitForProcess(pid);
+		std::cout << "Child exit\n";
+		exit(0);
+	}
+	std::string buf;
+	std::cin >> buf;
+	RestartCurrentProcess();
+	std::cin >> buf;
 	return 0;
 }
 
