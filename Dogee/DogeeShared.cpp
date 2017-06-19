@@ -506,11 +506,22 @@ namespace Dogee
 		myargc = argc;
 		myargv = argv;
 	}
-	void RestartCurrentProcess()
+
+	void RestartCurrentProcess(std::vector<std::string>& excludes_ip, std::vector<int>& excludes_ports)
 	{
+		std::stringstream exbuf;
+		std::string excludes;
+		exbuf << "----exclude ";
+		for (int i = 0; i < excludes_ip.size(); i++)
+		{
+			exbuf << excludes_ip[i] << ":" << excludes_ports[i];
+			if (i != excludes_ip.size() - 1)
+				exbuf << ";";
+		}
+		excludes = exbuf.str();
 #ifdef _WIN32
 		char* cmd=GetCommandLineA();
-		const char addcmd[] = "----restart ";
+		const char addcmd[] = " ----restart ";
 		STARTUPINFO si;
 		PROCESS_INFORMATION pi;
 
@@ -520,13 +531,16 @@ namespace Dogee
 		HANDLE handle;
 		DuplicateHandle(GetCurrentProcess(), GetCurrentProcess(), GetCurrentProcess(), &handle, 0, TRUE, DUPLICATE_SAME_ACCESS);
 		pathbuf << cmd << addcmd << (int)handle;
-
-		CreateProcessA(NULL, (char*)pathbuf.str().c_str(), NULL, NULL, TRUE,0 , NULL, NULL,&si,&pi );
-		CloseCluster();
+		if(excludes_ip.size()>0)
+			pathbuf<<" "<<excludes;
+		auto ret=CreateProcessA(NULL, (char*)pathbuf.str().c_str(), NULL, NULL, TRUE,0 , NULL, NULL,&si,&pi );
+		auto lasterr = GetLastError();
+		if(DogeeEnv::isMaster())
+			CloseCluster();
 		exit(0);
 #else
 		int pid=(int)getpid();
-		char** newargv =new char*[myargc+3];
+		char** newargv =new char*[myargc+ excludes_ip.size()>0 ? 4:3];
 		for (int i = 0; i < myargc; i++)
 		{
 			newargv[i] = myargv[i];
@@ -537,9 +551,24 @@ namespace Dogee
 		ss >> str;
 		newargv[myargc] = "----restart";
 		newargv[myargc + 1] =  (char*)str.c_str();
-		newargv[myargc + 2] = NULL;
-		CloseCluster();
+		if (excludes_ip.size() > 0)
+		{
+			newargv[myargc + 2] = (char*)excludes.c_str();
+			newargv[myargc + 3] = NULL;
+		}
+		else
+		{
+			newargv[myargc + 2] = NULL;
+		}
+		if (DogeeEnv::isMaster())
+			CloseCluster();
 		execv(myargv[0],newargv);
 #endif
+	}
+	void RestartCurrentProcess()
+	{
+		std::vector<std::string> excludes_ip;
+		std::vector<int> excludes_ports;
+		RestartCurrentProcess(excludes_ip, excludes_ports);
 	}
 }

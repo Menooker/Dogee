@@ -495,6 +495,8 @@ int main2(int argc, char* argv[])
 namespace Dogee{
 
 	extern void __regarg(int argc, char* argv[]);
+	extern void RestartCurrentProcess(std::vector<std::string>& excludes_ip , std::vector<int>& excludes_ports);
+	extern void RestartCurrentProcess();
 }
 int main(int argc, char* argv[])
 {

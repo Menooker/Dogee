@@ -14,6 +14,7 @@
 #include "DogeeAPIWrapping.h"
 #include <map>
 #include <assert.h>
+#include "DogeeUtil.h"
 
 #ifdef _WIN32
 int RcWinsockStartup()
@@ -51,6 +52,8 @@ enum RcCommand
 	RcCmdWaitForEvent,
 	RcCmdSetEvent,
 	RcCmdResetEvent,
+	RcCmdAlive,
+	RcCmdRestart,
 };
 
 
@@ -84,6 +87,8 @@ namespace Dogee
 	extern void AcInit(SOCKET sock);
 	extern void AcClose();
 	extern bool AcSlaveInitDataConnections(std::vector<std::string>& hosts, std::vector<int>& ports, int node_id);
+	extern void RestartCurrentProcess(std::vector<std::string>& excludes_ip, std::vector<int>& excludes_ports);
+	extern void RestartCurrentProcess();
 
 	class RemoteNodes
 	{
@@ -112,6 +117,10 @@ namespace Dogee
 	//variables and types only avaiable on master node
 	namespace MasterZone
 	{
+		std::vector<std::string> hosts;
+		std::vector<int> ports;
+		bool closing = false;
+		std::atomic<int> restart_lock = { 0 };
 		struct SyncNode
 		{
 			enum
@@ -135,6 +144,7 @@ namespace Dogee
 			std::unordered_map<ObjectKey, SyncNode*> sync_data;
 			std::mutex mutex;
 		public:
+			std::vector<std::chrono::system_clock::time_point> clocks;
 			~SyncManager()
 			{
 				auto itr = sync_data.begin();
@@ -150,6 +160,15 @@ namespace Dogee
 					}
 				}
 			}
+			SyncManager() :clocks(DogeeEnv::num_nodes, std::chrono::system_clock::now())
+			{
+			}
+
+			void Alive(int src)
+			{
+				clocks[src] = std::chrono::system_clock::now();
+			}
+
 			/*
 			Process the barrier message, may call the nodes to
 			continue, called on master
@@ -375,6 +394,7 @@ namespace Dogee
 		};
 		SyncManager* syncmanager;
 		std::thread masterlisten;
+		std::thread masteralive;
 	}
 
 
@@ -677,6 +697,12 @@ namespace Dogee
 			case RcCmdWakeSync:
 				RcSetRemoteEvent(cmd.param);
 				break;
+			case RcCmdAlive:
+				RcSend(s, &cmd, sizeof(cmd));
+				break;
+			case RcCmdRestart:
+				RestartCurrentProcess();
+				break;
 			default:
 				printf("Unknown command %d\n", cmd.cmd);
 			}
@@ -858,6 +884,33 @@ namespace Dogee
 		return 0;
 	}
 
+	void RestartCluster(std::vector<std::string>& excludes_ip, std::vector<int>& excludes_ports);
+	void RestartCluster();
+	static void RcMasterAliveListen()
+	{
+		for (;;)
+		{
+			std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+			std::vector<std::string> ex_ip;
+			std::vector<int> ex_port;
+			for (int i = 1; i < DogeeEnv::num_nodes; i++)
+			{
+				if (std::chrono::system_clock::now() - MasterZone::syncmanager->clocks[i]>std::chrono::seconds(5))
+				{
+					ex_ip.push_back(MasterZone::hosts[i]);
+					ex_port.push_back(MasterZone::ports[i]);
+				}
+				RcCommandPack cmd;
+				cmd.cmd = RcCmdAlive;
+				RcSend(remote_nodes.GetConnection(i), &cmd, sizeof(cmd));
+			}
+			if (ex_ip.size() > 0 && !MasterZone::closing)
+			{
+				RestartCluster(ex_ip, ex_port);
+			}
+		}
+	}
+
 	static void RcMasterListen();
 	extern void DeleteSharedConstInitializer();
 	extern int MasterCheckCheckPoint();
@@ -876,6 +929,8 @@ namespace Dogee
 			remote_nodes.PushConnection(s);
 		}
 
+		MasterZone::hosts = hosts;
+		MasterZone::ports = ports;
 		DogeeEnv::SetIsMaster(true);
 		DogeeEnv::num_nodes = hosts.size();
 		DogeeEnv::self_node_id = 0;
@@ -884,6 +939,11 @@ namespace Dogee
 		MasterZone::masterlisten =std::move( std::thread(RcMasterListen));
 		MasterZone::masterlisten.detach();
 		MasterZone::syncmanager = new MasterZone::SyncManager;
+		if (DogeeEnv::InitCheckpoint)
+		{
+			MasterZone::masteralive = std::move(std::thread(RcMasterAliveListen));
+			MasterZone::masteralive.detach();
+		}
 		AcInit(Socket::RcCreateListen(ports[0]));
 		printf("Master Listen port %d\n", ports[0]);
 		if (!AcWaitForReady())
@@ -893,19 +953,20 @@ namespace Dogee
 		}
 		if (DogeeEnv::InitCheckpoint)
 			DogeeEnv::InitCheckpoint();
+		DeleteSharedConstInitializer();
 		if (checkpoint >= 0)
 		{
 			checkpoint_cnt = checkpoint;
 			DoRestart();
 			exit(0);
 		}
-		DeleteSharedConstInitializer();
 		return 0;
 
 	}
 
 	void CloseCluster()
 	{
+		MasterZone::closing = true;
 		RcCommandPack cmd;
 		cmd.cmd = RcCmdClose;
 		for (int i = 1; i < DogeeEnv::num_nodes; i++)
@@ -968,6 +1029,33 @@ namespace Dogee
 		RcSend(remote_nodes.GetConnection(dest), &cmd, sizeof(cmd));
 	}
 
+	void RestartCluster(std::vector<std::string>& excludes_ip, std::vector<int>& excludes_ports)
+	{
+		int old=MasterZone::restart_lock.exchange(1);//compete for the lock, if anyone has already locked it, we just do nothing
+		if (old == 1)
+			return;
+		RcCommandPack cmd;
+		cmd.cmd = RcCmdRestart;
+#ifndef _WIN32
+		signal(SIGPIPE, SIG_IGN);
+#endif
+		for (int i = 1; i<DogeeEnv::num_nodes; i++)
+		{
+			if (SOCKET_ERROR == RcSend(remote_nodes.GetConnection(i), &cmd, sizeof(cmd)))
+			{
+				excludes_ip.push_back(MasterZone::hosts[i]);
+				excludes_ports.push_back(MasterZone::ports[i]);
+			}
+		}
+		std::this_thread::sleep_for(std::chrono::milliseconds(2000));
+		RestartCurrentProcess(excludes_ip, excludes_ports);
+	}
+	void RestartCluster()
+	{
+		std::vector<std::string> excludes_ip;
+		std::vector<int> excludes_ports;
+		RestartCluster(excludes_ip, excludes_ports);
+	}
 	static void RcMasterListen()
 	{
 		int n = DogeeEnv::num_nodes;
@@ -998,6 +1086,8 @@ namespace Dogee
 			if (SOCKET_ERROR == select(maxfd, &readfds, NULL, NULL, NULL))
 			{
 				printf("Select Error!%d\n", RcSocketLastError());
+				if (DogeeEnv::InitCheckpoint && !MasterZone::closing)
+					RestartCluster();
 				break;
 			}
 			DogeeEnv::InitCurrentThread();
@@ -1009,6 +1099,8 @@ namespace Dogee
 					if (RcRecv(sock, &cmd, sizeof(cmd)) != sizeof(cmd))
 					{
 						printf("Socket recv Error! %d\n", RcSocketLastError());
+						if (DogeeEnv::InitCheckpoint && !MasterZone::closing)
+							RestartCluster();
 						return ;
 					}
 					switch (cmd.cmd)
@@ -1031,7 +1123,9 @@ namespace Dogee
 					case RcCmdResetEvent:
 						MasterZone::syncmanager->ResetEventMsg(i, cmd.param);
 						break;
-
+					case RcCmdAlive:
+						MasterZone::syncmanager->Alive(i);
+						break;
 					default:
 						printf("Bad command %u!\n", cmd.cmd);
 					}

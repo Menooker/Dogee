@@ -309,7 +309,7 @@ int main_process(bool normal)
 			<< " milliseconds\nCount in clusters: ";
 		if (normal && itr == 5)
 		{
-			exit(255);
+			//exit(255);
 		}
 	}
 	std::cout << "Total time" << std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::system_clock::now() - t).count()
