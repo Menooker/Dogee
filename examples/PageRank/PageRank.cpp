@@ -234,6 +234,7 @@ void slave_main(uint32_t tid)
 
 int main(int argc, char* argv[])
 {
+	//SetAccumulatorMode(AccumulatorMode::DenseMode);
 	HelperInitCluster(argc, argv);
 	g_num_points = HelperGetParamInt("num_points");
 

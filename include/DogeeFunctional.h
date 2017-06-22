@@ -38,7 +38,7 @@ namespace Dogee
 				auto lam = [the_arr, step, _Fnarg, out_arr](uint32_t start)
 				{
 					T buf[32 * DSM_CACHE_BLOCK_SIZE / DSMInterface<T>::dsm_size_of];
-					T outbuf[32 * DSM_CACHE_BLOCK_SIZE / DSMInterface<T>::dsm_size_of];
+					T2 outbuf[32 * DSM_CACHE_BLOCK_SIZE / DSMInterface<T>::dsm_size_of];
 					the_arr->CopyTo(buf, start, step);
 					for (unsigned j = 0; j < step; j++)
 					{
@@ -47,7 +47,8 @@ namespace Dogee
 					out_arr->CopyFrom(outbuf, start, step);
 				};
 				events.push_back(DogeeEnv::ThreadPoolConfig::thread_pool->submit(lam, i));
-				if (events.size() == DogeeEnv::ThreadPoolConfig::thread_pool_max_wait - 20)
+				if (DogeeEnv::ThreadPoolConfig::thread_pool_max_wait - 20<=0 
+					|| events.size() == DogeeEnv::ThreadPoolConfig::thread_pool_max_wait - 20)
 				{
 					for (auto e : events)
 						e.Wait(-1);

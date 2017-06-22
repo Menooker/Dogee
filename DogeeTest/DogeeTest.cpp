@@ -404,12 +404,12 @@ int main_functional(int argc, char* argv[])
 	HelperInitCluster(argc, argv);
 
 	Array<float> arr = NewArray<float>(10000);
-	Array<float> arr2 = NewArray<float>(10000);
+	Array<int> arr2 = NewArray<int>(10000);
 	float fff = 1.5;
 	GetDData(arr, 10000).Map(arr2, 10000,[fff](float data){
-		return data + fff;
-	}).Map(arr,10000,[fff](float data){
-		return data / fff;
+		return (int)(data + fff);
+	}).Map(arr,10000,[fff](int data){
+		return (float)(data / fff);
 	});
 
 	for (int i = 0; i < 50; i++)
