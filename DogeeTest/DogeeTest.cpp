@@ -331,7 +331,7 @@ void thread_for_checkpoint(uint32_t param)
 
 void main_process()
 {
-	if (barrier)
+	if (barrier.get()!=nullptr)
 		barrier = NewObj<DCheckpointBarrier>(2);
 	std::cout << "shared_local : " << shared_local << std::endl;
 	Ref<DThread> th = NewObj<DThread>(THREAD_PROC(thread_for_checkpoint), 1, 123);

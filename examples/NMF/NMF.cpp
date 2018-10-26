@@ -45,7 +45,7 @@ LBarrier* local_barrier;
 static int matK;
 int shared_dsm_size;
 static float* __RESTRICT matQ;
-Ref<DBarrier> barrier(0);
+Ref<DBarrier> barrier(1);
 static float alpha;
 static float beta;
 

@@ -42,7 +42,7 @@ int features;
 LBarrier* local_barrier;
 int matK;
 float* page_rank;
-Ref<DBarrier> barrier(0);
+Ref<DBarrier> barrier(1);
 static int base_index;
 static int num_points_per_node;
 

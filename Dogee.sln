@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2013
-VisualStudioVersion = 12.0.40629.0
+# Visual Studio 15
+VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Dogee", "Dogee\Dogee.vcxproj", "{B25E729C-B0D7-4CC7-B6E4-246A0B038482}"
 EndProject
@@ -51,6 +51,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "K-means-checkpoint", "examp
 	ProjectSection(ProjectDependencies) = postProject
 		{B25E729C-B0D7-4CC7-B6E4-246A0B038482} = {B25E729C-B0D7-4CC7-B6E4-246A0B038482}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "MapExample", "examples\MapExample\MapExample.vcxproj", "{81A777FF-DAC8-4779-90EF-623C64891D93}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -168,6 +170,18 @@ Global
 		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|Win32.ActiveCfg = Release|Win32
 		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|Win32.Build.0 = Release|Win32
 		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB}.Release|x64.ActiveCfg = Release|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Debug|Mixed Platforms.ActiveCfg = Debug|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Debug|Mixed Platforms.Build.0 = Debug|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Debug|Win32.ActiveCfg = Debug|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Debug|Win32.Build.0 = Debug|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Debug|x64.ActiveCfg = Debug|x64
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Debug|x64.Build.0 = Debug|x64
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Release|Mixed Platforms.ActiveCfg = Release|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Release|Mixed Platforms.Build.0 = Release|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Release|Win32.ActiveCfg = Release|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Release|Win32.Build.0 = Release|Win32
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Release|x64.ActiveCfg = Release|x64
+		{81A777FF-DAC8-4779-90EF-623C64891D93}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -181,5 +195,9 @@ Global
 		{9D081298-0C7B-4EE4-AE85-3CF7999C87E1} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 		{729B9206-4C68-4C47-8D38-4A1ECA6EE2FC} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
 		{77A65C24-DFDA-4D16-9D0C-2C9D3724E0BB} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
+		{81A777FF-DAC8-4779-90EF-623C64891D93} = {A51AF21D-DF1C-47D1-B2D6-D3F01070B4E6}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {91BEAB64-321F-4934-BDC8-2F0A7AE4E5CD}
 	EndGlobalSection
 EndGlobal

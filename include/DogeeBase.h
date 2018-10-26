@@ -229,7 +229,7 @@ namespace Dogee
 		{
 			return get();
 		}
-		decltype(getarray(T(0), 0)) operator[](int k)
+		decltype(getarray(T(1), 0)) operator[](int k)
 		{
 			return getarray(get(), k);
 		}
@@ -263,10 +263,6 @@ namespace Dogee
 		using BaseArrayElement<Ref<T>>::operator->;
 		using BaseArrayElement<Ref<T>>::operator Ref<T>;
 		using BaseArrayElement<Ref<T>>::operator[];
-		operator bool()
-		{
-			return (bool)BaseArrayElement<Ref<T>>::get();
-		}
 	};
 	template<typename T> class ArrayElement<Array<T>> : public BaseArrayElement<Array<T>>
 	{
@@ -276,10 +272,6 @@ namespace Dogee
 		using BaseArrayElement<Array<T>>::operator->;
 		using BaseArrayElement<Array<T>>::operator Array<T>;
 		using BaseArrayElement<Array<T>>::operator[];
-		operator bool()
-		{
-			return (bool)BaseArrayElement<Array<T>>::get();
-		}
 	};
 
 	template<typename T, FieldKey FieldId> class BaseValue
@@ -315,6 +307,16 @@ namespace Dogee
 			return get();
 		}
 
+		bool operator==(T other)
+		{
+			return get() == other;
+		}
+
+		bool operator!=(T other)
+		{
+			return get() != other;
+		}
+
 		//write
 		BaseValue<T, FieldId>& operator=(T x)
 		{
@@ -336,6 +338,8 @@ namespace Dogee
 		using BaseValue<T, FieldId>::operator->;
 		using BaseValue<T, FieldId>::operator T;
 		using BaseValue<T, FieldId>::operator =;
+		using BaseValue<T, FieldId>::operator ==;
+		using BaseValue<T, FieldId>::operator !=;
 	};
 
 	template<typename T, FieldKey FieldId> class Value<Array<T>, FieldId> : public BaseValue<Array<T>, FieldId>
@@ -344,13 +348,11 @@ namespace Dogee
 		using BaseValue<Array<T>, FieldId>::operator->;
 		using BaseValue<Array<T>, FieldId>::operator Array<T>;
 		using BaseValue<Array<T>, FieldId>::operator =;
+		using BaseValue<Array<T>, FieldId>::operator ==;
+		using BaseValue<Array<T>, FieldId>::operator !=;
 		ArrayElement<T> operator[](int k)
 		{
 			return BaseValue<Array<T>, FieldId>::get().ArrayAccess(k);
-		}
-		operator bool()
-		{
-			return (bool)BaseValue<Array<T>, FieldId>::get();
 		}
 	};
 
@@ -360,10 +362,8 @@ namespace Dogee
 		using BaseValue<Ref<T>, FieldId>::operator->;
 		using BaseValue<Ref<T>, FieldId>::operator Ref<T>;
 		using BaseValue<Ref<T>, FieldId>::operator =;
-		operator bool()
-		{
-			return (bool)BaseValue<Array<T>, FieldId>::get();
-		}
+		using BaseValue<Ref<T>, FieldId>::operator ==;
+		using BaseValue<Ref<T>, FieldId>::operator !=;
 	};
 
 	template<typename T> class Array
@@ -432,10 +432,6 @@ namespace Dogee
 		{
 			return ArrayAccess(k);
 		}
-		operator bool() const
-		{
-			return (object_id != 0);
-		}
 		void Fill(std::function<T(uint32_t)> func, uint32_t start_index, uint32_t len) const
 		{
 			const unsigned bsize = DSM_CACHE_BLOCK_SIZE * 8;
@@ -488,19 +484,49 @@ namespace Dogee
 			return get();
 		}
 
-		operator bool()
-		{
-			return (obj.GetObjectId() != 0);
-		}
 
 		T& operator*()
 		{
 			return *get();
 		}
+		
+		Ref<T, false>& operator=(std::nullptr_t)
+		{
+			obj.SetObjectId(0);
+			return *this;
+		}
+		bool operator==(std::nullptr_t)
+		{
+			return obj.GetObjectId()==0;
+		}
+
+		template <class T2, bool isV,FieldKey idx>
+		bool operator==(Value<Ref<T2, isV>,idx> x)
+		{
+			return obj.GetObjectId() == x.get().GetObjectId();
+		}
+
+		template <class T2,bool isV>
+		bool operator==(Ref<T2, isV> x)
+		{
+			return obj.GetObjectId() == x.GetObjectId();
+		}
+
+		template <class T2>
+		bool operator!=(T2 v)
+		{
+			return !operator==(v);
+		}
 
 		ObjectKey GetObjectId()
 		{
 			return obj.GetObjectId();
+		}
+
+		Ref<T, false>& operator=(Ref<T, false> x)
+		{
+			obj.SetObjectId(x->GetObjectId());
+			return *this;
 		}
 
 		template <class T2>
@@ -527,10 +553,13 @@ namespace Dogee
 		}
 
 		template <class T2, bool isVirtual>
-		Ref(Ref<T2, isVirtual> x) :obj(x.GetObjectId())
+		Ref(Ref<T2, isVirtual>& x) :obj(x.GetObjectId())
 		{
 			static_assert(std::is_base_of<T, T2>::value, "T2 should be subclass of T.");
 		}
+
+		Ref(std::nullptr_t) :obj(0) {}
+
 		explicit Ref() :obj(0){}
 		explicit Ref(ObjectKey key) :obj(key)
 		{
@@ -563,10 +592,7 @@ namespace Dogee
 			lastobject = (DObject*)pobj;
 			return pobj;
 		}
-		operator bool()
-		{
-			return (okey != 0);
-		}
+
 		T* operator->()
 		{
 			return get();
@@ -580,6 +606,36 @@ namespace Dogee
 		ObjectKey GetObjectId()
 		{
 			return okey;
+		}
+
+
+		Ref<T, false>& operator=(std::nullptr_t)
+		{
+			okey=0;
+			pobj = nullptr;
+			return *this;
+		}
+		bool operator==(std::nullptr_t)
+		{
+			return okey == 0;
+		}
+
+		template <class T2, bool isV, FieldKey idx>
+		bool operator==(Value<Ref<T2, isV>, idx> x)
+		{
+			return okey == x.get().GetObjectId();
+		}
+
+		template <class T2, bool isV>
+		bool operator==(Ref<T2, isV> x)
+		{
+			return okey == x.GetObjectId();
+		}
+
+		template <class T2>
+		bool operator!=(T2 v)
+		{
+			return !operator==(v);
 		}
 
 		//copy or upcast
@@ -618,7 +674,7 @@ namespace Dogee
 			pobj = nullptr;
 			okey = key;
 		}
-
+		Ref(std::nullptr_t) :okey(0), pobj (nullptr) {}
 		~Ref()
 		{
 			delete pobj;

@@ -110,7 +110,7 @@ DefGlobal(g_param_len, int);
 DefGlobal(g_num_points, int);
 DefGlobal(g_barrier, Ref<DBarrier>);
 
-Ref<DBarrier> barrier(0);
+Ref<DBarrier> barrier(1);
 
 
 

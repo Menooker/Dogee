@@ -42,7 +42,7 @@ static int features;
 LBarrier* local_barrier;
 static int matK;
 float* means;
-Ref<DCheckpointBarrier> barrier(0);
+Ref<DCheckpointBarrier> barrier(1);
 static int n_iter = -1;
 
 class LocalDataset

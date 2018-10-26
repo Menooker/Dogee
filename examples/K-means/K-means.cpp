@@ -42,7 +42,7 @@ static int features;
 LBarrier* local_barrier;
 static int matK;
 float* means;
-Ref<DBarrier> barrier(0);
+Ref<DBarrier> barrier(1);
 
 class LocalDataset
 {
